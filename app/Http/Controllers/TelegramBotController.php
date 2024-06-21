@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -39,8 +40,11 @@ class TelegramBotController extends Controller
 
     public function sendMessage(Request $request)
     {
-        Storage::put('HOOK.txt', "lolwut");
-        Storage::put('HOOK.txt', json_encode($request->all()));
+        // dd($request);
+        Cache::forever("webhook-data", $request->all());
+        dd(Cache::get("webhook-data"));
+        // Storage::put('HOOK.txt', "lolwut");
+        // Storage::put('HOOK.txt', "womwomwom");
         Log::info(json_encode($request->all()));
         // Http::post(
         //     env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
