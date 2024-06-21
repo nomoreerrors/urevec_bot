@@ -33,7 +33,7 @@ class TelegramBotController extends Controller
 
         // );
 
-        dd($request);
+        // dd($request);
 
         //Отправить тестовое сообщение в тг в ответ на успешную регистрацию хука
         Http::post(
