@@ -34,7 +34,11 @@ class TelegramBotController extends Controller
         );
 
         $data = $response->getStatusCode();
-        dd($data);
+        Http::get(
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
+            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
+        );
+        // dd($data);
         // dd('Lolwut"');
     }
 }
