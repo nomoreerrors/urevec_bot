@@ -24,15 +24,15 @@ class TelegramBotController extends Controller
     }
 
 
-    public function setWebHook(Response $response)
+    public function setWebhook(Response $response)
     {
         // dd('here');
-        //Установить вебхук
-        Http::post(
+        // Установить вебхук
+        $http = Http::get(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
         );
-        dd($response);
+        dd($http);
     }
 
     public function sendMessage()

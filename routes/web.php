@@ -9,5 +9,5 @@ use Illuminate\Support\Facades\Route;
 // });
 
 
-// Route::post('/api', [TelegramBotController::class, 'sendMessage']);
-// Route::get('/get_updates', [TelegramBotController::class, 'getUpdates']);
+
+Route::get('/', [TelegramBotController::class, 'setWebhook']);
