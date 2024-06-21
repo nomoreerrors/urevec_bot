@@ -26,21 +26,20 @@ class TelegramBotController extends Controller
 
     public function setWebHook(Request $request)
     {
+        // dd('here');
         //Установить вебхук
-        // Http::get(
-        //     env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
-        //     ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
+        Http::get(
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
+            ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
 
-        // );
+        );
+    }
 
-        // dd($request);
-
-        //Отправить тестовое сообщение в тг в ответ на успешную регистрацию хука
+    public function sendMessage()
+    {
         Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
-        )->json();
-        // dd($data);
-        // dd('Lolwut"');
+        );
     }
 }
