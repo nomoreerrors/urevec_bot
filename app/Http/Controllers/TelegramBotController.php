@@ -40,6 +40,6 @@ class TelegramBotController extends Controller
         Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
-        );
+        )->json();
     }
 }
