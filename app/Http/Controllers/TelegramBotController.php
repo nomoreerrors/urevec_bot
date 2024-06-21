@@ -24,7 +24,7 @@ class TelegramBotController extends Controller
     }
 
 
-    public function setWebHook(Response $response)
+    public function setWebHook(Request $request)
     {
         //Установить вебхук
         Http::get(
@@ -33,6 +33,7 @@ class TelegramBotController extends Controller
 
         );
 
+        dd($request);
 
         //Отправить тестовое сообщение в тг в ответ на успешную регистрацию хука
         Http::get(
