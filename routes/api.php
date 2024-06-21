@@ -14,4 +14,4 @@ use App\Http\Controllers\TelegramBotController;
 //эквивалентно https://shuangyu.ru/urevec_bot/webhook на хостинге
 //Просто переходим по url, чтобы Телеграм записал наш адрес в базу и уведомлял о действиях пользователя
 //Для хуков всегда нужно использовать api.php, чтобы Ларавел не запрашивал токены безопасности
-Route::post('/webhook', [TelegramBotController::class, 'sendMessage']);
+Route::get('/webhook', [TelegramBotController::class, 'sendMessage']);

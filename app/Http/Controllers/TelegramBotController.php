@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TelegramBotController extends Controller
 {
@@ -35,11 +37,14 @@ class TelegramBotController extends Controller
         // dd($http);
     }
 
-    public function sendMessage()
+    public function sendMessage(Request $request)
     {
-        Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
-        )->json();
+        Storage::put('HOOK.txt', "lolwut");
+        Storage::put('HOOK.txt', json_encode($request->all()));
+        Log::info(json_encode($request->all()));
+        // Http::post(
+        //     env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
+        //     ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
+        // )->json();
     }
 }
