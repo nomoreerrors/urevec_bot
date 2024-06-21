@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -23,14 +24,15 @@ class TelegramBotController extends Controller
     }
 
 
-    public function setWebHook(Request $request)
+    public function setWebHook(Response $response)
     {
+        // dd(env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook");
         Http::get(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
-            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook"
+
         );
 
-        $data = $request->getContent();
+        $data = $response->getStatusCode();
         dd($data);
         // dd('Lolwut"');
     }
