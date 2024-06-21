@@ -36,10 +36,10 @@ class TelegramBotController extends Controller
         dd($request);
 
         //Отправить тестовое сообщение в тг в ответ на успешную регистрацию хука
-        Http::get(
+        Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
-        );
+        )->json();
         // dd($data);
         // dd('Lolwut"');
     }
