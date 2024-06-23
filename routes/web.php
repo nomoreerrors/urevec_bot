@@ -11,3 +11,9 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/', [TelegramBotController::class, 'setWebhook']);
+Route::get('/getinfo', [TelegramBotController::class, 'getWebhookInfo']);
+
+// Route::get('/webhook', function(){
+//     dd('lohiblya');
+// });
+Route::get('/webhook', [TelegramBotController::class, 'sendMessage']);
