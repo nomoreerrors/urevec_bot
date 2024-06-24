@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-
+use App\Services\TelegramBotService;
 
 class TelegramBotController extends Controller
 {
@@ -29,8 +29,6 @@ class TelegramBotController extends Controller
 
     public function setWebhook(Response $response)
     {
-        // dd('hereee');
-        // Установить вебхук
         $http = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
@@ -38,37 +36,41 @@ class TelegramBotController extends Controller
         dd($http);
     }
 
-    public function sendMessage(Request $request)
+    public function sendMessage(Request $request, TelegramBotService $service)
     {
-        // Сохранить ответ сервера в файл.
+        
         $data = $request->all();
-        Storage::put("DONEee.json", json_encode($data));
+        $service->requestLog($data);
+
+        if(!property_exists((object)$data["message"], "text")) {
+        return response('ok', 200);
+        };
+
+        $service->linksFilter($data);
+
+// dd('Lolwut');
+       
+
+//         $result = strpos($data["message"]["text"], "http");
+        
+//         if($result !== false){
+// //замени id на настоящий Юрьевец
+//             Http::post( 
+//                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
+//                 ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => "Пошел нахуй!"]
+//             )->json(); 
+//             return;
+//             } else {
+
+//             Http::post(
+//                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
+//                 ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => $data["message"]["text"] . "message doesn't contain http"]
+//             )->json();
+//             return;
+
+//         }
 
 
-        $result = strpos($data["message"]["text"], "http");
-dd($result);
-        if(strpos()){
-
-            Http::post(
-                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-                ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => "Пошел нахуй!"]
-            )->json(); 
-            } else {
-
-            Http::post(
-                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-                ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => $data["message"]["text"]]
-            )->json();
-
-        }
-
-
-
-        //Отправить тестовое смс в ответ на любое сообщение в ТГ
-        Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => $data["message"]["text"]]
-        )->json();
     }
 
 
