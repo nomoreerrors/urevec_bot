@@ -36,39 +36,34 @@ class TelegramBotController extends Controller
         dd($http);
     }
 
+
+
     public function sendMessage(Request $request, TelegramBotService $service)
     {
-        
+       
         $data = $request->all();
         $service->requestLog($data);
 
-        if(!property_exists((object)$data["message"], "text")) {
-        return response('ok', 200);
-        };
+// return response('ok', 200);
 
-        $service->linksFilter($data);
 
-// dd('Lolwut');
-       
+        $isAdmin = $service->checkIfUserIsAdmin();
+        $isChatMessage = $service->checkIsMessageFromChat();
 
-//         $result = strpos($data["message"]["text"], "http");
+        if(!$isChatMessage) {
+            
+            return response('ok', 200); //пришло не сообщение из чата, а уведомление от ТГ
+        }
         
-//         if($result !== false){
-// //замени id на настоящий Юрьевец
-//             Http::post( 
-//                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-//                 ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => "Пошел нахуй!"]
-//             )->json(); 
-//             return;
-//             } else {
+        if(!$isAdmin) {
+            
+            $service->linksFilter($data);
+        } else {
+            return response('ok', 200); //Сообщение от админа — проверку не проводим
+        }
 
-//             Http::post(
-//                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-//                 ["chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"), "text" => $data["message"]["text"] . "message doesn't contain http"]
-//             )->json();
-//             return;
 
-//         }
+
 
 
     }
