@@ -1,0 +1,385 @@
+{
+    "update_id": 267305687,
+    "message": {
+        "message_id": 465,
+        "from": {
+            "id": 754429643,
+            "is_bot": false,
+            "first_name": "LS",
+            "username": "nomoreerrors",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "chat": {
+            "id": -1002222230714,
+            "title": "oifjwoejf",
+            "username": "test33rr",
+            "type": "supergroup"
+        },
+        "date": 1719338068,
+        "text": "\u0434\u043b\u043e"
+    },
+    "0": {
+        "update_id": 267305688,
+        "message": {
+            "message_id": 466,
+            "from": {
+                "id": 661829140,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338129,
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB0mZ7BJEyEbQ_Z3SVgPDCyXcTe6etAAKC3zEbCbnZS4DKFYS0kZBAAQADAgADcwADNQQ",
+                    "file_unique_id": "AQADgt8xGwm52Ut4",
+                    "file_size": 1525,
+                    "width": 90,
+                    "height": 60
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB0mZ7BJEyEbQ_Z3SVgPDCyXcTe6etAAKC3zEbCbnZS4DKFYS0kZBAAQADAgADbQADNQQ",
+                    "file_unique_id": "AQADgt8xGwm52Uty",
+                    "file_size": 27646,
+                    "width": 320,
+                    "height": 214
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB0mZ7BJEyEbQ_Z3SVgPDCyXcTe6etAAKC3zEbCbnZS4DKFYS0kZBAAQADAgADeAADNQQ",
+                    "file_unique_id": "AQADgt8xGwm52Ut9",
+                    "file_size": 145474,
+                    "width": 800,
+                    "height": 534
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB0mZ7BJEyEbQ_Z3SVgPDCyXcTe6etAAKC3zEbCbnZS4DKFYS0kZBAAQADAgADeQADNQQ",
+                    "file_unique_id": "AQADgt8xGwm52Ut-",
+                    "file_size": 200346,
+                    "width": 1024,
+                    "height": 683
+                }
+            ]
+        }
+    },
+    "1": {
+        "update_id": 267305689,
+        "message": {
+            "message_id": 467,
+            "from": {
+                "id": 75429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338140,
+            "voice": {
+                "duration": 5,
+                "mime_type": "audio\/ogg",
+                "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
+                "file_unique_id": "AgADak0AAgm52Us",
+                "file_size": 16532
+            }
+        }
+    },
+    "2": {
+        "update_id": 267305690,
+        "message": {
+            "message_id": 468,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338173,
+            "video": {
+                "duration": 22,
+                "width": 1008,
+                "height": 1606,
+                "file_name": "\u0417\u0430\u043f\u0438\u0441\u044c \u044d\u043a\u0440\u0430\u043d\u0430 2024-05-29 \u0432 10.42.02.mov",
+                "mime_type": "video\/quicktime",
+                "thumbnail": {
+                    "file_id": "AAMCAgADIQUABIR0jLoAAgHUZnsEvYH4HZ-50Zc9IDyqo6l096MAAmxNAAIJudlLXBLy7e4RpjIBAAdtAAM1BA",
+                    "file_unique_id": "AQADbE0AAgm52Uty",
+                    "file_size": 5396,
+                    "width": 201,
+                    "height": 320
+                },
+                "thumb": {
+                    "file_id": "AAMCAgADIQUABIR0jLoAAgHUZnsEvYH4HZ-50Zc9IDyqo6l096MAAmxNAAIJudlLXBLy7e4RpjIBAAdtAAM1BA",
+                    "file_unique_id": "AQADbE0AAgm52Uty",
+                    "file_size": 5396,
+                    "width": 201,
+                    "height": 320
+                },
+                "file_id": "BAACAgIAAyEFAASEdIy6AAIB1GZ7BL2B-B2fudGXPSA8qqOpdPejAAJsTQACCbnZS1wS8u3uEaYyNQQ",
+                "file_unique_id": "AgADbE0AAgm52Us",
+                "file_size": 45952557
+            }
+        }
+    },
+    "3": {
+        "update_id": 267305691,
+        "message": {
+            "message_id": 469,
+            "from": {
+                "id": 661829140,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338181,
+            "forward_origin": {
+                "type": "channel",
+                "chat": {
+                    "id": -1001103156398,
+                    "title": "Bits.media - \u0431\u0438\u0442\u043a\u043e\u0438\u043d \u0438 \u0431\u043b\u043e\u043a\u0447\u0435\u0439\u043d \u043f\u043e-\u0440\u0443\u0441\u0441\u043a\u0438",
+                    "username": "bitsmedia",
+                    "type": "channel"
+                },
+                "message_id": 23735,
+                "date": 1718868967
+            },
+            "forward_from_chat": {
+                "id": -1001103156398,
+                "title": "Bits.media - \u0431\u0438\u0442\u043a\u043e\u0438\u043d \u0438 \u0431\u043b\u043e\u043a\u0447\u0435\u0439\u043d \u043f\u043e-\u0440\u0443\u0441\u0441\u043a\u0438",
+                "username": "bitsmedia",
+                "type": "channel"
+            },
+            "forward_from_message_id": 23735,
+            "forward_date": 1718868967,
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB1WZ7BMXdiBGNV9LI1Rb7oy9Wr3FHAALo2DEbWgqhS2JHkvSfOVkbAQADAgADcwADNQQ",
+                    "file_unique_id": "AQAD6NgxG1oKoUt4",
+                    "file_size": 1261,
+                    "width": 90,
+                    "height": 51
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB1WZ7BMXdiBGNV9LI1Rb7oy9Wr3FHAALo2DEbWgqhS2JHkvSfOVkbAQADAgADbQADNQQ",
+                    "file_unique_id": "AQAD6NgxG1oKoUty",
+                    "file_size": 10405,
+                    "width": 320,
+                    "height": 180
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB1WZ7BMXdiBGNV9LI1Rb7oy9Wr3FHAALo2DEbWgqhS2JHkvSfOVkbAQADAgADeAADNQQ",
+                    "file_unique_id": "AQAD6NgxG1oKoUt9",
+                    "file_size": 34955,
+                    "width": 800,
+                    "height": 450
+                },
+                {
+                    "file_id": "AgACAgIAAyEFAASEdIy6AAIB1WZ7BMXdiBGNV9LI1Rb7oy9Wr3FHAALo2DEbWgqhS2JHkvSfOVkbAQADAgADeQADNQQ",
+                    "file_unique_id": "AQAD6NgxG1oKoUt-",
+                    "file_size": 38669,
+                    "width": 900,
+                    "height": 506
+                }
+            ],
+            "caption": "\u0418\u043d\u0434\u0438\u0439\u0441\u043a\u0438\u0439 \u0440\u0435\u0433\u0443\u043b\u044f\u0442\u043e\u0440 \u043e\u0448\u0442\u0440\u0430\u0444\u043e\u0432\u0430\u043b \u0431\u0438\u0440\u0436\u0443 Binance \u043d\u0430 $2,2 \u043c\u043b\u043d\n\n\u041f\u043e\u0434\u0440\u0430\u0437\u0434\u0435\u043b\u0435\u043d\u0438\u0435 \u0444\u0438\u043d\u0430\u043d\u0441\u043e\u0432\u043e\u0439 \u0440\u0430\u0437\u0432\u0435\u0434\u043a\u0438 \u0418\u043d\u0434\u0438\u0438 (FIU) \u043e\u0448\u0442\u0440\u0430\u0444\u043e\u0432\u0430\u043b\u043e \u043a\u0440\u0443\u043f\u043d\u0435\u0439\u0448\u0443\u044e \u0432 \u043c\u0438\u0440\u0435 \u043a\u0440\u0438\u043f\u0442\u043e\u0431\u0438\u0440\u0436\u0443 Binance \u043d\u0430 $2,2 \u043c\u043b\u043d \u0437\u0430 \u043d\u0435\u0441\u043e\u0431\u043b\u044e\u0434\u0435\u043d\u0438\u0435 \u043f\u0440\u0430\u0432\u0438\u043b \u0431\u043e\u0440\u044c\u0431\u044b \u0441 \u043e\u0442\u043c\u044b\u0432\u0430\u043d\u0438\u0435\u043c \u0434\u0435\u043d\u0435\u0433. \n\nhttps:\/\/bits.media\/indiyskiy-regulyator-oshtrafoval-birzhu-binance-na-2-2-mln\/",
+            "caption_entities": [
+                {
+                    "offset": 218,
+                    "length": 78,
+                    "type": "url"
+                }
+            ]
+        }
+    },
+    "4": {
+        "update_id": 267305692,
+        "message": {
+            "message_id": 470,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338197,
+            "text": "C \u041d\u043e\u0432\u044b\u043c \u0433\u043e\u0434\u043e\u043c"
+        }
+    },
+    "5": {
+        "update_id": 267305693,
+        "edited_message": {
+            "message_id": 470,
+            "from": {
+                "id": 253429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338197,
+            "edit_date": 1719338202,
+            "text": "C \u041d\u043e\u0432\u044b\u043c \u0433\u043e\u0434\u043e\u043c :)"
+        }
+    },
+    "6": {
+        "update_id": 267305694,
+        "message": {
+            "message_id": 471,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338244,
+            "video_note": {
+                "duration": 3,
+                "length": 384,
+                "thumbnail": {
+                    "file_id": "AAMCAgADIQUABIR0jLoAAgHXZnsFBKHfAAGKE6902SbAeC8CJ7sLAAJyTQACCbnZS6ijBCRLRPYLAQAHbQADNQQ",
+                    "file_unique_id": "AQADck0AAgm52Uty",
+                    "file_size": 9658,
+                    "width": 320,
+                    "height": 320
+                },
+                "thumb": {
+                    "file_id": "AAMCAgADIQUABIR0jLoAAgHXZnsFBKHfAAGKE6902SbAeC8CJ7sLAAJyTQACCbnZS6ijBCRLRPYLAQAHbQADNQQ",
+                    "file_unique_id": "AQADck0AAgm52Uty",
+                    "file_size": 9658,
+                    "width": 320,
+                    "height": 320
+                },
+                "file_id": "DQACAgIAAyEFAASEdIy6AAIB12Z7BQSh3wABihOvdNkmwHgvAie7CwACck0AAgm52UuoowQkS0T2CzUE",
+                "file_unique_id": "AgADck0AAgm52Us",
+                "file_size": 381132
+            }
+        }
+    },
+    "7": {
+        "update_id": 267305655,
+        "my_chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 661829140,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "date": 1719316663,
+            "old_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0414\u0436\u043e\u043d \u041a\u0440\u0430\u043c\u0435\u0440",
+                    "username": "UrevecBot"
+                },
+                "status": "left"
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0414\u0436\u043e\u043d \u041a\u0440\u0430\u043c\u0435\u0440",
+                    "username": "UrevecBot"
+                },
+                "status": "member"
+            }
+        }
+    },
+    "8": {
+        "update_id": 267305655,
+        "my_chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 114429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "date": 1719316663,
+            "old_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0414\u0436\u043e\u043d \u041a\u0440\u0430\u043c\u0435\u0440",
+                    "username": "UrevecBot"
+                },
+                "status": "left"
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0414\u0436\u043e\u043d \u041a\u0440\u0430\u043c\u0435\u0440",
+                    "username": "UrevecBot"
+                },
+                "status": "member"
+            }
+        }
+    }
+}

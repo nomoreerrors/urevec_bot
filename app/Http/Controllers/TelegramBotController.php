@@ -16,11 +16,11 @@ class TelegramBotController extends Controller
 
     public function getUpdates()
     {
-//trump
+        //trump
 
         Http::get(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => $this->message]
+            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => "Hello world"]
         );
     }
 
@@ -38,45 +38,51 @@ class TelegramBotController extends Controller
 
     public function sendMessage(Request $request, TelegramBotService $service)
     {
+
         $data = $request->all();
-        
+
         $service->requestLog($data);
         Log::info("Вошел");
 
         $isChatMessage = $service->checkIsMessageFromChat();
         $isAdmin = $service->checkIfUserIsAdmin();
 
-        if(!$isChatMessage) {
-            Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе"); 
-            return response('ok', 200); 
+        if (!$isChatMessage) {
+            Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе");
+            return response('ok', 200);
         }
 
-        if(!$isAdmin) {
-           Log::info("Не администратор"); 
-            $service->linksFilter();
-
-        } 
-        else {
-            Log::info("Сообщение отправил администратор");
-            return response('ok', 200); 
-        }
-
-
+        // if (!$isAdmin) {
+        //     Log::info("Не администратор");
+        //     $service->linksFilter();
+        // } else {
+        //     Log::info("Сообщение отправил администратор");
+        //     return response('ok', 200);
+        // }
+        Log::info("Не администратор");
+        $service->linksFilter();
+        return response('ok', 200);
     }
 
 
     public function getWebhookInfo()
     {
-       $http = Http::get(env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getWebhookInfo")
-                            ->json(); //Обязательно json
-       dd($http);
-    // Storage::put("NEWHOOK.txt", json_encode($http));
+        $http = Http::get(env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getWebhookInfo")
+            ->json(); //Обязательно json
+        dd($http);
+        // Storage::put("NEWHOOK.txt", json_encode($http));
     }
 
 
 
     public function testBot(Request $request, TelegramBotService $service): void
     {
+
+        // $result =  json_decode(Storage::get('TestObjects.json'), true);
+        // dd($result);
+        // // dd(Storage::get("TestObjects.json"));
+        // $testObjects = Storage::get(json_decode("TestObjects.json", true));
+        // dd($testObjects);
 
         // dd($service->data);
         // dd("lol");
@@ -95,7 +101,7 @@ class TelegramBotController extends Controller
         //                 "until_date" => time() + 86400
         //             ]
         //     )->json();
-            
+
         //       Http::post( 
         //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
         //             [
@@ -112,6 +118,6 @@ class TelegramBotController extends Controller
         //         ]
         //     )->json(); 
 
-            
+
     }
 }

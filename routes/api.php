@@ -15,4 +15,3 @@ Route::get('/user', function (Request $request) {
 //эквивалентно https://shuangyu.ru/urevec_bot/api/webhook на хостинге
 Route::post('/webhook', [TelegramBotController::class, 'sendMessage']);
 Route::post('/testbot', [TelegramBotController::class, 'testBot']);
-
