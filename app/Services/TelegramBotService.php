@@ -15,6 +15,8 @@ class TelegramBotService
 
     private $data;
 
+    private $messageType = "";
+
     
 
 
@@ -35,12 +37,12 @@ class TelegramBotService
 
     public function linksFilter()
     {
-         $hasLink = strpos($this->data["message"]["text"], "http");
+        $hasLink = strpos($this->data[$this->messageType]["text"], "http");
+        
+         
+        Log::info("Внутри фильтра ссылок");
 
-Log::info("Внутри фильтра ссылок");
         if($hasLink !== false) { 
-
-           
             
             Http::post( 
                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
@@ -56,7 +58,7 @@ Log::info("Внутри фильтра ссылок");
                         "until_date" => time() + 86400
                     ]
             )->json();
-Log::info("deleteMessage");
+            
              Http::post( 
                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
                     [
@@ -91,33 +93,54 @@ Log::info("deleteMessage");
 
         public function checkIfUserIsAdmin(): bool
         {
-            // $adminsIdArray = ["424525424"]; //не админ для теста
+            
             $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-            if(in_array($this->data["message"]["from"]["id"], $adminsIdArray)) {
+            // if(array_key_exists("message",  $this->data) ||
+            // array_key_exists("edited_message", $this->data));
+            // dd("checkifuserisadmin " . "this->data->message = " . $this->data["message"] . 
+            // "this->data->editedmessage = " . $this->data["edited_message"]);
+            if(array_key_exists($this->messageType, $this->data)) {
 
+                if(in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
+                $result = true;
                 Log::info("isAdmin return true");
-                return true;
+                
 
             } else {
+                $result;
                 Log::info("isAdmin return false");
-                return false;
+                $result = false;
             }
-         
+            return $result;
+            }
+           
         }
 
 
         public function checkIsMessageFromChat(): bool
         {
+            $this->messageType = "";
 
-            if(array_key_exists("text", $this->data["message"])) {
-            Log::info("Поле текст объекта data :" . $this->data["message"]["text"]);  
-            $result = array_key_exists("text", $this->data["message"]);
-            Log::info("поле текст существует: " . $result);
-            } else {
-                Log::info("Поля ТЕКСТ не существует в объекте");
-            }
+            if(array_key_exists("message", $this->data)) {
+                $this->messageType = "message";
 
-            if(!array_key_exists("text", $this->data["message"])) {
+            } elseif(array_key_exists("edited_message", $this->data)) {
+                 $this->messageType = "edited_message";
+            } 
+            else {
+                return false;
+            } 
+            
+            // if(array_key_exists("text", $this->data["message"])) {
+            // Log::info("Поле текст объекта data :" . $this->data["message"]["text"]);  
+            // $result = array_key_exists("text", $this->data["message"]);
+            // Log::info("поле текст существует: " . $result);
+            // } else {
+            //     Log::info("Поля ТЕКСТ не существует в объекте");
+            // }
+
+            if(!array_key_exists("text", $this->data[$this->messageType])) {
+                
                 Log::info("checkIsMessageFromChat returned false");
                 return false;
                

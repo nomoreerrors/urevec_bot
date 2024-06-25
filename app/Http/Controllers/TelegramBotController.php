@@ -13,8 +13,6 @@ use App\Services\TelegramBotService;
 class TelegramBotController extends Controller
 {
 
-    private $message = "Supergirl is here!";
-
 
     public function getUpdates()
     {
@@ -44,21 +42,21 @@ class TelegramBotController extends Controller
         
         $service->requestLog($data);
         Log::info("Вошел");
-        
 
-
-        $isAdmin = $service->checkIfUserIsAdmin();
         $isChatMessage = $service->checkIsMessageFromChat();
+        $isAdmin = $service->checkIfUserIsAdmin();
 
         if(!$isChatMessage) {
             Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе"); 
             return response('ok', 200); 
         }
-        
+
         if(!$isAdmin) {
            Log::info("Не администратор"); 
             $service->linksFilter();
-        } else {
+
+        } 
+        else {
             Log::info("Сообщение отправил администратор");
             return response('ok', 200); 
         }
@@ -77,39 +75,42 @@ class TelegramBotController extends Controller
 
 
 
-    public function testBot(Request $request): void
+    public function testBot(Request $request, TelegramBotService $service): void
     {
-        $data = $request->all();
-              Http::post( 
-                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
-                    [
-                        "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-                        "user_id" => $data["message"]["from"]["id"],
-                        "can_send_messages" => false,
-                        "can_send_documents" => false,
-                        "can_send_photos" => false,
-                        "can_send_videos" => false,
-                        "can_send_video_notes" => false,
-                        "can_send_other_messages" => false,
-                        "until_date" => time() + 86400
-                    ]
-            )->json();
-            
-              Http::post( 
-                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
-                    [
-                        "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-                        "message_id" =>$data["message"]["message_id"]
-                     ]
-            )->json();
 
-               Http::post( 
-                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-                [
-                    "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-                    "text" => "Пользователь " . $data["message"]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата."
-                ]
-            )->json(); 
+        // dd($service->data);
+        // dd("lol");
+        // $data = $request->all();
+        //       Http::post( 
+        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
+        //             [
+        //                 "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+        //                 "user_id" => $data["message"]["from"]["id"],
+        //                 "can_send_messages" => false,
+        //                 "can_send_documents" => false,
+        //                 "can_send_photos" => false,
+        //                 "can_send_videos" => false,
+        //                 "can_send_video_notes" => false,
+        //                 "can_send_other_messages" => false,
+        //                 "until_date" => time() + 86400
+        //             ]
+        //     )->json();
+            
+        //       Http::post( 
+        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
+        //             [
+        //                 "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+        //                 "message_id" =>$data["message"]["message_id"]
+        //              ]
+        //     )->json();
+
+        //        Http::post( 
+        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
+        //         [
+        //             "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+        //             "text" => "Пользователь " . $data["message"]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата."
+        //         ]
+        //     )->json(); 
 
             
     }
