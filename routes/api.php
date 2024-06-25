@@ -14,4 +14,5 @@ Route::get('/user', function (Request $request) {
 //Не забывай про префикс api у каждого роута
 //эквивалентно https://shuangyu.ru/urevec_bot/api/webhook на хостинге
 Route::post('/webhook', [TelegramBotController::class, 'sendMessage']);
-// Route::get('/getinfo', [TelegramBotController::class, 'getWebhookInfo']);
+Route::post('/testbot', [TelegramBotController::class, 'testBot']);
+
