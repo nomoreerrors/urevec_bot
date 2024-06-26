@@ -1,24 +1,4 @@
 {
-    "update_id": 267305687,
-    "message": {
-        "message_id": 465,
-        "from": {
-            "id": 754429643,
-            "is_bot": false,
-            "first_name": "LS",
-            "username": "nomoreerrors",
-            "language_code": "ru",
-            "is_premium": true
-        },
-        "chat": {
-            "id": -1002222230714,
-            "title": "oifjwoejf",
-            "username": "test33rr",
-            "type": "supergroup"
-        },
-        "date": 1719338068,
-        "text": "\u0434\u043b\u043e"
-    },
     "0": {
         "update_id": 267305688,
         "message": {
@@ -379,6 +359,56 @@
                     "username": "UrevecBot"
                 },
                 "status": "member"
+            }
+        }
+    },
+    "9": {
+        "update_id": 267305687,
+        "message": {
+            "message_id": 465,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338068,
+            "text": "\u0434\u043b\u043e"
+        }
+    },
+    "10": {
+        "update_id": 267305689,
+        "here's some unknown messagetype": {
+            "message_id": 467,
+            "from": {
+                "id": 75429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "oifjwoejf",
+                "username": "test33rr",
+                "type": "supergroup"
+            },
+            "date": 1719338140,
+            "voice": {
+                "duration": 5,
+                "mime_type": "audio\/ogg",
+                "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
+                "file_unique_id": "AgADak0AAgm52Us",
+                "file_size": 16532
             }
         }
     }

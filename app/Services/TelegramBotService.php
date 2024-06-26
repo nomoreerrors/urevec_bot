@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-
+use ErrorException;
 
 class TelegramBotService
 {
 
-    private $data;
+    public $data;
 
     private $messageType = "";
 
@@ -102,10 +102,10 @@ class TelegramBotService
 
             if (in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
                 $result = true;
-                Log::info("isAdmin return true");
+                // Log::info("isAdmin return true");
             } else {
 
-                Log::info("isAdmin return false");
+                // Log::info("isAdmin return false");
                 $result = false;
             }
         }
@@ -113,7 +113,7 @@ class TelegramBotService
     }
 
 
-    public function checkIsMessageFromChat(): bool
+    public function checkMessageType(): string
     {
         $this->messageType = "";
 
@@ -121,19 +121,12 @@ class TelegramBotService
             $this->messageType = "message";
         } elseif (array_key_exists("edited_message", $this->data)) {
             $this->messageType = "edited_message";
+        } elseif (array_key_exists("my_chat_member", $this->data)) {
+            $this->messageType = "my_chat_member";
         } else {
-            return false;
+            $this->messageType = "unknown message type";
         }
 
-
-        if (!array_key_exists("text", $this->data[$this->messageType])) {
-
-            Log::info("checkIsMessageFromChat returned false");
-            return false;
-        } else {
-
-            Log::info("checkIsMessageFromChat returned true");
-            return true;
-        }
+        return $this->messageType;
     }
 }

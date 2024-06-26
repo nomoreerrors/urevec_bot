@@ -25,13 +25,14 @@ class TelegramBotController extends Controller
     }
 
 
-    public function setWebhook(Response $response)
+    public function setWebhook()
     {
+
         $http = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
         )->json(); //обязательно json
-        dd($http);
+        // dd($http);
     }
 
 
@@ -42,26 +43,23 @@ class TelegramBotController extends Controller
         $data = $request->all();
 
         $service->requestLog($data);
-        Log::info("Вошел");
+        // Log::info("Вошел");
 
-        $isChatMessage = $service->checkIsMessageFromChat();
+        $messageType = $service->checkMessageType();
         $isAdmin = $service->checkIfUserIsAdmin();
 
-        if (!$isChatMessage) {
-            Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе");
+        if ($messageType !== "message" && $messageType !== "edited_message") {
+            // Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе");
             return response('ok', 200);
         }
 
-        // if (!$isAdmin) {
-        //     Log::info("Не администратор");
-        //     $service->linksFilter();
-        // } else {
-        //     Log::info("Сообщение отправил администратор");
-        //     return response('ok', 200);
-        // }
-        Log::info("Не администратор");
-        $service->linksFilter();
-        return response('ok', 200);
+        if (!$isAdmin) {
+            // Log::info("Не администратор");
+            $service->linksFilter();
+        } else {
+            // Log::info("Сообщение отправил администратор");
+            return response('ok', 200);
+        }
     }
 
 
@@ -77,47 +75,23 @@ class TelegramBotController extends Controller
 
     public function testBot(Request $request, TelegramBotService $service): void
     {
+        $array = ["must" => "lolwut", "have" => "detonator"];
+        $bot = "have";
+        if ($bot !== "lol" && $bot !== "have") {
+            dd("true");
+        }
 
-        // $result =  json_decode(Storage::get('TestObjects.json'), true);
-        // dd($result);
-        // // dd(Storage::get("TestObjects.json"));
-        // $testObjects = Storage::get(json_decode("TestObjects.json", true));
-        // dd($testObjects);
-
-        // dd($service->data);
-        // dd("lol");
-        // $data = $request->all();
-        //       Http::post( 
-        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
-        //             [
-        //                 "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-        //                 "user_id" => $data["message"]["from"]["id"],
-        //                 "can_send_messages" => false,
-        //                 "can_send_documents" => false,
-        //                 "can_send_photos" => false,
-        //                 "can_send_videos" => false,
-        //                 "can_send_video_notes" => false,
-        //                 "can_send_other_messages" => false,
-        //                 "until_date" => time() + 86400
-        //             ]
-        //     )->json();
-
-        //       Http::post( 
-        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
-        //             [
-        //                 "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-        //                 "message_id" =>$data["message"]["message_id"]
-        //              ]
-        //     )->json();
-
-        //        Http::post( 
-        //         env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-        //         [
-        //             "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
-        //             "text" => "Пользователь " . $data["message"]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата."
-        //         ]
-        //     )->json(); 
-
-
+        $testObjects = json_decode(file_get_contents("/Users/nomoreerrors/Documents/sftptest/tests/Unit/TestObjects.json"), true);
+        // dd($testObjects["0"]);
+        foreach ($testObjects as $object) {
+            $messageType = "";
+            if (
+                array_key_exists("message", $object) ||
+                array_key_exists("edited_message", $object)
+            ) {
+                $messageType = $object;
+                dd($messageType);
+            }
+        }
     }
 }
