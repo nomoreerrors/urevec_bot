@@ -4,10 +4,6 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use App\Services\TelegramBotService;
-use ErrorException;
-use Exception;
-use Hamcrest\Arrays\IsArray;
-use Illuminate\Support\Facades\Storage;
 
 class CheckMessageTypeTest extends TestCase
 {
@@ -25,7 +21,6 @@ class CheckMessageTypeTest extends TestCase
         parent::setUp();
         $this->testObjects = json_decode(file_get_contents(__DIR__ . "/../TestObjects.json"), true);
         $this->service = new TelegramBotService();
-        $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
     }
 
 

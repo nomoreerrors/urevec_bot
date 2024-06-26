@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\TelegramBotService;
+use ErrorException;
 
 class TelegramBotController extends Controller
 {
@@ -39,25 +40,31 @@ class TelegramBotController extends Controller
 
     public function sendMessage(Request $request, TelegramBotService $service)
     {
-
         $data = $request->all();
 
         $service->requestLog($data);
-        // Log::info("Вошел");
-
         $messageType = $service->checkMessageType();
         $isAdmin = $service->checkIfUserIsAdmin();
 
         if ($messageType !== "message" && $messageType !== "edited_message") {
-            // Log::info("Не сообщение из чата. Вероятно, уведомление о новом пользователе");
             return response('ok', 200);
         }
 
         if (!$isAdmin) {
-            // Log::info("Не администратор");
-            $service->linksFilter();
+            try {
+                $hasLink = $service->linksFilter();
+
+                if ($hasLink) { //ссылка есть
+
+                    $service->restrictUser(time() + 86400);
+                    $$service->deleteMessage();
+                    $service->sendMessage("Пользователь " . $service->data[$service->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
+                    //Позже создать объект с готовыми сообщениями
+                }
+            } catch (ErrorException $e) {
+                Log::error($e->getMessage());
+            };
         } else {
-            // Log::info("Сообщение отправил администратор");
             return response('ok', 200);
         }
     }

@@ -220,7 +220,7 @@
                 "type": "supergroup"
             },
             "date": 1719338197,
-            "text": "C \u041d\u043e\u0432\u044b\u043c \u0433\u043e\u0434\u043e\u043c"
+            "text": "http lolwut testy"
         }
     },
     "5": {
@@ -243,7 +243,7 @@
             },
             "date": 1719338197,
             "edit_date": 1719338202,
-            "text": "C \u041d\u043e\u0432\u044b\u043c \u0433\u043e\u0434\u043e\u043c :)"
+            "text": "http"
         }
     },
     "6": {
@@ -386,7 +386,7 @@
     },
     "10": {
         "update_id": 267305689,
-        "here's some unknown messagetype": {
+        "edited_message": {
             "message_id": 467,
             "from": {
                 "id": 75429643,
@@ -409,6 +409,90 @@
                 "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
                 "file_unique_id": "AgADak0AAgm52Us",
                 "file_size": 16532
+            }
+        },
+        "10": {
+            "update_id": 267305689,
+            "here's some unknown messagetype": {
+                "message_id": 467,
+                "from": {
+                    "id": 75429643,
+                    "is_bot": false,
+                    "first_name": "LS",
+                    "username": "nomoreerrors",
+                    "language_code": "ru",
+                    "is_premium": true
+                },
+                "chat": {
+                    "id": -1002222230714,
+                    "title": "oifjwoejf",
+                    "username": "test33rr",
+                    "type": "supergroup"
+                },
+                "date": 1719338140,
+                "voice": {
+                    "duration": 5,
+                    "mime_type": "audio\/ogg",
+                    "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
+                    "file_unique_id": "AgADak0AAgm52Us",
+                    "file_size": 16532
+                }
+            },
+            "11": {
+                "update_id": 267305689,
+                "message": {
+                    "message_id": 467,
+                    "from": {
+                        "id": 7400599756,
+                        "is_bot": false,
+                        "first_name": "LS",
+                        "username": "nomoreerrors",
+                        "language_code": "ru",
+                        "is_premium": true
+                    },
+                    "chat": {
+                        "id": -1002222230714,
+                        "title": "oifjwoejf",
+                        "username": "test33rr",
+                        "type": "supergroup"
+                    },
+                    "date": 1719338140,
+                    "voice": {
+                        "duration": 5,
+                        "mime_type": "audio\/ogg",
+                        "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
+                        "file_unique_id": "AgADak0AAgm52Us",
+                        "file_size": 16532
+                    }
+                },
+                "12": {
+                    "update_id": 267305689,
+                    "edited_message": {
+                        "message_id": 467,
+                        "from": {
+                            "id": 7400599756,
+                            "is_bot": false,
+                            "first_name": "LS",
+                            "username": "nomoreerrors",
+                            "language_code": "ru",
+                            "is_premium": true
+                        },
+                        "chat": {
+                            "id": -1002222230714,
+                            "title": "oifjwoejf",
+                            "username": "test33rr",
+                            "type": "supergroup"
+                        },
+                        "date": 1719338140,
+                        "voice": {
+                            "duration": 5,
+                            "mime_type": "audio\/ogg",
+                            "file_id": "AwACAgIAAyEFAASEdIy6AAIB02Z7BJwkOt17Xu2lDuODUjjdzq9_AAJqTQACCbnZS4vMrRJZveY2NQQ",
+                            "file_unique_id": "AgADak0AAgm52Us",
+                            "file_size": 16532
+                        }
+                    }
+                }
             }
         }
     }
