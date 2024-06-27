@@ -9,22 +9,8 @@ use App\Services\TelegramBotService;
 
 class RestrictUserTest extends TestCase
 {
-    protected array $testObjects;
-
-    protected $service;
-
-    protected array $adminsIdArray;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->testObjects = json_decode(file_get_contents(__DIR__ . "/../TestObjects.json"), true);
-        $this->service = new TelegramBotService();
-        $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-    }
-
     /**
-     * Возвращается ли объект с описанием "юзер не найден по id"
+     * Возвращается ли объект с описанием "user id not found"
      * Если возвращается, то и при верном id запрос работает
      * @return void
      */

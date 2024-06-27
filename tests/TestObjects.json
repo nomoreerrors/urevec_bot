@@ -413,7 +413,7 @@
         },
         "10": {
             "update_id": 267305689,
-            "here's some unknown messagetype": {
+            "message": {
                 "message_id": 467,
                 "from": {
                     "id": 75429643,

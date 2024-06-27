@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use ErrorException;
+use Exception;
 
 class TelegramBotService
 {
@@ -36,16 +37,24 @@ class TelegramBotService
 
     public function linksFilter(): bool
     {
-        $hasLink = false;
-
+        // $hasLink = false;
         if (
-            ($this->messageType === "message" || $this->messageType === "edited_message") &&
-            (array_key_exists("text", $this->data[$this->messageType]))
+            $this->messageType !== "message" &&
+            $this->messageType !== "edited_message"
         ) {
 
+            // log::info($this->data);
+
+            return false;
+        } elseif (array_key_exists("text", $this->data[$this->messageType])) {
+
             $hasLink = strpos($this->data[$this->messageType]["text"], "http");
+            if ($hasLink === 0) {
+                return true;
+            }
         }
-        return $hasLink;
+
+        return false;
     }
 
 
@@ -117,8 +126,9 @@ class TelegramBotService
     }
 
 
-    public function deleteMessage(): Http
+    public function deleteMessage(): array
     {
+        // dd("deleteMessage");
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
             [
@@ -133,7 +143,7 @@ class TelegramBotService
 
 
 
-    public function sendMessage(string $message): Http
+    public function sendMessage(string $message): array
     {
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
@@ -143,5 +153,18 @@ class TelegramBotService
             ]
         )->json();
         return $response;
+    }
+
+    public function banUser(): bool
+    {
+        try {
+            $this->restrictUser(time() + 86400);
+            $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
+            $this->deleteMessage();
+            return true;
+        } catch (Exception $e) {
+            log::info($e->getMessage());
+            return false;
+        }
     }
 }

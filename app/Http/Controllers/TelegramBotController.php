@@ -38,7 +38,7 @@ class TelegramBotController extends Controller
 
 
 
-    public function sendMessage(Request $request, TelegramBotService $service)
+    public function webhookHandler(Request $request, TelegramBotService $service)
     {
         $data = $request->all();
 
@@ -52,21 +52,17 @@ class TelegramBotController extends Controller
 
         if (!$isAdmin) {
             try {
+
                 $hasLink = $service->linksFilter();
+                if ($hasLink !== false) { //ссылка есть
 
-                if ($hasLink) { //ссылка есть
-
-                    $service->restrictUser(time() + 86400);
-                    $$service->deleteMessage();
-                    $service->sendMessage("Пользователь " . $service->data[$service->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
-                    //Позже создать объект с готовыми сообщениями
+                    $service->banUser();
                 }
             } catch (ErrorException $e) {
                 Log::error($e->getMessage());
             };
-        } else {
-            return response('ok', 200);
         }
+        return response('ok', 200);
     }
 
 
@@ -82,23 +78,5 @@ class TelegramBotController extends Controller
 
     public function testBot(Request $request, TelegramBotService $service): void
     {
-        $array = ["must" => "lolwut", "have" => "detonator"];
-        $bot = "have";
-        if ($bot !== "lol" && $bot !== "have") {
-            dd("true");
-        }
-
-        $testObjects = json_decode(file_get_contents("/Users/nomoreerrors/Documents/sftptest/tests/Unit/TestObjects.json"), true);
-        // dd($testObjects["0"]);
-        foreach ($testObjects as $object) {
-            $messageType = "";
-            if (
-                array_key_exists("message", $object) ||
-                array_key_exists("edited_message", $object)
-            ) {
-                $messageType = $object;
-                dd($messageType);
-            }
-        }
     }
 }

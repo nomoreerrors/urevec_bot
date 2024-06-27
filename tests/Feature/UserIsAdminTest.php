@@ -1,29 +1,16 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature;
 
-use PHPUnit\Framework\TestCase;
-use App\Services\TelegramBotService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 
 
 class UserIsAdminTest extends TestCase
 {
-    protected array $testObjects;
 
-    protected $service;
-
-    protected array $adminsIdArray;
-
-
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->testObjects = json_decode(file_get_contents(__DIR__ . "/../TestObjects.json"), true);
-        $this->service = new TelegramBotService();
-        $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-    }
 
 
 

@@ -1,28 +1,13 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature;
 
-use PHPUnit\Framework\TestCase;
-use App\Services\TelegramBotService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 class CheckMessageTypeTest extends TestCase
 {
-
-    protected array $testObjects;
-
-    protected $service;
-
-    protected array $adminsIdArray;
-
-
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->testObjects = json_decode(file_get_contents(__DIR__ . "/../TestObjects.json"), true);
-        $this->service = new TelegramBotService();
-    }
-
 
 
     public function test_assert_the_right_string_key_returned(): void
