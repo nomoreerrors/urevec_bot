@@ -37,17 +37,18 @@ class TelegramBotService
 
     public function linksFilter(): bool
     {
+        // $hasLink = false;
         if (
             $this->messageType !== "message" &&
             $this->messageType !== "edited_message"
         ) {
 
+            // log::info($this->data);
 
             return false;
         } elseif (array_key_exists("text", $this->data[$this->messageType])) {
 
             $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
-
             if ($hasLink) {
                 return true;
             }
@@ -156,19 +157,16 @@ class TelegramBotService
 
     public function banUser(): bool
     {
-
         try {
             $this->restrictUser(time() + 86400);
             $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
-
             return true;
         } catch (Exception $e) {
-            log::info($e->getMessage() . __METHOD__ . "Line: " . __LINE__);
+            log::info($e->getMessage());
             return false;
         }
     }
-
 
     public function blockNewVisitor(): bool
     {
