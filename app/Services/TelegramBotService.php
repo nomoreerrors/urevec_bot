@@ -37,19 +37,18 @@ class TelegramBotService
 
     public function linksFilter(): bool
     {
-        // $hasLink = false;
         if (
             $this->messageType !== "message" &&
             $this->messageType !== "edited_message"
         ) {
 
-            // log::info($this->data);
 
             return false;
         } elseif (array_key_exists("text", $this->data[$this->messageType])) {
 
-            $hasLink = strpos($this->data[$this->messageType]["text"], "http");
-            if ($hasLink === 0) {
+            $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
+
+            if ($hasLink) {
                 return true;
             }
         }
@@ -110,7 +109,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
-                "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+                "chat_id" => env("TELEGRAM_CHAT_ID"),
                 "user_id" => $this->data[$this->messageType]["from"]["id"],
                 "can_send_messages" => false,
                 "can_send_documents" => false,
@@ -132,7 +131,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
             [
-                "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+                "chat_id" => env("TELEGRAM_CHAT_ID"),
                 "message_id" => $this->data[$this->messageType]["message_id"]
             ]
         )->json();
@@ -148,7 +147,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             [
-                "chat_id" => env("TELEGRAM_CHAT_UREVEC_ID"),
+                "chat_id" => env("TELEGRAM_CHAT_ID"),
                 "text" => $message
             ]
         )->json();
@@ -157,14 +156,33 @@ class TelegramBotService
 
     public function banUser(): bool
     {
+
         try {
             $this->restrictUser(time() + 86400);
             $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
+
             return true;
         } catch (Exception $e) {
-            log::info($e->getMessage());
+            log::info($e->getMessage() . __METHOD__ . "Line: " . __LINE__);
             return false;
         }
+    }
+
+
+    public function blockNewVisitor(): bool
+    {
+        if ($this->messageType !== "my_chat_member") {
+            return false;
+        } else {
+            $response = $this->restrictUser(time() + 86400);
+
+
+            if ($response["ok"] === true) {
+                return true;
+            };
+        }
+
+        return false;
     }
 }

@@ -33,7 +33,7 @@ class TelegramBotController extends Controller
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
         )->json(); //обязательно json
-        // dd($http);
+        dd($http);
     }
 
 
@@ -46,23 +46,41 @@ class TelegramBotController extends Controller
         $messageType = $service->checkMessageType();
         $isAdmin = $service->checkIfUserIsAdmin();
 
-        if ($messageType !== "message" && $messageType !== "edited_message") {
-            return response('ok', 200);
+
+
+
+
+
+        if ($messageType !== "message" && $messageType !== "edited_message" && $messageType !== "my_chat_member") {
+
+            return response('unknown message type', 200);
         }
 
         if (!$isAdmin) {
             try {
+                // dd("here");
+                // log::info($data);
+                $isNewUser = $service->blockNewVisitor();
 
+                if ($isNewUser) {
+                    return response('new member blocked for 24 hours', 200);
+                }
                 $hasLink = $service->linksFilter();
+
                 if ($hasLink !== false) { //ссылка есть
 
-                    $service->banUser();
+                    $isBlocked = $service->banUser();
+                    if ($isBlocked) {
+
+                        // log::info($data);
+                        return response('user blocked', 200);
+                    }
                 }
             } catch (ErrorException $e) {
                 Log::error($e->getMessage());
             };
         }
-        return response('ok', 200);
+        return response('default response', 200);
     }
 
 

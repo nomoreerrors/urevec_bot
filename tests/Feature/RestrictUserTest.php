@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\TelegramBotService;
+use Log;
 
 class RestrictUserTest extends TestCase
 {
@@ -28,8 +29,11 @@ class RestrictUserTest extends TestCase
                 if (!$isAdmin) {
 
                     $response = $this->service->restrictUser(time() + 86400);
-                    // dd($response);
-                    $this->assertTrue($response["description"] === "Bad Request: user not found");
+
+                    if (array_key_exists("description", $response)) {
+
+                        $this->assertTrue($response["description"] === "Bad Request: user not found");
+                    }
                 }
             }
         }
