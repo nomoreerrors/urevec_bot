@@ -22,14 +22,15 @@ class TelegramBotController extends Controller
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
         )->json(); //обязательно json
-        // dd($http);
+
     }
 
 
 
     public function webhookHandler(Request $request, TelegramBotService $service)
     {
-        //tartarariiiii
+        log::info("inside webhookhandler");
+        //batushki
         $data = $request->all();
 
         $service->requestLog($data);
@@ -43,7 +44,7 @@ class TelegramBotController extends Controller
 
         if (!$isAdmin) {
             try {
-
+                log::info("inside block if(!isadmin)");
                 $isNewUser = $service->blockNewVisitor();
 
                 if ($isNewUser) {

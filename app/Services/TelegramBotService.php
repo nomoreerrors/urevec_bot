@@ -43,13 +43,14 @@ class TelegramBotService
             $this->messageType !== "edited_message"
         ) {
 
-            // log::info($this->data);
+            log::info("linksfilter. Не текстовое сообщение и не редактированное");
 
             return false;
         } elseif (array_key_exists("text", $this->data[$this->messageType])) {
 
             $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
             if ($hasLink) {
+                log::info("ссылка обнаружена ", $this->data);
                 return true;
             }
         }
@@ -62,7 +63,7 @@ class TelegramBotService
 
     public function checkIfUserIsAdmin(): bool
     {
-
+        log::info("inside checkisadmin");
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
         // if(array_key_exists("message",  $this->data) ||
         // array_key_exists("edited_message", $this->data));
@@ -73,10 +74,10 @@ class TelegramBotService
 
             if (in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
                 $result = true;
-                // Log::info("isAdmin return true");
+                Log::info("isAdmin return true");
             } else {
 
-                // Log::info("isAdmin return false");
+                Log::info("isAdmin return false");
                 $result = false;
             }
         }
@@ -97,6 +98,7 @@ class TelegramBotService
         } else {
             $this->messageType = "unknown message type";
         }
+        log::info("inside set checkmessagetype success");
 
         return $this->messageType;
     }
@@ -157,10 +159,12 @@ class TelegramBotService
 
     public function banUser(): bool
     {
+        log::info("inside banNewUser");
         try {
             $this->restrictUser(time() + 86400);
             $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
+            log::info("ban new user must be success");
             return true;
         } catch (Exception $e) {
             log::info($e->getMessage());
@@ -183,10 +187,11 @@ class TelegramBotService
         }
 
         if (!array_key_exists("new_chat_participant", $this->data[$this->messageType])) {
+            log::info("new chat participant value не существует (blocknewvisitor");
             return false;
         } else {
             $response = $this->restrictUser(time() + 86400);
-
+            log::info("in the end of blocknewvisitor");
 
             if ($response["ok"] === true) {
                 return true;

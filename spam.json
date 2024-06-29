@@ -1,56 +1,213 @@
 {
-    "12": {
-        "update_id": 267306000,
+    "update_id": 267306051,
+    "message": {
+        "message_id": 655,
+        "from": {
+            "id": 754429643,
+            "is_bot": false,
+            "first_name": "LS",
+            "username": "nomoreerrors",
+            "language_code": "ru",
+            "is_premium": true
+        },
+        "chat": {
+            "id": -1002222230714,
+            "title": "Testylvania",
+            "type": "supergroup"
+        },
+        "date": 1719684885,
+        "text": "55555"
+    },
+    "0": {
+        "update_id": 267306052,
         "message": {
-            "message_id": 17770,
+            "message_id": 17801,
             "from": {
-                "id": 1616729589,
+                "id": 5206455850,
                 "is_bot": false,
-                "first_name": "\u0422\u0430\u043c\u0438\u043b\u0430"
+                "first_name": "\u0415\u043a\u0430\u0442\u0435\u0440\u0438\u043d\u0430",
+                "username": "Ekaterina98765"
             },
             "chat": {
                 "id": -1001522860812,
                 "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
                 "type": "supergroup"
             },
-            "date": 1719598077,
-            "message_thread_id": 17726,
+            "date": 1719685773,
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3MAAzUE",
+                    "file_unique_id": "AQADoeYxG6QiAUh4",
+                    "file_size": 1028,
+                    "width": 67,
+                    "height": 90
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA20AAzUE",
+                    "file_unique_id": "AQADoeYxG6QiAUhy",
+                    "file_size": 19277,
+                    "width": 240,
+                    "height": 320
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3gAAzUE",
+                    "file_unique_id": "AQADoeYxG6QiAUh9",
+                    "file_size": 117020,
+                    "width": 601,
+                    "height": 800
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3kAAzUE",
+                    "file_unique_id": "AQADoeYxG6QiAUh-",
+                    "file_size": 248386,
+                    "width": 961,
+                    "height": 1280
+                }
+            ],
+            "caption": "\u0421\u043b\u0430\u0432\u043d\u0430\u044f, 15 \u0441 \u0442\u043e\u0440\u0446\u0430 \u0434\u043e\u043c\u0430",
+            "has_protected_content": true
+        }
+    },
+    "1": {
+        "update_id": 267306053,
+        "message": {
+            "message_id": 17802,
+            "from": {
+                "id": 5160172199,
+                "is_bot": false,
+                "first_name": "\u0422\u0430\u0442\u044c\u044f\u043d\u0430"
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719686082,
+            "forward_origin": {
+                "type": "channel",
+                "chat": {
+                    "id": -1001843180566,
+                    "title": "\u0412\u043b\u0430\u0434\u0438\u043c\u0438\u0440 \u0421\u0435\u0439\u0447\u0430\u0441",
+                    "username": "vladimirgorod_33",
+                    "type": "channel"
+                },
+                "message_id": 3025,
+                "date": 1719677061
+            },
+            "forward_from_chat": {
+                "id": -1001843180566,
+                "title": "\u0412\u043b\u0430\u0434\u0438\u043c\u0438\u0440 \u0421\u0435\u0439\u0447\u0430\u0441",
+                "username": "vladimirgorod_33",
+                "type": "channel"
+            },
+            "forward_from_message_id": 3025,
+            "forward_date": 1719677061,
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYpmgFPCep9qOdJVYHSXxcr7GoIc2AACNOExG8qZ-Ev9jtDj6iSYGwEAAwIAA3MAAzUE",
+                    "file_unique_id": "AQADNOExG8qZ-Et4",
+                    "file_size": 1532,
+                    "width": 90,
+                    "height": 60
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYpmgFPCep9qOdJVYHSXxcr7GoIc2AACNOExG8qZ-Ev9jtDj6iSYGwEAAwIAA20AAzUE",
+                    "file_unique_id": "AQADNOExG8qZ-Ety",
+                    "file_size": 26435,
+                    "width": 320,
+                    "height": 213
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYpmgFPCep9qOdJVYHSXxcr7GoIc2AACNOExG8qZ-Ev9jtDj6iSYGwEAAwIAA3gAAzUE",
+                    "file_unique_id": "AQADNOExG8qZ-Et9",
+                    "file_size": 154706,
+                    "width": 800,
+                    "height": 533
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYpmgFPCep9qOdJVYHSXxcr7GoIc2AACNOExG8qZ-Ev9jtDj6iSYGwEAAwIAA3kAAzUE",
+                    "file_unique_id": "AQADNOExG8qZ-Et-",
+                    "file_size": 266874,
+                    "width": 1200,
+                    "height": 800
+                }
+            ],
+            "caption": "\u0413\u0440\u0430\u0444\u0444\u0438\u0442\u0438 \u0434\u043b\u044f \u043b\u0435\u0442\u043d\u0435\u0433\u043e \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043d\u0438\u044f: \u0443\u043b. \u0418\u043d\u0441\u0442\u0438\u0442\u0443\u0442\u0441\u043a\u0438\u0439 \u0433\u043e\u0440\u043e\u0434\u043e\u043a, 6 (\u043d\u0430\u043f\u0440\u043e\u0442\u0438\u0432 \u043d\u0430\u0445\u043e\u0434\u0438\u0442\u0441\u044f \u0446\u0435\u043d\u0442\u0440\u0430\u043b\u044c\u043d\u044b\u0439 \u0432\u0445\u043e\u0434 \u0432 \u0448\u043a\u043e\u043b\u0443);",
+            "has_protected_content": true
+        }
+    },
+    "2": {
+        "update_id": 267306054,
+        "message": {
+            "message_id": 17803,
+            "from": {
+                "id": 5093038239,
+                "is_bot": false,
+                "first_name": "LanaMos",
+                "username": "LanaMos17"
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719686762,
+            "message_thread_id": 17801,
             "reply_to_message": {
-                "message_id": 17726,
+                "message_id": 17801,
                 "from": {
-                    "id": 1074023376,
+                    "id": 5206455850,
                     "is_bot": false,
-                    "first_name": "\u041e\u043b\u0435\u0433"
+                    "first_name": "\u0415\u043a\u0430\u0442\u0435\u0440\u0438\u043d\u0430",
+                    "username": "Ekaterina98765"
                 },
                 "chat": {
                     "id": -1001522860812,
                     "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
                     "type": "supergroup"
                 },
-                "date": 1719564170,
-                "edit_date": 1719566262,
-                "text": "\u041c\u0438\u043d\u0443\u0442 40 \u043d\u0430\u0437\u0430\u0434 \u043d\u0430\u0431\u043b\u044e\u0434\u0430\u043b\u0438 \u0411\u0435\u0441\u043f\u0438\u043b\u043e\u0442\u043d\u0438\u043a,\u043f\u0440\u043e\u043b\u0435\u0442\u0430\u043b \u043d\u0430\u0434 \u041f\u0438\u0433\u0430\u043d\u043e\u0432\u043e \u0432 \u0441\u0442\u043e\u0440\u043e\u043d\u0443 \u041d\u0438\u0436\u043d\u0435\u0433\u043e \u041d\u043e\u0432\u0433\u043e\u0440\u043e\u0434\u0430",
+                "date": 1719685773,
+                "photo": [
+                    {
+                        "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3MAAzUE",
+                        "file_unique_id": "AQADoeYxG6QiAUh4",
+                        "file_size": 1028,
+                        "width": 67,
+                        "height": 90
+                    },
+                    {
+                        "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA20AAzUE",
+                        "file_unique_id": "AQADoeYxG6QiAUhy",
+                        "file_size": 19277,
+                        "width": 240,
+                        "height": 320
+                    },
+                    {
+                        "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3gAAzUE",
+                        "file_unique_id": "AQADoeYxG6QiAUh9",
+                        "file_size": 117020,
+                        "width": 601,
+                        "height": 800
+                    },
+                    {
+                        "file_id": "AgACAgIAAx0CWsUDDAACRYlmgFKN1Mt03TvObJiPMhzJoEueDgACoeYxG6QiAUifo17_eBvQkgEAAwIAA3kAAzUE",
+                        "file_unique_id": "AQADoeYxG6QiAUh-",
+                        "file_size": 248386,
+                        "width": 961,
+                        "height": 1280
+                    }
+                ],
+                "caption": "\u0421\u043b\u0430\u0432\u043d\u0430\u044f, 15 \u0441 \u0442\u043e\u0440\u0446\u0430 \u0434\u043e\u043c\u0430",
                 "has_protected_content": true
             },
-            "text": "\u043b\u0443\u0447\u0448\u0438\u043c \u0440\u0435\u0448\u0435\u043d\u0438\u0435\u043c \u0431\u0443\u0434\u0435\u0442 \u043d\u0435\u043c\u0435\u0434\u043b\u0435\u043d\u043d\u043e \u043f\u043e\u0437\u0432\u043e\u043d\u0438\u0442\u044c\u00a0\u0432 \u043f\u043e\u043b\u0438\u0446\u0438\u044e \u043f\u043e \u043d\u043e\u043c\u0435\u0440\u0443 112.",
-            "entities": [
-                {
-                    "offset": 43,
-                    "length": 23,
-                    "type": "text_link",
-                    "url": "https:\/\/www.pnp.ru\/social\/esli-dron-za-oknom.html"
-                }
-            ],
-            "link_preview_options": {
-                "is_disabled": true
-            },
+            "text": "\u041d\u0430\u0448 , \u0441\u043f\u0430\u0441\u0438\u0431\u043e \u0431\u043e\u043b\u044c\u0448\u043e\u0435",
             "has_protected_content": true
         }
     },
-    "13": {
-        "update_id": 267306001,
+    "3": {
+        "update_id": 267306055,
         "message": {
-            "message_id": 600,
+            "message_id": 680,
             "from": {
                 "id": 754429643,
                 "is_bot": false,
@@ -64,18 +221,183 @@
                 "title": "Testylvania",
                 "type": "supergroup"
             },
-            "date": 1719598525,
-            "text": "https:\/\/www.pnp.ru\/social\/esli-dron-za-oknom.html",
+            "date": 1719688008,
+            "text": "777777"
+        }
+    },
+    "4": {
+        "update_id": 267306056,
+        "message": {
+            "message_id": 17804,
+            "from": {
+                "id": 1509779352,
+                "is_bot": false,
+                "first_name": "\u041f\u0430\u0432\u0435\u043b",
+                "username": "Dnn_Skameika"
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719688068,
+            "media_group_id": "13757504546742154",
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYxmgFuE-XTsBq5Q4hksBbWEnKlXSAACbucxG6QiAUjcMU-bpDRk4AEAAwIAA3MAAzUE",
+                    "file_unique_id": "AQADbucxG6QiAUh4",
+                    "file_size": 831,
+                    "width": 67,
+                    "height": 90
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYxmgFuE-XTsBq5Q4hksBbWEnKlXSAACbucxG6QiAUjcMU-bpDRk4AEAAwIAA20AAzUE",
+                    "file_unique_id": "AQADbucxG6QiAUhy",
+                    "file_size": 8391,
+                    "width": 240,
+                    "height": 320
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYxmgFuE-XTsBq5Q4hksBbWEnKlXSAACbucxG6QiAUjcMU-bpDRk4AEAAwIAA3gAAzUE",
+                    "file_unique_id": "AQADbucxG6QiAUh9",
+                    "file_size": 35544,
+                    "width": 600,
+                    "height": 800
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRYxmgFuE-XTsBq5Q4hksBbWEnKlXSAACbucxG6QiAUjcMU-bpDRk4AEAAwIAA3kAAzUE",
+                    "file_unique_id": "AQADbucxG6QiAUh-",
+                    "file_size": 57999,
+                    "width": 960,
+                    "height": 1280
+                }
+            ],
+            "caption": "\u043a\u0442\u043e \u043f\u043e\u0442\u0435\u0440\u044f\u043b \u0441\u043e\u0431\u0430\u043a\u0443 \u0431\u0435\u0433\u0430\u0435\u0442 \u0440\u044f\u0434\u043e\u043c \u0441 \u0447\u0438\u0436\u0438\u043a\u043e\u043c \u043d\u0430 \u0421\u043b\u0430\u0432\u043d\u043e\u0439",
+            "has_protected_content": true
+        }
+    },
+    "5": {
+        "update_id": 267306057,
+        "message": {
+            "message_id": 17805,
+            "from": {
+                "id": 1509779352,
+                "is_bot": false,
+                "first_name": "\u041f\u0430\u0432\u0435\u043b",
+                "username": "Dnn_Skameika"
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719688068,
+            "media_group_id": "13757504546742154",
+            "photo": [
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRY1mgFuEVLL1zbocBEakRDPkc0RU8gAChewxG4w5AUgDUQ9MQIzm-AEAAwIAA3MAAzUE",
+                    "file_unique_id": "AQADhewxG4w5AUh4",
+                    "file_size": 756,
+                    "width": 51,
+                    "height": 90
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRY1mgFuEVLL1zbocBEakRDPkc0RU8gAChewxG4w5AUgDUQ9MQIzm-AEAAwIAA20AAzUE",
+                    "file_unique_id": "AQADhewxG4w5AUhy",
+                    "file_size": 10075,
+                    "width": 180,
+                    "height": 320
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRY1mgFuEVLL1zbocBEakRDPkc0RU8gAChewxG4w5AUgDUQ9MQIzm-AEAAwIAA3gAAzUE",
+                    "file_unique_id": "AQADhewxG4w5AUh9",
+                    "file_size": 47899,
+                    "width": 450,
+                    "height": 800
+                },
+                {
+                    "file_id": "AgACAgIAAx0CWsUDDAACRY1mgFuEVLL1zbocBEakRDPkc0RU8gAChewxG4w5AUgDUQ9MQIzm-AEAAwIAA3kAAzUE",
+                    "file_unique_id": "AQADhewxG4w5AUh-",
+                    "file_size": 106680,
+                    "width": 720,
+                    "height": 1280
+                }
+            ],
+            "has_protected_content": true
+        }
+    },
+    "6": {
+        "update_id": 267306058,
+        "my_chat_member": {
+            "chat": {
+                "id": -1002222230714,
+                "title": "Testylvania",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "date": 1719688577,
+            "old_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0412\u0438\u043a\u0442\u043e\u0440 \u041d\u0430\u0432\u043e\u0440\u0441\u043a\u0438 | New York Airport",
+                    "username": "UrevecBot"
+                },
+                "status": "administrator",
+                "can_be_edited": false,
+                "can_manage_chat": true,
+                "can_change_info": true,
+                "can_delete_messages": true,
+                "can_invite_users": true,
+                "can_restrict_members": true,
+                "can_pin_messages": true,
+                "can_manage_topics": false,
+                "can_promote_members": false,
+                "can_manage_video_chats": true,
+                "can_post_stories": true,
+                "can_edit_stories": true,
+                "can_delete_stories": true,
+                "is_anonymous": false,
+                "can_manage_voice_chats": true
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 7239017745,
+                    "is_bot": true,
+                    "first_name": "\u0412\u0438\u043a\u0442\u043e\u0440 \u041d\u0430\u0432\u043e\u0440\u0441\u043a\u0438 | New York Airport",
+                    "username": "UrevecBot"
+                },
+                "status": "member"
+            }
+        }
+    },
+    "7": {
+        "update_id": 267306059,
+        "message": {
+            "message_id": 17806,
+            "from": {
+                "id": 903354776,
+                "is_bot": false,
+                "first_name": "Odi",
+                "username": "Odis765"
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719688654,
+            "text": "https:\/\/t.me\/ganduras001",
             "entities": [
                 {
                     "offset": 0,
-                    "length": 49,
+                    "length": 24,
                     "type": "url"
                 }
-            ],
-            "link_preview_options": {
-                "url": "https:\/\/www.pnp.ru\/social\/esli-dron-za-oknom.html"
-            }
-        }
-    }
-}
