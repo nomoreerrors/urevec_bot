@@ -18,11 +18,13 @@ class BlockNewVisitorTest extends TestCase
         foreach ($this->testObjects as $object) {
             $this->service->data = $object;
             $messageType = $this->service->checkMessageType();
-            if ($messageType === "my_chat_member") {
-                $result = $this->service->blockNewVisitor();
+            if ($messageType === "message" || $messageType === "edited_message") {
+                if (array_key_exists("new_chat_participant", $this->service->data[$messageType])) {
+                    $result = $this->service->blockNewVisitor();
 
-                if ($result === true) {
-                    $this->assertTrue($result);
+                    if ($result === true) {
+                        $this->assertTrue($result);
+                    }
                 }
             }
         }

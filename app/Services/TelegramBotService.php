@@ -170,7 +170,19 @@ class TelegramBotService
 
     public function blockNewVisitor(): bool
     {
-        if ($this->messageType !== "my_chat_member") {
+        if ($this->messageType === "") {
+            throw new Exception("Тип сообщения — пустая строка. Тип не задан в TelegramBotService.");
+        }
+
+        if (
+            $this->messageType !== "message" &&
+            $this->messageType !== "edited_message"
+        ) {
+            log::info("Ошибка: не текстовое сообщение\n" . __METHOD__ . "\n", $this->data);
+            return false;
+        }
+
+        if (!array_key_exists("new_chat_participant", $this->data[$this->messageType])) {
             return false;
         } else {
             $response = $this->restrictUser(time() + 86400);

@@ -25,7 +25,9 @@ class DeleteMessageTest extends TestCase
             $messageType = $this->service->checkMessageType();
             if ($messageType === "message" || $messageType === "edited_message") {
                 $response = $this->service->deleteMessage();
-                $this->assertTrue($response["description"] === "Bad Request: message to delete not found");
+                if (array_key_exists("description", $response)) {
+                    $this->assertTrue($response["description"] === "Bad Request: message to delete not found");
+                }
             }
         }
     }

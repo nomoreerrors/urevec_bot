@@ -15,17 +15,6 @@ class TelegramBotController extends Controller
 {
 
 
-    public function getUpdates()
-    {
-        //trump
-
-        Http::get(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            ["chat_id" => env('TELEGRAM_API_TEST_USER_ID'), "text" => "Hello world"]
-        );
-    }
-
-
     public function setWebhook()
     {
 
@@ -33,7 +22,7 @@ class TelegramBotController extends Controller
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
         )->json(); //обязательно json
-        dd($http);
+        // dd($http);
     }
 
 
@@ -46,13 +35,8 @@ class TelegramBotController extends Controller
         $messageType = $service->checkMessageType();
         $isAdmin = $service->checkIfUserIsAdmin();
 
-
-
-
-
-
-        if ($messageType !== "message" && $messageType !== "edited_message" && $messageType !== "my_chat_member") {
-
+        if ($messageType !== "message" && $messageType !== "edited_message") {
+            log::info("unknown message type: " . $messageType);
             return response('unknown message type', 200);
         }
 

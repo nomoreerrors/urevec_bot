@@ -21,10 +21,10 @@ class WebHookHandlerTest extends TestCase
             $hasLink = $this->service->linksFilter();
             // log::info($this->data);
             if ($hasLink) {
-                // log::info($object);
+                log::info($object);
                 $response = $this->post("api/webhook", $this->service->data);
-
-
+                // dd($response);
+                log::info($response->getOriginalContent());
                 $this->assertTrue($response->getOriginalContent() === "user blocked");
             }
         }
@@ -38,12 +38,15 @@ class WebHookHandlerTest extends TestCase
             $this->service->data = $object;
             $messageType = $this->service->checkMessageType();
 
-            $hasLink = $this->service->linksFilter();
-            if ($messageType === "my_chat_member") {
-                $response = $this->post("api/webhook", $this->service->data);
-                if ($response->getOriginalContent() !== "default response") {
 
-                    $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+            if ($messageType === "message" || $messageType === "edited_message") {
+
+                if (array_key_exists("new_chat_participant", $this->service->data[$messageType])) {
+                    $response = $this->post("api/webhook", $this->service->data);
+                    if ($response->getOriginalContent() !== "default response") {
+
+                        $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+                    }
                 }
             }
         }
