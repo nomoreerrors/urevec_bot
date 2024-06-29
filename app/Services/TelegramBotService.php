@@ -66,15 +66,11 @@ class TelegramBotService
         // log::info("inside checkisadmin");
         // log::info($this->data);
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        // if(array_key_exists("message",  $this->data) ||
-        // array_key_exists("edited_message", $this->data));
-        // dd("checkifuserisadmin " . "this->data->message = " . $this->data["message"] . 
-        // "this->data->editedmessage = " . $this->data["edited_message"]);
         $result = null;
         if (array_key_exists($this->messageType, $this->data)) {
             log:
-            info($this->data[$this->messageType]["from"]["id"] . "messagetype :" . $this->messageType);
-            if (in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
+
+            if ((string)in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
 
 
                 $result = true;

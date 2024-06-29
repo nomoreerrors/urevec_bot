@@ -570,5 +570,27 @@
                 }
             ]
         }
+    },
+    "13": {
+        "update_id": 267306065,
+        "message": {
+            "message_id": 17812,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "date": 1719693238,
+            "text": "456",
+            "has_protected_content": true
+        }
     }
 }
