@@ -36,14 +36,13 @@ class TelegramBotController extends Controller
         $isAdmin = $service->checkIfUserIsAdmin();
 
         if ($messageType !== "message" && $messageType !== "edited_message") {
-            log::info("unknown message type: " . $messageType);
+            log::info($messageType, $data);
             return response('unknown message type', 200);
         }
 
         if (!$isAdmin) {
             try {
-                // dd("here");
-                // log::info($data);
+
                 $isNewUser = $service->blockNewVisitor();
 
                 if ($isNewUser) {
