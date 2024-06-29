@@ -63,7 +63,8 @@ class TelegramBotService
 
     public function checkIfUserIsAdmin(): bool
     {
-        log::info("inside checkisadmin");
+        // log::info("inside checkisadmin");
+        // log::info($this->data);
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
         // if(array_key_exists("message",  $this->data) ||
         // array_key_exists("edited_message", $this->data));
@@ -71,8 +72,11 @@ class TelegramBotService
         // "this->data->editedmessage = " . $this->data["edited_message"]);
         $result = null;
         if (array_key_exists($this->messageType, $this->data)) {
-
+            log:
+            info($this->data[$this->messageType]["from"]["id"] . "messagetype :" . $this->messageType);
             if (in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
+
+
                 $result = true;
                 Log::info("isAdmin return true");
             } else {
@@ -98,7 +102,7 @@ class TelegramBotService
         } else {
             $this->messageType = "unknown message type";
         }
-        log::info("inside set checkmessagetype success");
+
 
         return $this->messageType;
     }
