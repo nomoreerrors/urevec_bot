@@ -68,9 +68,7 @@ class TelegramBotService
 
 
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        log::info(
-            explode(",", env("TELEGRAM_CHAT_ADMINS_ID"))
-        );
+        log::info(env("TELEGRAM_CHAT_ADMINS_ID"));
         $result = null;
         if (array_key_exists($this->messageType, $this->data)) {
             log::info($adminsIdArray);
