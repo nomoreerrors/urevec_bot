@@ -44,7 +44,7 @@ class TelegramBotController extends Controller
         $messageType = $service->checkMessageType();
         $isAdmin = $service->checkIfUserIsAdmin();
 
-        if ($messageType !== "message" && $messageType !== "edited_message") {
+        if ($messageType !== "message" && $messageType !== "edited_message" && $messageType !== "chat_member") {
             log::info($messageType, $data);
             return response('unknown message type', 200);
         }

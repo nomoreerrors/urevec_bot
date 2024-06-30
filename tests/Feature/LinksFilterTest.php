@@ -18,21 +18,28 @@ class LinksFilterTest extends TestCase
             $hasLink = false;
             $messageType = $this->service->checkMessageType();
 
-            if (
-                ($messageType === "message" || $messageType === "edited_message") &&
-                (array_key_exists("text", $this->service->data[$messageType]))
-            ) {
 
-                $hasLink = str_contains($this->service->data[$messageType]["text"], "http");
-                if ($hasLink) {
+            if ($messageType === "message" || $messageType === "edited_message") {
+
+                if (array_key_exists("entities", $this->service->data[$messageType])) {
+                    if ($this->service->data[$messageType]["entities"][0]["type"] === "text_link") {
+
+                        $this->assertTrue($this->service->linksFilter());
+                    }
+                }
+
+                if (array_key_exists("text", $this->service->data[$messageType])) {
+
+                    $hasLink = str_contains($this->service->data[$messageType]["text"], "http");
+                    if ($hasLink) {
 
 
-                    $this->assertTrue($this->service->linksFilter());
+                        $this->assertTrue($this->service->linksFilter());
+                    }
                 }
             }
         }
     }
-
 
     public function test_message_has_not_message_key_or_text_key_returns_false(): void
     {
@@ -67,12 +74,24 @@ class LinksFilterTest extends TestCase
 
             if (
                 ($messageType === "message" || $messageType === "edited_message") &&
-                (array_key_exists("text", $this->service->data[$messageType]))
+                (array_key_exists("text", $this->service->data[$messageType]) &&
+                    !array_key_exists("entities", $this->service->data[$messageType]))
+
             ) {
 
+
                 $hasLink = str_contains($this->service->data[$messageType]["text"], "http");
+
                 if ($hasLink === false) {
+                    log::info($object);
                     $this->assertFalse($this->service->linksFilter());
+                }
+            }
+
+            if (array_key_exists("entities", $this->service->data[$messageType])) {
+                if ($this->service->data[$messageType]["entities"][0]["type"] !== "text_link") {
+
+                    $this->assertFalse($this->service->linksfilter());
                 }
             }
         }

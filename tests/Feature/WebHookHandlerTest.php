@@ -39,13 +39,16 @@ class WebHookHandlerTest extends TestCase
             $messageType = $this->service->checkMessageType();
 
 
-            if ($messageType === "message" || $messageType === "edited_message") {
+            if ($messageType === "chat_member") {
 
-                if (array_key_exists("new_chat_participant", $this->service->data[$messageType])) {
-                    $response = $this->post("api/webhook", $this->service->data);
-                    if ($response->getOriginalContent() !== "default response") {
+                if (array_key_exists("new_chat_member", $this->service->data[$messageType])) {
+                    if ($this->service->data[$messageType]["new_chat_member"]["status"] === "member") {
+                        $response = $this->post("api/webhook", $this->service->data);
 
-                        $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+                        if ($response->getOriginalContent() !== "default response") {
+
+                            $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+                        }
                     }
                 }
             }

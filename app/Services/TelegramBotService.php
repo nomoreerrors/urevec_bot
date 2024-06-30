@@ -38,22 +38,30 @@ class TelegramBotService
 
     public function linksFilter(): bool
     {
-        log::info("inside links filter");
+        // log::info("inside links filter");
         if (
             $this->messageType !== "message" &&
             $this->messageType !== "edited_message"
         ) {
 
-            log::info("linksfilter. Не текстовое сообщение и не редактированное");
-
             return false;
-        } elseif (array_key_exists("text", $this->data[$this->messageType])) {
-            log::info("Linksfilter: поле текст существует");
+        }
+        if (array_key_exists("entities", $this->data[$this->messageType])) {
+            $result = str_contains(json_encode($this->data[$this->messageType]["entities"]), "text_link");
+            if ($result) {
+                return true;
+            }
+        }
+
+
+        if (array_key_exists("text", $this->data[$this->messageType])) {
             $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
 
-            log::info("hasLink value = " . (string)$hasLink);
             if ($hasLink) {
-                log::info("ссылка обнаружена ", $this->data);
+                // dd("here");
+                // log::info("from service: ");
+                // log::info($this->data);
+                // log::info("ссылка обнаружена ", $this->data);
                 return true;
             }
         }
@@ -74,7 +82,7 @@ class TelegramBotService
         if (array_key_exists($this->messageType, $this->data)) {
             log::info($adminsIdArray);
             log::info($this->data[$this->messageType]["from"]["id"]);
-            if ((string)in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
+            if ((string) in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
 
                 $result = true;
                 Log::info("isAdmin return true" . $this->data[$this->messageType]["from"]["id"]);
@@ -96,10 +104,13 @@ class TelegramBotService
             $this->messageType = "message";
         } elseif (array_key_exists("edited_message", $this->data)) {
             $this->messageType = "edited_message";
+        } elseif (array_key_exists("chat_member", $this->data)) {
+            $this->messageType = "chat_member";
         } elseif (array_key_exists("my_chat_member", $this->data)) {
             $this->messageType = "my_chat_member";
         } else {
             $this->messageType = "unknown message type";
+            log::info($this->messageType, $this->data);
         }
 
 
@@ -182,24 +193,31 @@ class TelegramBotService
         }
 
         if (
-            $this->messageType !== "message" &&
-            $this->messageType !== "edited_message"
+            $this->messageType !== "chat_member"
+
         ) {
-            log::info("Ошибка: не текстовое сообщение\n" . __METHOD__ . "\n", $this->data);
+            log::info("Ошибка: не новый участник чата" . __METHOD__ . "\n", $this->data);
             return false;
         }
 
-        if (!array_key_exists("new_chat_participant", $this->data[$this->messageType])) {
-            log::info("new chat participant value не существует (blocknewvisitor");
+        if (!array_key_exists("new_chat_member", $this->data[$this->messageType])) {
+            log::info("new_chat_member value не существует (blocknewvisitor");
             return false;
-        } else {
-            $response = $this->restrictUser(time() + 86400);
-            log::info("in the end of blocknewvisitor");
 
-            if ($response["ok"] === true) {
-                return true;
-            };
+            if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
+                return false;
+            }
         }
+
+        $response = $this->restrictUser(time() + 86400);
+
+        log::info("at the end of blocknewvisitor");
+        if ($response["ok"] === true) {
+
+
+            return true;
+        }
+
 
         return false;
     }

@@ -22,6 +22,8 @@ class CheckMessageTypeTest extends TestCase
                 $this->assertEquals("edited_message", $this->service->checkMessageType());
             } elseif (array_key_exists("my_chat_member", $object)) {
                 $this->assertEquals("my_chat_member", $this->service->checkMessageType());
+            } elseif (array_key_exists("chat_member", $object)) {
+                $this->assertEquals("chat_member", $this->service->checkMessageType());
             } else {
                 $this->assertEquals("unknown message type", $this->service->checkMessageType());
             }
