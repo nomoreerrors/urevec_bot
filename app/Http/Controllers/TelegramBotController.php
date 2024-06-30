@@ -20,7 +20,10 @@ class TelegramBotController extends Controller
 
         $http = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
-            ["url" => env("TELEGRAM_API_WEBHOOK_URL")]
+            [
+                "url" => env("TELEGRAM_API_WEBHOOK_URL"),
+                "allowed_updates" => ["chat_member", "message", "edited_message"]
+            ]
         )->json(); //обязательно json
 
     }
@@ -29,6 +32,10 @@ class TelegramBotController extends Controller
 
     public function webhookHandler(Request $request, TelegramBotService $service)
     {
+        if (env("TELEGRAM_CHAT_ADMINS_ID") === "") {
+            throw new \Exception("Переменная TELEGRAM_CHAT_ADMINS_ID не установлена, либо переменные .env недоступны");
+        }
+
         log::info("inside webhookhandler");
         //batushki
         $data = $request->all();

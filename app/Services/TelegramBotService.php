@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use ErrorException;
 use Exception;
+use Illuminate\Support\Facades\Config;
 
 class TelegramBotService
 {
@@ -68,10 +69,7 @@ class TelegramBotService
 
 
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        log::info("env ADMINS ID: " . (string)env("TELEGRAM_CHAT_ADMINS_ID"));
-        log::info("env TELEGRAM_API_URL: " . env("TELEGRAM_API_URL"));
-        log::info("env API TOKEN: " . env("TELEGRAM_API_TOKEN"));
-        // dd(env("TELEGRAM_API_TOKEN"));
+
         $result = null;
         if (array_key_exists($this->messageType, $this->data)) {
             log::info($adminsIdArray);
@@ -81,11 +79,6 @@ class TelegramBotService
                 $result = true;
                 Log::info("isAdmin return true" . $this->data[$this->messageType]["from"]["id"]);
             } else {
-                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
-                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
-                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
-                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
-                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
                 Log::info("isAdmin return false");
                 $result = false;
             }
