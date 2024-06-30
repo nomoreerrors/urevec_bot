@@ -58,10 +58,6 @@ class TelegramBotService
             $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
 
             if ($hasLink) {
-                // dd("here");
-                // log::info("from service: ");
-                // log::info($this->data);
-                // log::info("ссылка обнаружена ", $this->data);
                 return true;
             }
         }
@@ -203,11 +199,19 @@ class TelegramBotService
         if (!array_key_exists("new_chat_member", $this->data[$this->messageType])) {
             log::info("new_chat_member value не существует (blocknewvisitor");
             return false;
-
-            if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
-                return false;
-            }
         }
+
+        if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
+            return false;
+        }
+
+        if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
+            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
+            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
+            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
+            return false;
+        }
+
 
         $response = $this->restrictUser(time() + 86400);
 

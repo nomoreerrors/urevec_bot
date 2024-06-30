@@ -36,41 +36,41 @@ class TelegramBotController extends Controller
             throw new \Exception("Переменная TELEGRAM_CHAT_ADMINS_ID не установлена, либо переменные .env недоступны");
         }
 
-        log::info("inside webhookhandler");
-        //batushki
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
+        //По какой логине забанена Ксения Киселева? Пригласила чувака и в бан. Объект "145"
         $data = $request->all();
 
         $service->requestLog($data);
         $messageType = $service->checkMessageType();
-        $isAdmin = $service->checkIfUserIsAdmin();
+        $hasLink = $service->linksFilter();
 
         if ($messageType !== "message" && $messageType !== "edited_message" && $messageType !== "chat_member") {
             log::info($messageType, $data);
             return response('unknown message type', 200);
         }
 
+        $isAdmin = $service->checkIfUserIsAdmin();
         if (!$isAdmin) {
-            try {
-                log::info("inside block if(!isadmin)");
-                $isNewUser = $service->blockNewVisitor();
 
-                if ($isNewUser) {
-                    return response('new member blocked for 24 hours', 200);
+            $isNewUser = $service->blockNewVisitor();
+            if ($isNewUser) {
+                return response('new member blocked for 24 hours', 200);
+            }
+
+
+            if ($hasLink !== false) { //ссылка есть
+
+                $isBlocked = $service->banUser();
+                if ($isBlocked) {
+
+                    // log::info($data);
+                    return response('user blocked', 200);
                 }
-                $hasLink = $service->linksFilter();
-
-                if ($hasLink !== false) { //ссылка есть
-
-                    $isBlocked = $service->banUser();
-                    if ($isBlocked) {
-
-                        // log::info($data);
-                        return response('user blocked', 200);
-                    }
-                }
-            } catch (ErrorException $e) {
-                Log::error($e->getMessage());
-            };
+            }
         }
         return response('default response', 200);
     }

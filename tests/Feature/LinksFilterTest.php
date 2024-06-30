@@ -78,12 +78,9 @@ class LinksFilterTest extends TestCase
                     !array_key_exists("entities", $this->service->data[$messageType]))
 
             ) {
-
-
                 $hasLink = str_contains($this->service->data[$messageType]["text"], "http");
 
                 if ($hasLink === false) {
-                    log::info($object);
                     $this->assertFalse($this->service->linksFilter());
                 }
             }
