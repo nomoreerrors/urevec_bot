@@ -37,7 +37,7 @@ class TelegramBotService
 
     public function linksFilter(): bool
     {
-        // $hasLink = false;
+        log::info("inside links filter");
         if (
             $this->messageType !== "message" &&
             $this->messageType !== "edited_message"
@@ -47,8 +47,10 @@ class TelegramBotService
 
             return false;
         } elseif (array_key_exists("text", $this->data[$this->messageType])) {
-
+            log::info("Linksfilter: поле текст существует");
             $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
+
+            log::info("hasLink value = " . (string)$hasLink);
             if ($hasLink) {
                 log::info("ссылка обнаружена ", $this->data);
                 return true;
@@ -63,24 +65,26 @@ class TelegramBotService
 
     public function checkIfUserIsAdmin(): bool
     {
-        // log::info("inside checkisadmin");
-        // log::info($this->data);
+
+
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
         $result = null;
         if (array_key_exists($this->messageType, $this->data)) {
-            log:
-
             if ((string)in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
 
-
                 $result = true;
-                Log::info("isAdmin return true");
+                Log::info("isAdmin return true" . $this->data[$this->messageType]["from"]["id"]);
             } else {
-
+                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
+                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
+                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
+                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
+                //ПОЧЕМУ НЕ ЛОВИТ АДМИН АЙДИ НА СЕРВЕРЕ???
                 Log::info("isAdmin return false");
                 $result = false;
             }
         }
+
         return $result;
     }
 
