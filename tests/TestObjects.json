@@ -761,5 +761,72 @@
                 "status": "member"
             }
         }
+    },
+    "18": {
+        "update_id": 267306132,
+        "chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 6004397368,
+                "is_bot": false,
+                "first_name": "P. A"
+            },
+            "date": 1719765113,
+            "old_chat_member": {
+                "user": {
+                    "id": 6004397368,
+                    "is_bot": false,
+                    "first_name": "P. A"
+                },
+                "status": "member"
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 6004397368,
+                    "is_bot": false,
+                    "first_name": "P. A"
+                },
+                "status": "left"
+            }
+        }
+    },
+    "19": {
+        "update_id": 267306129,
+        "chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 5980549469,
+                "is_bot": false,
+                "first_name": "\u2671!\u00a1\u0428a\u0439\u043du\u00a1!\u2671",
+                "username": "Fyfi0"
+            },
+            "date": 1719762393,
+            "old_chat_member": {
+                "user": {
+                    "id": 5980549469,
+                    "is_bot": false,
+                    "first_name": "\u2671!\u00a1\u0428a\u0439\u043du\u00a1!\u2671",
+                    "username": "Fyfi0"
+                },
+                "status": "member"
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 5980549469,
+                    "is_bot": false,
+                    "first_name": "\u2671!\u00a1\u0428a\u0439\u043du\u00a1!\u2671",
+                    "username": "Fyfi0"
+                },
+                "status": "left"
+            }
+        }
     }
 }

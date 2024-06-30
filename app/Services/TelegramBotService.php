@@ -201,7 +201,10 @@ class TelegramBotService
             return false;
         }
 
+        // dd($this->data[$this->messageType]["new_chat_member"]);
         if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
+
+            log::info("new_chat_member status !== member", $this->data);
             return false;
         }
 
@@ -213,8 +216,10 @@ class TelegramBotService
         }
 
 
+
         $response = $this->restrictUser(time() + 86400);
 
+        log::info("chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
         log::info("at the end of blocknewvisitor");
         if ($response["ok"] === true) {
 
