@@ -19,7 +19,7 @@ class TelegramBotService
 
     public string $messageType = "";
 
-
+    private int $day = 86400;
 
 
     public function requestLog(array $data)
@@ -61,7 +61,7 @@ class TelegramBotService
                 return true;
             }
         }
-
+        // dd($this->data);
         return false;
     }
 
@@ -81,7 +81,8 @@ class TelegramBotService
             if ((string) in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
 
                 $result = true;
-                Log::info("isAdmin return true" . $this->data[$this->messageType]["from"]["id"]);
+
+                Log::info("USER IS ADMIN!!!!!!!" . $this->data[$this->messageType]["from"]["id"]);
             } else {
                 Log::info("isAdmin return false");
                 $result = false;
@@ -113,28 +114,44 @@ class TelegramBotService
         return $this->messageType;
     }
 
+
+    public function checkIfMessageForwardFromAnotherGroup(): bool
+    {
+        if ($this->messageType === "message" || $this->messageType === "edited_message") {
+            if (
+                array_key_exists("forward_from_chat", $this->data[$this->messageType]) &&
+                array_key_exists("forward_origin", $this->data[$this->messageType])
+            ) {
+                // dd($this->data);
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Лишить пользователя прав
-     * @return Http 
+     * По умолчанию: user id объекта request
+     * @return array
      */
-    public function restrictUser(int $time): array
+    public function restrictUser(int $time = 86400, int $id = 0,): bool
     {
+        $result = false;
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
                 "chat_id" => env("TELEGRAM_CHAT_ID"),
-                "user_id" => $this->data[$this->messageType]["from"]["id"],
+                "user_id" => $id > 0 ? $id : $this->data[$this->messageType]["from"]["id"],
                 "can_send_messages" => false,
                 "can_send_documents" => false,
                 "can_send_photos" => false,
                 "can_send_videos" => false,
                 "can_send_video_notes" => false,
                 "can_send_other_messages" => false,
-                "until_date" => $time
+                "until_date" => time() + $time
             ]
         )->json();
-
-        return $response;
+        $result = $response["ok"];
+        return $result;
     }
 
 
@@ -167,21 +184,23 @@ class TelegramBotService
         return $response;
     }
 
-    public function banUser(): bool
+    public function banUser(int $time = 86400): bool
     {
         log::info("inside banNewUser");
-        try {
-            $this->restrictUser(time() + 86400);
-            $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
-            $this->deleteMessage();
-            log::info("ban new user must be success");
-            return true;
-        } catch (Exception $e) {
-            log::info($e->getMessage());
-            return false;
-        }
+
+        $this->restrictUser($time);
+        $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
+        $this->deleteMessage();
+
+        return true;
     }
 
+
+    /**
+     * Временная блокировка новых подписчиков, включая приглашенных
+     * @throws \Exception
+     * @return bool
+     */
     public function blockNewVisitor(): bool
     {
         if ($this->messageType === "") {
@@ -201,33 +220,38 @@ class TelegramBotService
             return false;
         }
 
-        // dd($this->data[$this->messageType]["new_chat_member"]);
-        if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
 
+        if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
+            //Не является новым подписчиком
             log::info("new_chat_member status !== member", $this->data);
             return false;
         }
 
-        if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
-            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
-            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
-            //ВРЕМЕННАЯ МЕРА. ЭТО новый добавленный пользователь другим подписчиком. Его тоже надо ограничить.
-            return false;
+        if (!array_key_exists("user", $this->data[$this->messageType]["new_chat_member"])) {
+            throw new Exception("Ключ user не существует. Возможно, объект более сложный 
+                 приглашено несколько подписчиков одновременно");
         }
 
 
+        //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
+        //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
+        if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
+            $result = $this->restrictUser(time() + 86400, $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
 
-        $response = $this->restrictUser(time() + 86400);
+            if ($result) {
+                log::info("Invited user blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
 
-        log::info("chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
-        log::info("at the end of blocknewvisitor");
-        if ($response["ok"] === true) {
+                return true;
+            }
+        }
 
+
+        $result = $this->restrictUser(time() + 86400);
+        if ($result) {
+
+            log::info("User blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
 
             return true;
         }
-
-
-        return false;
     }
 }

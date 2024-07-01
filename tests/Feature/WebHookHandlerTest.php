@@ -30,6 +30,26 @@ class WebHookHandlerTest extends TestCase
         }
     }
 
+    public function test_if_is_forward_message_ban_user(): void
+    {
+        foreach ($this->testObjects as $object) {
+            $this->service->data = $object;
+            $this->service->checkMessageType();
+
+
+            $isForward = $this->service->checkIfMessageForwardFromAnotherGroup();
+
+            if ($isForward) {
+
+                $response = $this->post("api/webhook", $object);
+                $this->assertTrue($response->getOriginalContent() === "user blocked");
+            }
+        }
+    }
+
+
+
+
 
 
     public function test_new_user_restricted_for_24_hours(): void
@@ -45,8 +65,8 @@ class WebHookHandlerTest extends TestCase
                     if ($this->service->data[$messageType]["new_chat_member"]["status"] === "member") {
                         $response = $this->post("api/webhook", $this->service->data);
 
+                        // dd($response);
                         if ($response->getOriginalContent() !== "default response") {
-
                             $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
                         }
                     }
