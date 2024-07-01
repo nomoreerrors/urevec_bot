@@ -51,8 +51,8 @@ class TelegramBotController extends Controller
 
         if (!$isAdmin) {
 
-            // dd("here");
             $isNewUser = $service->blockNewVisitor();
+
             if ($isNewUser) {
                 return response('new member blocked for 24 hours', 200);
             }

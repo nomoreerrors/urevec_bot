@@ -19,33 +19,33 @@ class BlockNewVisitorTest extends TestCase
         foreach ($this->testObjects as $object) {
             $this->service->data = $object;
             $messageType = $this->service->checkMessageType();
-            if (
-                $messageType === "chat_member" &&
-                array_key_exists("new_chat_member", $object[$messageType]) &&
-                $object[$messageType]["new_chat_member"]["user"]["id"] === $object[$messageType]["from"]["id"]
-            ) {
+            $isNewMember = $this->service->checkIfIsNewMember();
 
-                if ($object[$messageType]["new_chat_member"]["status"] === "member") {
+
+
+            if ($isNewMember) {
+
+                if ($object[$messageType]["new_chat_member"]["user"]["id"] === $object[$messageType]["from"]["id"]) {
 
                     $result = $this->service->blockNewVisitor();
                     if ($result === true) {
                         $this->assertTrue($result);
                     }
                 }
-
-
-                if ($object[$messageType]["new_chat_member"]["status"] !== "member") {
-
-                    $result = $this->service->blockNewVisitor();
-                    $this->assertFalse($result);
-                }
-
-                if ($object[$messageType]["new_chat_member"]["status"] === "left") {
-                    //Просто для верности доп. проверка
-                    $result = $this->service->blockNewVisitor();
-                    $this->assertFalse($result);
-                }
             }
+        }
+
+
+        if (!$isNewMember) {
+
+            $result = $this->service->blockNewVisitor();
+            $this->assertFalse($result);
+        }
+
+        if ($object[$messageType]["new_chat_member"]["status"] === "left") {
+            //Просто для верности доп. проверка
+            $result = $this->service->blockNewVisitor();
+            $this->assertFalse($result);
         }
     }
 

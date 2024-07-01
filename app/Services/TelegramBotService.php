@@ -135,7 +135,12 @@ class TelegramBotService
      */
     public function restrictUser(int $time = 86400, int $id = 0,): bool
     {
+
+        $until_date = time() + $time;
         $result = false;
+
+
+
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
@@ -147,10 +152,14 @@ class TelegramBotService
                 "can_send_videos" => false,
                 "can_send_video_notes" => false,
                 "can_send_other_messages" => false,
-                "until_date" => time() + $time
+                "until_date" => $until_date
             ]
         )->json();
+
+        log::info("restrict until_date restrictUser: " . $until_date);
+
         $result = $response["ok"];
+
         return $result;
     }
 
@@ -191,27 +200,20 @@ class TelegramBotService
         $this->restrictUser($time);
         $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
         $this->deleteMessage();
-
+        // dd($time);
+        log::info("time from banUser: " . $time);
         return true;
     }
 
 
-    /**
-     * Временная блокировка новых подписчиков, включая приглашенных
-     * @throws \Exception
-     * @return bool
-     */
-    public function blockNewVisitor(): bool
+
+    public function checkIfIsNewMember(): bool
     {
         if ($this->messageType === "") {
             throw new Exception("Тип сообщения — пустая строка. Тип не задан в TelegramBotService.");
         }
 
-        if (
-            $this->messageType !== "chat_member"
-
-        ) {
-            log::info("Ошибка: не новый участник чата" . __METHOD__ . "\n", $this->data);
+        if ($this->messageType !== "chat_member") {
             return false;
         }
 
@@ -226,32 +228,51 @@ class TelegramBotService
             log::info("new_chat_member status !== member", $this->data);
             return false;
         }
+        return true;
+    }
 
-        if (!array_key_exists("user", $this->data[$this->messageType]["new_chat_member"])) {
-            throw new Exception("Ключ user не существует. Возможно, объект более сложный 
+
+
+
+    /**
+     * Временная блокировка новых подписчиков, включая приглашенных
+     * @throws \Exception
+     * @return bool
+     */
+    public function blockNewVisitor(): bool
+    {
+        $isNewMember = $this->checkIfIsNewMember();
+
+        // dd($isNewMember);
+        if ($isNewMember) {
+
+            if (!array_key_exists("user", $this->data[$this->messageType]["new_chat_member"])) {
+                throw new Exception("Ключ user не существует. Возможно, объект более сложный 
                  приглашено несколько подписчиков одновременно");
-        }
+            }
 
 
-        //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
-        //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
-        if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
-            $result = $this->restrictUser(time() + 86400, $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
+            //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
+            //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
+            if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
+                $result = $this->restrictUser(id: $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
 
+                if ($result) {
+                    log::info("Invited user blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
+
+                    return true;
+                }
+            }
+
+
+            $result = $this->restrictUser();
             if ($result) {
-                log::info("Invited user blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
+
+                log::info("User blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
 
                 return true;
             }
         }
-
-
-        $result = $this->restrictUser(time() + 86400);
-        if ($result) {
-
-            log::info("User blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
-
-            return true;
-        }
+        return false;
     }
 }

@@ -19,29 +19,30 @@ class WebHookHandlerTest extends TestCase
             $this->service->checkMessageType();
 
             $hasLink = $this->service->linksFilter();
-            // log::info($this->data);
+
             if ($hasLink) {
                 log::info($object);
                 $response = $this->post("api/webhook", $this->service->data);
                 // dd($response);
-                log::info($response->getOriginalContent());
+                // log::info($response->getOriginalContent());
                 $this->assertTrue($response->getOriginalContent() === "user blocked");
             }
         }
     }
 
-    public function test_if_is_forward_message_ban_user(): void
+    public function test_if_is_forward_message_from_another_group_ban_user(): void
     {
         foreach ($this->testObjects as $object) {
             $this->service->data = $object;
             $this->service->checkMessageType();
 
 
-            $isForward = $this->service->checkIfMessageForwardFromAnotherGroup();
+            $isForwardMessage = $this->service->checkIfMessageForwardFromAnotherGroup();
 
-            if ($isForward) {
+            if ($isForwardMessage) {
 
                 $response = $this->post("api/webhook", $object);
+                // dd($response->getOriginalContent());
                 $this->assertTrue($response->getOriginalContent() === "user blocked");
             }
         }
@@ -49,27 +50,21 @@ class WebHookHandlerTest extends TestCase
 
 
 
-
-
-
-    public function test_new_user_restricted_for_24_hours(): void
+    public function test_new_user_restricted_automatically(): void
     {
         foreach ($this->testObjects as $object) {
             $this->service->data = $object;
-            $messageType = $this->service->checkMessageType();
+            $this->service->checkMessageType();
+            $isNewMember = $this->service->checkIfIsNewMember();
 
 
-            if ($messageType === "chat_member") {
 
-                if (array_key_exists("new_chat_member", $this->service->data[$messageType])) {
-                    if ($this->service->data[$messageType]["new_chat_member"]["status"] === "member") {
-                        $response = $this->post("api/webhook", $this->service->data);
+            if ($isNewMember) {
+                $response = $this->post("api/webhook", $this->service->data);
 
-                        // dd($response);
-                        if ($response->getOriginalContent() !== "default response") {
-                            $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
-                        }
-                    }
+                // dd($response);
+                if ($response->getOriginalContent() !== "default response") {
+                    $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
                 }
             }
         }
