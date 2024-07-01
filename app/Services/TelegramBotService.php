@@ -19,23 +19,33 @@ class TelegramBotService
 
     public string $messageType = "";
 
-    private int $day = 86400;
 
 
+
+    /**
+     * Запись входящего объекта в файл 
+     * @param array $data
+     * @return void
+     */
     public function requestLog(array $data)
     {
         $this->data = $data;
         $requestLog = Storage::json("DONE.json");
 
+
         if (!$requestLog) {
             Storage::put("DONE.json", json_encode($data));
         } else {
             $requestLog[] = $data;
+
             Storage::put("DONE.json", json_encode($requestLog));
         }
     }
 
-
+    /**
+     * Поиск ссылок в text value и проверка на наличие текстовых ссылок
+     * @return bool
+     */
     public function linksFilter(): bool
     {
         // log::info("inside links filter");
@@ -67,7 +77,10 @@ class TelegramBotService
 
 
 
-
+    /**
+     * Summary of checkIfUserIsAdmin
+     * @return bool
+     */
     public function checkIfUserIsAdmin(): bool
     {
 
@@ -114,7 +127,10 @@ class TelegramBotService
         return $this->messageType;
     }
 
-
+    /**
+     * Репост из другой группы или нет
+     * @return bool
+     */
     public function checkIfMessageForwardFromAnotherGroup(): bool
     {
         if ($this->messageType === "message" || $this->messageType === "edited_message") {
@@ -128,12 +144,15 @@ class TelegramBotService
         }
         return false;
     }
+
+
+
     /**
      * Лишить пользователя прав
      * По умолчанию: user id объекта request
      * @return array
      */
-    public function restrictUser(int $time = 86400, int $id = 0,): bool
+    public function restrictChatMember(int $time = 86400, int $id = 0,): bool
     {
 
         $until_date = time() + $time;
@@ -156,7 +175,7 @@ class TelegramBotService
             ]
         )->json();
 
-        log::info("restrict until_date restrictUser: " . $until_date);
+        log::info("restrict until_date restrictChatMember: " . $until_date);
 
         $result = $response["ok"];
 
@@ -197,7 +216,7 @@ class TelegramBotService
     {
         log::info("inside banNewUser");
 
-        $this->restrictUser($time);
+        $this->restrictChatMember($time);
         $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
         $this->deleteMessage();
         // dd($time);
@@ -243,7 +262,6 @@ class TelegramBotService
     {
         $isNewMember = $this->checkIfIsNewMember();
 
-        // dd($isNewMember);
         if ($isNewMember) {
 
             if (!array_key_exists("user", $this->data[$this->messageType]["new_chat_member"])) {
@@ -255,7 +273,7 @@ class TelegramBotService
             //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
             //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
             if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
-                $result = $this->restrictUser(id: $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
+                $result = $this->restrictChatMember(id: $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
 
                 if ($result) {
                     log::info("Invited user blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
@@ -265,7 +283,7 @@ class TelegramBotService
             }
 
 
-            $result = $this->restrictUser();
+            $result = $this->restrictChatMember();
             if ($result) {
 
                 log::info("User blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);

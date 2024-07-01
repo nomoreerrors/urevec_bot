@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ManageChatSettingsService;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +26,52 @@ class TelegramBotController extends Controller
                 "allowed_updates" => ["chat_member", "message", "edited_message"]
             ]
         )->json(); //обязательно json
+
+    }
+
+
+    public function setChatPermissions(Request $request, TelegramBotService $service)
+    {
+        $data = $request->all();
+        $chatPermissions = new ManageChatSettingsService();
+        $service->requestLog($data);
+
+
+        if (array_key_exists("mode", $data)) {
+            if ($data["mode"] === "night_mode") {
+                $result = $chatPermissions->setPermissionsToNightMode();
+                if ($result) {
+                    log::info("Set to night mode time :" . time());
+                }
+            }
+            if ($data["mode"] === "light_mode") {
+                $result = $chatPermissions->setPermissionsToLightMode();
+
+                // dd("here");
+                if ($result) {
+                    log::info("Set to light mode time . " . time());
+                }
+            }
+        }
+
+        // if ((int)date("H") <= 1) {
+        // $chatPermissions->setPermissionsToNightMode();
+        // }
+
+        // if ((int)date("H") >= 8) {
+        // $chatPermissions->setPermissionsToLightMode();
+        // }
+
+
+
+        //Написать тесты setChatPermissions
+        //Написать тесты setChatPermissions
+        //Написать тесты setChatPermissions
+        //Написать тесты setChatPermissions
+        //смени url с тестовой на реальный
+        //смени url с тестовой на реальный
+        //смени url с тестовой на реальный
+
 
     }
 
@@ -84,5 +131,6 @@ class TelegramBotController extends Controller
 
     public function testBot(Request $request, TelegramBotService $service): void
     {
+        $service->sendMessage("scream 2");
     }
 }

@@ -8,7 +8,7 @@ use Tests\TestCase;
 use App\Services\TelegramBotService;
 
 
-class RestrictUserTest extends TestCase
+class RestrictChatMemberTest extends TestCase
 {
     /**
      * Возвращается ли объект с описанием "user id not found"
