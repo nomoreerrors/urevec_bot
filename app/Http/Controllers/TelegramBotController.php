@@ -63,7 +63,7 @@ class TelegramBotController extends Controller
 
     public function webhookHandler(Request $request, TelegramBotService $service)
     {
-        if (env("TELEGRAM_CHAT_ADMINS_ID") === "") {
+        if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
             throw new \Exception("Переменная TELEGRAM_CHAT_ADMINS_ID не установлена, либо переменные .env недоступны");
         }
 

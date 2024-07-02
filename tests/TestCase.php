@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\MessageModel as Model;
 use App\Services\FilterService;
 use App\Services\ManageChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;

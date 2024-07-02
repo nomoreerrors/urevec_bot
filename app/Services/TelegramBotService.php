@@ -76,23 +76,7 @@ class TelegramBotService extends BaseService
 
 
 
-    /**
-     * Репост из другой группы или нет
-     * @return bool
-     */
-    public function checkIfMessageForwardFromAnotherGroup(): bool
-    {
-        if ($this->messageType === "message" || $this->messageType === "edited_message") {
-            if (
-                array_key_exists("forward_from_chat", $this->data[$this->messageType]) &&
-                array_key_exists("forward_origin", $this->data[$this->messageType])
-            ) {
-                // dd($this->data);
-                return true;
-            }
-        }
-        return false;
-    }
+
 
 
 
