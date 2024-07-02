@@ -36,7 +36,7 @@ class TelegramBotController extends Controller
         $chatPermissions = new ManageChatSettingsService();
         $service->requestLog($data);
 
-
+        // curl -d "mode=night_mode" -X POST https://shuangyu.ru/test_bot/api/setChatPermissions
         if (array_key_exists("mode", $data)) {
             if ($data["mode"] === "night_mode") {
                 $result = $chatPermissions->setPermissionsToNightMode();

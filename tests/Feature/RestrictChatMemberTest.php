@@ -28,7 +28,7 @@ class RestrictChatMemberTest extends TestCase
                 $isAdmin = $this->service->checkIfUserIsAdmin();
                 if (!$isAdmin) {
 
-                    $result = $this->service->restrictUser();
+                    $result = $this->service->restrictChatMember();
                     // dd(gettype($result));
                     $this->assertTrue($result);
                 }
