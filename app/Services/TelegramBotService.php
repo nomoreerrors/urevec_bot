@@ -12,10 +12,10 @@ use ErrorException;
 use Exception;
 use Illuminate\Support\Facades\Config;
 
-class TelegramBotService
+class TelegramBotService extends BaseService
 {
 
-    public $data;
+    public array $data;
 
     public string $messageType = "";
 
@@ -42,38 +42,6 @@ class TelegramBotService
         }
     }
 
-    /**
-     * Поиск ссылок в text value и проверка на наличие текстовых ссылок
-     * @return bool
-     */
-    public function linksFilter(): bool
-    {
-        // log::info("inside links filter");
-        if (
-            $this->messageType !== "message" &&
-            $this->messageType !== "edited_message"
-        ) {
-
-            return false;
-        }
-        if (array_key_exists("entities", $this->data[$this->messageType])) {
-            $result = str_contains(json_encode($this->data[$this->messageType]["entities"]), "text_link");
-            if ($result) {
-                return true;
-            }
-        }
-
-
-        if (array_key_exists("text", $this->data[$this->messageType])) {
-            $hasLink = str_contains($this->data[$this->messageType]["text"], "http");
-
-            if ($hasLink) {
-                return true;
-            }
-        }
-        // dd($this->data);
-        return false;
-    }
 
 
 
@@ -106,26 +74,7 @@ class TelegramBotService
     }
 
 
-    public function checkMessageType(): string
-    {
-        $this->messageType = "";
 
-        if (array_key_exists("message", $this->data)) {
-            $this->messageType = "message";
-        } elseif (array_key_exists("edited_message", $this->data)) {
-            $this->messageType = "edited_message";
-        } elseif (array_key_exists("chat_member", $this->data)) {
-            $this->messageType = "chat_member";
-        } elseif (array_key_exists("my_chat_member", $this->data)) {
-            $this->messageType = "my_chat_member";
-        } else {
-            $this->messageType = "unknown message type";
-            log::info($this->messageType, $this->data);
-        }
-
-
-        return $this->messageType;
-    }
 
     /**
      * Репост из другой группы или нет

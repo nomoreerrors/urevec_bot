@@ -30,49 +30,33 @@ class TelegramBotController extends Controller
     }
 
 
-    public function setChatPermissions(Request $request, TelegramBotService $service)
+    public function switchPermissionsNightLightMode(Request $request, TelegramBotService $service)
     {
         $data = $request->all();
         $chatPermissions = new ManageChatSettingsService();
         $service->requestLog($data);
 
-        // curl -d "mode=night_mode" -X POST https://shuangyu.ru/test_bot/api/setChatPermissions
+
         if (array_key_exists("mode", $data)) {
             if ($data["mode"] === "night_mode") {
+
                 $result = $chatPermissions->setPermissionsToNightMode();
                 if ($result) {
                     log::info("Set to night mode time :" . time());
+                    return response('ok', 200, ['mode' => 'night_mode']);
                 }
             }
             if ($data["mode"] === "light_mode") {
                 $result = $chatPermissions->setPermissionsToLightMode();
 
-                // dd("here");
                 if ($result) {
                     log::info("Set to light mode time . " . time());
+                    return response('ok', 200,  ['mode' => 'light_mode']);
                 }
             }
         }
-
-        // if ((int)date("H") <= 1) {
-        // $chatPermissions->setPermissionsToNightMode();
-        // }
-
-        // if ((int)date("H") >= 8) {
-        // $chatPermissions->setPermissionsToLightMode();
-        // }
-
-
-
-        //Написать тесты setChatPermissions
-        //Написать тесты setChatPermissions
-        //Написать тесты setChatPermissions
-        //Написать тесты setChatPermissions
-        //смени url с тестовой на реальный
-        //смени url с тестовой на реальный
-        //смени url с тестовой на реальный
-
-
+        log::error("Failed to switch night/light permissions mode");
+        return response("Failed switch to night/light permissions mode", 200);
     }
 
 

@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Services\FilterService;
 use App\Services\ManageChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
@@ -16,6 +17,8 @@ abstract class TestCase extends BaseTestCase
 
     protected $chatPermissions;
 
+    protected $filter;
+
 
 
 
@@ -26,5 +29,6 @@ abstract class TestCase extends BaseTestCase
         $this->service = new TelegramBotService();
         $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
         $this->chatPermissions = new ManageChatSettingsService();
+        $this->filter = new FilterService();
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class ManageChatSettingsService
+class ManageChatSettingsService extends BaseService
 {
 
     public function setPermissionsToNightMode(): bool

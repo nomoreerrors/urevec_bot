@@ -25,4 +25,15 @@ class SetPermissionsDayNightModeTest extends TestCase
         $result = $this->chatPermissions->setPermissionsToLightMode();
         $this->assertTrue($result);
     }
+
+
+    public function testSwitchPermissionsNightLightModeReturn(): void
+    {
+        $response = $this->post("/setChatPermissions", ["mode" => "night_mode"]);
+        $this->assertEquals("night_mode", $response->headers->get("mode"));
+
+
+        $response = $this->post("/setChatPermissions", ["mode" => "light_mode"]);
+        $this->assertEquals("light_mode", $response->headers->get("mode"));
+    }
 }
