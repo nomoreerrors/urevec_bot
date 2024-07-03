@@ -29,6 +29,9 @@ class FilterService extends BaseService
      */
     public function wordsFilter(): bool
     {
+        if (empty($this->message->getText())) {
+            return false;
+        }
         $badWords = json_decode(Storage::get('badwords.json'), true);
         if (empty($badWords)) {
             throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json");
@@ -40,8 +43,8 @@ class FilterService extends BaseService
 
 
         foreach ($badWords as $word) {
-            if (str_contains($this->message->getText(), $word)) {
-
+            if (str_contains($this->message->getText(), mb_strtolower($word))) {
+                log::info($word);
                 return true;
             }
         }

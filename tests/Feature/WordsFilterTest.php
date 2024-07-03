@@ -29,8 +29,7 @@ class WordsFilterTest extends TestCase
 
             if (!empty($message->getText())) {
                 foreach ($badWords as $word) {
-                    if (str_contains($message->getText(), $word)) {
-
+                    if (str_contains($message->getText(), mb_strtolower($word))) {
                         $result = $filter->wordsFilter();
                         $this->assertTrue($result);
                     }

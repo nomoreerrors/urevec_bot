@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MessageModel;
 use App\Models\TelegramMessageModel;
+use App\Services\FilterService;
 use App\Services\ManageChatSettingsService;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
@@ -77,7 +78,7 @@ class TelegramBotController extends Controller
 
         $data = $request->all();
         $message = new TelegramMessageModel($data);
-        //request log всего объекта положим в middleware
+        $filter = new FilterService($message);
         $service = new TelegramBotService($message);
         $service->requestLog();
 
@@ -110,6 +111,12 @@ class TelegramBotController extends Controller
                 if ($isBlocked) {
                     return response('user blocked', 200);
                 }
+            }
+
+
+            if ($filter->wordsFilter()) {
+                $service->deleteMessage();
+                return response("Message deleted by filter", 200);
             }
         }
 
