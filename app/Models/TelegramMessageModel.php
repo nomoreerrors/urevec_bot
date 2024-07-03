@@ -8,7 +8,7 @@ use Exception;
 use Illuminate\Support\Facades\Storage;
 
 
-class MessageModel extends BaseMessageModel
+class TelegramMessageModel extends BaseMessageModel
 {
     use HasFactory;
 }

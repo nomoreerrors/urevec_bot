@@ -15,6 +15,8 @@ Route::withoutMiddleware(env("APP_DEBUG") ? [ValidateCsrfToken::class] : [])->gr
 
     Route::get('/', [TelegramBotController::class, 'setWebhook']);
     Route::get('/getinfo', [TelegramBotController::class, 'getWebhookInfo']);
-    Route::post('setChatPermissions', [TelegramBotController::class, 'switchPermissionsNightLightMode']);
     Route::post('/testbot', [TelegramBotController::class, 'testBot']);
 });
+
+Route::post('setChatPermissions', [TelegramBotController::class, 'switchPermissionsNightLightMode'])
+    ->withoutMiddleware(ValidateCsrfToken::class);

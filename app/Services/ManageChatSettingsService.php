@@ -35,7 +35,7 @@ class ManageChatSettingsService extends BaseService
                 ]
             ]
         )->json(); //обязательно json
-        // dd($response);
+
         if ($response["ok"] === true) {
             return true;
         } else

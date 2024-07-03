@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use App\Models\TelegramMessageModel;
+use App\Services\TelegramBotService;
 
 class SendMessageTest extends TestCase
 {
@@ -13,8 +15,12 @@ class SendMessageTest extends TestCase
      */
     public function test_send_message_return_status_true(): void
     {
+
+        $message = new TelegramMessageModel($this->testObjects[0]);
+        $service = new TelegramBotService($message);
+
         $testMessage = "His name is Robert Paulsen";
-        $response = $this->service->sendMessage($testMessage);
+        $response = $service->sendMessage($testMessage);
 
         $this->assertTrue($response["ok"] === true);
     }

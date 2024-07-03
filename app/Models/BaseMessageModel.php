@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 class BaseMessageModel extends Model
@@ -11,25 +12,37 @@ class BaseMessageModel extends Model
     use HasFactory;
 
 
-    public string $messageType;
+    private string $messageType;
 
     /** Репост из другого чата @var bool */
-    public bool $isForwardMessage;
+    private bool $isForwardMessage = false;
 
-    public string $text;
+    private string $text = "";
 
     private array $data;
 
-    public array $entities;
+    private array $entities = [];
 
-    public bool $hasLink = false;
+    private bool $hasLink = false;
 
-    public bool $hasTextLink = false;
+    /** Отдельное поле сущности: text_link  @var bool */
+    private bool $hasTextLink = false;
 
-    public bool $userIsAdmin = false;
+
+    private bool $fromAdmin = false;
+
+    private bool $isNewMemberJoinUpdate = false;
+
+    private int $fromId = 0;
 
 
-    public int $userId = 0;
+    private string $fromUserName;
+
+
+    private int $messageId = 0;
+
+
+    private array $invitedUsersId = [];
 
 
     public function __construct(array $data)
@@ -46,15 +59,20 @@ class BaseMessageModel extends Model
         if (array_key_exists("message", $data)) {
             $this->messageType = "message";
             $this->setText();
+            $this->setMessageId();
+            $this->setUserData();
         }
 
         if (array_key_exists("edited_message", $data)) {
             $this->messageType = "edited_message";
             $this->setText();
+            $this->setMessageId();
+            $this->setUserData();
         }
 
         if (array_key_exists("chat_member", $data)) {
             $this->messageType = "chat_member";
+            $this->setIsNewMemberJoinUpdate();
         }
 
         if (array_key_exists("my_chat_member", $data)) {
@@ -62,7 +80,7 @@ class BaseMessageModel extends Model
         }
 
         $this->setEntities();
-        $this->setUserId();
+        $this->setUserData();
         $this->checkIfUserIsAdmin();
         $this->setIsForwardMessage();
     }
@@ -93,6 +111,9 @@ class BaseMessageModel extends Model
             if (str_contains($this->text, $link)) {
                 $this->hasLink = true;
             }
+        if ($this->hasTextLink) {
+            $this->hasLink = true;
+        }
     }
 
 
@@ -108,9 +129,11 @@ class BaseMessageModel extends Model
     }
 
 
-    private function setUserId(): void
+    private function setUserData(): void
     {
-        $this->userId = $this->data[$this->messageType]["from"]["id"];
+        $this->fromId = $this->data[$this->messageType]["from"]["id"];
+        // dd($this->fromId = $this->data[$this->messageType]["from"]["id"]);
+        $this->fromUserName = $this->data[$this->messageType]["from"]["first_name"];
     }
 
 
@@ -122,9 +145,11 @@ class BaseMessageModel extends Model
     private function checkIfUserIsAdmin(): void
     {
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-
-        if ((string) in_array($this->userId, $adminsIdArray)) {
-            $this->userIsAdmin = true;
+        // dd(env("TELEGRAM_CHAT_ADMINS_ID"));
+        // dd(env("CRON_TOKEN"));
+        // dd($adminsIdArray);
+        if ((string)in_array($this->fromId, $adminsIdArray)) {
+            $this->fromAdmin = true;
         }
     }
 
@@ -143,5 +168,123 @@ class BaseMessageModel extends Model
                 $this->isForwardMessage = true;
             }
         }
+    }
+
+
+
+    private function setIsNewMemberJoinUpdate(): void
+    {
+        if (empty($this->messageType)) {
+            throw new Exception("Тип сообщения — пустая строка. Тип не задан в TelegramBotService.");
+        }
+
+        if ($this->messageType !== "chat_member") {
+            $this->isNewMemberJoinUpdate = false;
+        }
+
+        if (!array_key_exists("new_chat_member", $this->data[$this->messageType])) {
+            log::info("new_chat_member value не существует (blocknewvisitor");
+            $this->isNewMemberJoinUpdate = false;
+        }
+
+
+        if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
+            //Не является новым подписчиком
+            log::info("new_chat_member status !== member", $this->data);
+            $this->isNewMemberJoinUpdate = false;
+        }
+        if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->fromId) {
+            $this->invitedUsersId[] = $this->data[$this->messageType]["new_chat_member"]["user"]["id"];
+            $this->isNewMemberJoinUpdate = true;
+        } else {
+            $this->isNewMemberJoinUpdate = true;
+        }
+    }
+
+
+
+
+
+
+
+    public function getType(): string
+    {
+        return $this->messageType;
+    }
+
+
+    public function getFromAdmin(): bool
+    {
+        return $this->fromAdmin;
+    }
+
+    public function getFromId(): int
+    {
+        return $this->fromId;
+    }
+
+
+    public function getText(): string
+    {
+        return $this->text;
+    }
+
+
+    public function getHasLink(): bool
+    {
+        return $this->hasLink;
+    }
+
+
+    public function getIsNewMemberJoinUpdate(): bool
+    {
+        return $this->isNewMemberJoinUpdate;
+    }
+
+
+    public function getIsForwardMessage(): bool
+    {
+        return $this->isForwardMessage;
+    }
+
+
+    public function getEntities(): array
+    {
+        return $this->entities;
+    }
+
+    public function getInvitedUsersId(): array
+    {
+        return $this->invitedUsersId;
+    }
+
+    public function getMessageType(): string
+    {
+        return $this->messageType;
+    }
+
+    public function setMessageId(): void
+    {
+        // dd($this->messageType);
+        if (
+            $this->messageType !== "message" &&
+            $this->messageType !== "edited_message"
+        ) {
+            throw new Exception("Попытка установить message_id неверному типу сообщения");
+        }
+
+        $this->messageId = $this->data[$this->messageType]["message_id"];
+    }
+
+
+    public function getFromUserName(): string
+    {
+        return  $this->fromUserName;
+    }
+
+
+    public function getMessageId(): int
+    {
+        return $this->messageId;
     }
 }

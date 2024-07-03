@@ -3,6 +3,9 @@
 namespace Tests\Feature\BaseMessageModel;
 
 use App\Models\MessageModel;
+use App\Models\TelegramMessageModel;
+use ErrorException;
+use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -21,13 +24,29 @@ class BaseMessageModelTest extends TestCase
         // dd($message);
 
         foreach ($this->testObjects as $object) {
-            $message = new MessageModel($object);
+            $message = new TelegramMessageModel($object);
 
-            $this->assertNotEmpty($message->messageType);
-            $this->assertNotEmpty($message->userId);
+            $this->assertNotEmpty($message->getType());
+            $this->assertNotEmpty($message->getFromId());
 
 
+            $messageType = "";
 
+            if (array_key_exists("message", $object)) {
+                $messageType = "message";
+            }
+
+            if (array_key_exists("edited_message", $object)) {
+                $messageType = "edited_message";
+            }
+
+            if (array_key_exists("chat_member", $object)) {
+                $messageType = "chat_member";
+            }
+
+            if (array_key_exists("my_chat_member", $object)) {
+                $messageType = "my_chat_member";
+            }
 
 
 
@@ -35,7 +54,7 @@ class BaseMessageModelTest extends TestCase
                 ($message->messageType === "message" ||
                     $message->messageType === "edited_message")
             ) {
-                if (array_key_exists("text", $object[$message->messageType])) {
+                if (array_key_exists("text", $object[$messageType])) {
                     $this->assertNotEmpty($message->text);
 
 

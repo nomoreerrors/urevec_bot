@@ -6,33 +6,29 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\TelegramBotService;
+use App\Models\TelegramMessageModel;
+
+
 
 
 class RestrictChatMemberTest extends TestCase
 {
-    /**
-     * Возвращается ли объект с описанием "user id not found"
-     * Если возвращается, то и при верном id запрос работает
-     * @return void
-     */
-    public function test_restrict_user_by_user_id_from_incoming_message_return_true(): void
+    public function test_restrict_user_by_id_user_found_return_true(): void
     {
 
-        foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $messageType = $this->service->checkMessageType();
+
+        $message = new TelegramMessageModel($this->testObjects["3"]);
+        $service = new TelegramBotService($message);
+
+        $this->assertTrue($service->restrictChatMember());
+    }
 
 
-            if ($messageType === "message" || $messageType === "edited_message") {
+    public function test_restrict_user_by_id_user_not_found_return_false(): void
+    {
+        $message = new TelegramMessageModel($this->testObjects["19"]);
+        $service = new TelegramBotService($message);
 
-                $isAdmin = $this->service->checkIfUserIsAdmin();
-                if (!$isAdmin) {
-
-                    $result = $this->service->restrictChatMember();
-                    // dd(gettype($result));
-                    $this->assertTrue($result);
-                }
-            }
-        }
+        $this->assertFalse($service->restrictChatMember());
     }
 }

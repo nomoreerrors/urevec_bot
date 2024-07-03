@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\TelegramMessageModel;
+use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -15,16 +17,13 @@ class WebHookHandlerTest extends TestCase
     public function test_if_message_contains_link_ban_user(): void
     {
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $this->service->checkMessageType();
+            $message = new TelegramMessageModel($object);
+            $service = new TelegramBotService($message);
 
-            $hasLink = $this->service->linksFilter();
 
-            if ($hasLink) {
-                log::info($object);
-                $response = $this->post("api/webhook", $this->service->data);
-                // dd($response);
-                // log::info($response->getOriginalContent());
+
+            if ($message->getHasLink()) {
+                $response = $this->post("api/webhook", $object);
                 $this->assertTrue($response->getOriginalContent() === "user blocked");
             }
         }
@@ -33,13 +32,11 @@ class WebHookHandlerTest extends TestCase
     public function test_if_is_forward_message_from_another_group_ban_user(): void
     {
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $this->service->checkMessageType();
+            $message = new TelegramMessageModel($object);
+            $service = new TelegramBotService($message);
 
 
-            $isForwardMessage = $this->service->checkIfMessageForwardFromAnotherGroup();
-
-            if ($isForwardMessage) {
+            if ($message->getIsForwardMessage()) {
 
                 $response = $this->post("api/webhook", $object);
                 // dd($response->getOriginalContent());
@@ -53,14 +50,11 @@ class WebHookHandlerTest extends TestCase
     public function test_new_user_restricted_automatically(): void
     {
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $this->service->checkMessageType();
-            $isNewMember = $this->service->checkIfIsNewMember();
+            $message = new TelegramMessageModel($object);
 
 
-
-            if ($isNewMember) {
-                $response = $this->post("api/webhook", $this->service->data);
+            if ($message->getIsNewMemberJoinUpdate()) {
+                $response = $this->post("api/webhook", $object);
 
                 // dd($response);
                 if ($response->getOriginalContent() !== "default response") {

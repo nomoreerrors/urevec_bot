@@ -5,7 +5,10 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
+use App\Services\FilterService;
 use Illuminate\Support\Facades\Storage;
+use App\Models\TelegramMessageModel;
+use App\Services\TelegramBotService;
 use Exception;
 use App\Services\Filter;
 
@@ -18,24 +21,17 @@ class WordsFilterTest extends TestCase
     {
         $badWords = json_decode(Storage::get('badwords.json'), true);
 
-        if ($badWords === null) {
-            throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json");
-        }
 
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $messageType = $this->service->checkMessageType();
-
-            if (($messageType === "message" || $messageType === "edited_message") &&
-                array_key_exists("text", $object[$messageType])
-            ) {
-                $text = $object[$messageType]["text"];
+            $message = new TelegramMessageModel($object);
+            $filter = new FilterService($message);
 
 
+            if (!empty($message->getText())) {
                 foreach ($badWords as $word) {
-                    if (str_contains($text, $word)) {
+                    if (str_contains($message->getText(), $word)) {
 
-                        $result = $this->filter->wordsFilter($object);
+                        $result = $filter->wordsFilter();
                         $this->assertTrue($result);
                     }
                 }

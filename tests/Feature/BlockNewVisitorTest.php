@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\TelegramMessageModel;
+use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -17,34 +19,28 @@ class BlockNewVisitorTest extends TestCase
     {
 
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $messageType = $this->service->checkMessageType();
-            $isNewMember = $this->service->checkIfIsNewMember();
+
+
+            $message = new TelegramMessageModel($object);
+            $service = new TelegramBotService($message);
 
 
 
-            if ($isNewMember) {
+            if ($message->getIsNewMemberJoinUpdate()) {
 
-                if ($object[$messageType]["new_chat_member"]["user"]["id"] === $object[$messageType]["from"]["id"]) {
 
-                    $result = $this->service->blockNewVisitor();
-                    if ($result === true) {
-                        $this->assertTrue($result);
-                    }
+                $result = $service->blockNewVisitor();
+                if ($result === true) {
+                    $this->assertTrue($result);
                 }
             }
         }
 
 
-        if (!$isNewMember) {
+        if (!$message->getIsNewMemberJoinUpdate()) {
 
-            $result = $this->service->blockNewVisitor();
-            $this->assertFalse($result);
-        }
+            $result = $service->blockNewVisitor();
 
-        if ($object[$messageType]["new_chat_member"]["status"] === "left") {
-            //Просто для верности доп. проверка
-            $result = $this->service->blockNewVisitor();
             $this->assertFalse($result);
         }
     }
@@ -55,21 +51,16 @@ class BlockNewVisitorTest extends TestCase
     {
 
         foreach ($this->testObjects as $object) {
-            $this->service->data = $object;
-            $messageType = $this->service->checkMessageType();
-            if (
-                $messageType === "chat_member" &&
-                array_key_exists("new_chat_member", $object[$messageType]) &&
-                $object[$messageType]["new_chat_member"]["user"]["id"] !== $object[$messageType]["from"]["id"]
-            ) {
-
-                if ($object[$messageType]["new_chat_member"]["status"] === "member") {
+            $message = new TelegramMessageModel($object);
+            $service = new TelegramBotService($message);
 
 
-                    $result = $this->service->blockNewVisitor();
-                    if ($result === true) {
-                        $this->assertTrue($result);
-                    }
+
+            if ($message->getInvitedUsersId() !== []) {
+
+                $result = $service->blockNewVisitor();
+                if ($result === true) {
+                    $this->assertTrue($result);
                 }
             }
         }

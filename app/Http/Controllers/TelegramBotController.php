@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MessageModel;
+use App\Models\TelegramMessageModel;
 use App\Services\ManageChatSettingsService;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
@@ -30,11 +32,16 @@ class TelegramBotController extends Controller
     }
 
 
-    public function switchPermissionsNightLightMode(Request $request, TelegramBotService $service)
+    public function switchPermissionsNightLightMode(Request $request)
     {
         $data = $request->all();
+
         $chatPermissions = new ManageChatSettingsService();
-        $service->requestLog($data);
+
+        $cronToken = array_key_exists("token", $data) ? $data["token"] : null;
+        if ($cronToken !== env("CRON_TOKEN")) {
+            return response("Неверный токен запроса", 400);
+        }
 
 
         if (array_key_exists("mode", $data)) {
@@ -61,44 +68,52 @@ class TelegramBotController extends Controller
 
 
 
-    public function webhookHandler(Request $request, TelegramBotService $service)
+    public function webhookHandler(Request $request)
     {
+
         if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
             throw new \Exception("Переменная TELEGRAM_CHAT_ADMINS_ID не установлена, либо переменные .env недоступны");
         }
 
         $data = $request->all();
+        $message = new TelegramMessageModel($data);
+        //request log всего объекта положим в middleware
+        $service = new TelegramBotService($message);
+        $service->requestLog();
 
-        $service->requestLog($data);
-        $messageType = $service->checkMessageType();
 
 
-        if ($messageType !== "message" && $messageType !== "edited_message" && $messageType !== "chat_member") {
-            log::info($messageType, $data);
+        if (
+            $message->getType() !== "message" &&
+            $message->getType() !== "edited_message" &&
+            $message->getType() !== "chat_member"
+        ) {
+            log::info($message->getType(), $data);
             return response('unknown message type', 200);
         }
 
-        $isAdmin = $service->checkIfUserIsAdmin();
 
-        if (!$isAdmin) {
 
-            $isNewUser = $service->blockNewVisitor();
 
-            if ($isNewUser) {
+        if (!$message->getFromAdmin()) {
+
+            if ($message->getIsNewMemberJoinUpdate()) {
+                $service->blockNewVisitor();
+
                 return response('new member blocked for 24 hours', 200);
             }
 
-            $hasLink = $service->linksFilter();
-            $isForwardMessage = $service->checkIfMessageForwardFromAnotherGroup();
 
 
-            if ($hasLink !== false || $isForwardMessage !== false) {
+            if ($message->getHasLink() || $message->getIsForwardMessage()) {
                 $isBlocked = $service->banUser();
                 if ($isBlocked) {
                     return response('user blocked', 200);
                 }
             }
         }
+
+
         return response('default response', 200);
     }
 

@@ -10,15 +10,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use ErrorException;
 use Exception;
+use App\Models\TelegramMessageModel;
 use Illuminate\Support\Facades\Config;
 
 class TelegramBotService extends BaseService
 {
 
-    public array $data;
-
-    public string $messageType = "";
-
+    public function __construct(private TelegramMessageModel $message)
+    {
+        $this->message = $message;
+    }
 
 
 
@@ -27,10 +28,19 @@ class TelegramBotService extends BaseService
      * @param array $data
      * @return void
      */
-    public function requestLog(array $data)
+    public function requestLog()
     {
-        $this->data = $data;
         $requestLog = Storage::json("DONE.json");
+
+        $data = [
+            "User is admin" => $this->message->getFromAdmin(),
+            "Message from ID" => $this->message->getFromId(),
+            "Message type" => $this->message->getMessageType(),
+            "Message has link" => $this->message->getHasLink(),
+            "Message is forward from group" => $this->message->getIsForwardMessage(),
+            "Message is new member join update" => $this->message->getIsNewMemberJoinUpdate(),
+            "Invited users id" => $this->message->getInvitedUsersId(),
+        ];
 
 
         if (!$requestLog) {
@@ -40,42 +50,8 @@ class TelegramBotService extends BaseService
 
             Storage::put("DONE.json", json_encode($requestLog));
         }
+        // dd("here");
     }
-
-
-
-
-    /**
-     * Summary of checkIfUserIsAdmin
-     * @return bool
-     */
-    public function checkIfUserIsAdmin(): bool
-    {
-
-
-        $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-
-        $result = false;
-        if (array_key_exists($this->messageType, $this->data)) {
-            log::info($adminsIdArray);
-            log::info($this->data[$this->messageType]["from"]["id"]);
-            if ((string) in_array($this->data[$this->messageType]["from"]["id"], $adminsIdArray)) {
-
-                $result = true;
-
-                Log::info("USER IS ADMIN!!!!!!!" . $this->data[$this->messageType]["from"]["id"]);
-            } else {
-                Log::info("isAdmin return false");
-                $result = false;
-            }
-        }
-
-        return $result;
-    }
-
-
-
-
 
 
 
@@ -85,11 +61,10 @@ class TelegramBotService extends BaseService
      * По умолчанию: user id объекта request
      * @return array
      */
-    public function restrictChatMember(int $time = 86400, int $id = 0,): bool
+    public function restrictChatMember(int $time = 86400, int $id = 0): bool
     {
 
         $until_date = time() + $time;
-        $result = false;
 
 
 
@@ -97,7 +72,7 @@ class TelegramBotService extends BaseService
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
                 "chat_id" => env("TELEGRAM_CHAT_ID"),
-                "user_id" => $id > 0 ? $id : $this->data[$this->messageType]["from"]["id"],
+                "user_id" => $id > 0 ? $id : $this->message->getFromId(),
                 "can_send_messages" => false,
                 "can_send_documents" => false,
                 "can_send_photos" => false,
@@ -108,11 +83,18 @@ class TelegramBotService extends BaseService
             ]
         )->json();
 
-        log::info("restrict until_date restrictChatMember: " . $until_date);
+        if ($response["ok"]) {
+            return true;
+        }
+        if (
+            $response["ok"] === false &&
+            $response["description"] === 'Bad Request: PARTICIPANT_ID_INVALID'
+        ) {
+            return false;
+        }
 
-        $result = $response["ok"];
-
-        return $result;
+        throw new Exception("Не удалось заблокировать по id");
+        // return false;
     }
 
 
@@ -123,7 +105,7 @@ class TelegramBotService extends BaseService
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
             [
                 "chat_id" => env("TELEGRAM_CHAT_ID"),
-                "message_id" => $this->data[$this->messageType]["message_id"]
+                "message_id" => $this->message->getMessageId()
             ]
         )->json();
 
@@ -133,56 +115,30 @@ class TelegramBotService extends BaseService
 
 
 
-    public function sendMessage(string $message): array
+    public function sendMessage(string $text_message): array
     {
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             [
                 "chat_id" => env("TELEGRAM_CHAT_ID"),
-                "text" => $message
+                "text" => $text_message
             ]
         )->json();
         return $response;
     }
+
+
 
     public function banUser(int $time = 86400): bool
     {
         log::info("inside banNewUser");
 
         $this->restrictChatMember($time);
-        $this->sendMessage("Пользователь " . $this->data[$this->messageType]["from"]["first_name"] . " заблокирован на 24 часа за нарушение правил чата.");
+        $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
         $this->deleteMessage();
-        // dd($time);
         log::info("time from banUser: " . $time);
         return true;
     }
-
-
-
-    public function checkIfIsNewMember(): bool
-    {
-        if ($this->messageType === "") {
-            throw new Exception("Тип сообщения — пустая строка. Тип не задан в TelegramBotService.");
-        }
-
-        if ($this->messageType !== "chat_member") {
-            return false;
-        }
-
-        if (!array_key_exists("new_chat_member", $this->data[$this->messageType])) {
-            log::info("new_chat_member value не существует (blocknewvisitor");
-            return false;
-        }
-
-
-        if ($this->data[$this->messageType]["new_chat_member"]["status"] !== "member") {
-            //Не является новым подписчиком
-            log::info("new_chat_member status !== member", $this->data);
-            return false;
-        }
-        return true;
-    }
-
 
 
 
@@ -193,37 +149,37 @@ class TelegramBotService extends BaseService
      */
     public function blockNewVisitor(): bool
     {
-        $isNewMember = $this->checkIfIsNewMember();
 
-        if ($isNewMember) {
-
-            if (!array_key_exists("user", $this->data[$this->messageType]["new_chat_member"])) {
-                throw new Exception("Ключ user не существует. Возможно, объект более сложный 
-                 приглашено несколько подписчиков одновременно");
-            }
+        //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
+        //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
+        $invitedUsers = $this->message->getInvitedUsersId();
 
 
-            //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
-            //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
-            if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->data[$this->messageType]["from"]["id"]) {
-                $result = $this->restrictChatMember(id: $this->data[$this->messageType]["new_chat_member"]["user"]["id"]);
+        if ($invitedUsers !== []) {
+            foreach ($invitedUsers as $user_id) {
+                $result = $this->restrictChatMember(id: $user_id);
 
                 if ($result) {
-                    log::info("Invited user blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
-
-                    return true;
+                    log::info("Invited user blocked. : " . $this->message->getFromId());
                 }
             }
+            return true;
+        }
 
 
+
+        if ($this->message->getIsNewMemberJoinUpdate()) {
             $result = $this->restrictChatMember();
+
             if ($result) {
 
-                log::info("User blocked. Chat_member status: " . $this->data[$this->messageType]["new_chat_member"]["status"]);
+                log::info("User blocked. Message id: " . $this->message->messageId . "user_id" . $this->message->getFromId());
 
                 return true;
             }
         }
+
+
         return false;
     }
 }
