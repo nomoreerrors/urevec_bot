@@ -33,13 +33,14 @@ class TelegramBotService extends BaseService
         $requestLog = Storage::json("DONE.json");
 
         $data = [
-            "User is admin" => $this->message->getFromAdmin(),
-            "Message from ID" => $this->message->getFromId(),
-            "Message type" => $this->message->getMessageType(),
-            "Message has link" => $this->message->getHasLink(),
-            "Message is forward from group" => $this->message->getIsForwardMessage(),
-            "Message is new member join update" => $this->message->getIsNewMemberJoinUpdate(),
-            "Invited users id" => $this->message->getInvitedUsersId(),
+            "IS ADMIN" => $this->message->getFromAdmin(),
+            "USER ID" => $this->message->getFromId(),
+            "USER NAME" => $this->message->getFromUserName(),
+            "MESSAGE TYPE" => $this->message->getMessageType(),
+            "MESSAGE HAS LINK" => $this->message->getHasLink(),
+            "MESSAGE IS FORWARD FROM ANOTHER GROUP" => $this->message->getIsForwardMessage(),
+            "NEW MEMBER JOIN UPDATE" => $this->message->getIsNewMemberJoinUpdate(),
+            "INVITED USERS ID" => $this->message->getInvitedUsersId(),
         ];
 
 
