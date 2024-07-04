@@ -45,6 +45,30 @@ class BlockNewVisitorTest extends TestCase
         }
     }
 
+    /**
+     * Make sure is new member and not left user
+     * @return void
+     */
+    public function test_new_chat_member_status_not_equals_member_return_false(): void
+    {
+
+        foreach ($this->testObjects as $object) {
+
+
+            $message = new TelegramMessageModel($object);
+            $service = new TelegramBotService($message);
+            if (array_key_exists("chat_member", $object)) {
+
+                if ($object["chat_member"]["new_chat_member"]["status"] !== "member") {
+                    $result = $service->blockNewVisitor();
+                    $this->assertFalse($result);
+                }
+            }
+        }
+    }
+
+
+
 
 
     public function test_new_user_invited_by_another_user_blocked_response_result_true(): void

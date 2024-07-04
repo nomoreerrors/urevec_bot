@@ -28,14 +28,15 @@ class BaseMessageModel extends Model
     /** Отдельное поле сущности: text_link  @var bool */
     private bool $hasTextLink = false;
 
-
+    /** Message from admin or not */
     private bool $fromAdmin = false;
 
     private bool $isNewMemberJoinUpdate = false;
 
+    /** Sender id */
     private int $fromId = 0;
 
-
+    /** Message sender nickname */
     private string $fromUserName;
 
 
@@ -58,16 +59,16 @@ class BaseMessageModel extends Model
 
         if (array_key_exists("message", $data)) {
             $this->messageType = "message";
-            $this->setText();
-            $this->setMessageId();
-            $this->setUserData();
+            $this->setText()
+                ->setMessageId()
+                ->setUserData();
         }
 
         if (array_key_exists("edited_message", $data)) {
             $this->messageType = "edited_message";
-            $this->setText();
-            $this->setMessageId();
-            $this->setUserData();
+            $this->setText()
+                ->setMessageId()
+                ->setUserData();
         }
 
         if (array_key_exists("chat_member", $data)) {
@@ -79,28 +80,32 @@ class BaseMessageModel extends Model
             $this->messageType = "my_chat_member";
         }
 
-        $this->setEntities();
-        $this->setUserData();
-        $this->checkIfUserIsAdmin();
-        $this->setIsForwardMessage();
+        $this->setEntities()
+            ->setUserData()
+            ->checkIfUserIsAdmin()
+            ->setIsForwardMessage();
     }
 
-    private function setEntities(): void
+    private function setEntities()
     {
         if (array_key_exists("entities", $this->data[$this->messageType])) {
             $this->entities = $this->data[$this->messageType]["entities"];
             $this->setHasTextLink();
+            return $this;
         } else
             $this->entities = [];
+        return $this;
     }
 
 
-    private function setText(): void
+    private function setText()
     {
         if (array_key_exists("text", $this->data[$this->messageType])) {
             $this->text = $this->data[$this->messageType]["text"];
             $this->setHasLink();
-        }
+            return $this;
+        };
+        return $this;
     }
 
 
@@ -118,47 +123,46 @@ class BaseMessageModel extends Model
 
 
 
-    private function setHasTextLink(): void
+    private function setHasTextLink()
     {
         if (
             json_encode(str_contains(json_encode($this->entities), "text_link")) ||
             json_encode(str_contains(json_encode($this->entities), "url"))
         ) {
             $this->hasTextLink = true;
+            return $this;
         }
+        return $this;
     }
 
 
-    private function setUserData(): void
+    private function setUserData()
     {
         $this->fromId = $this->data[$this->messageType]["from"]["id"];
-        // dd($this->fromId = $this->data[$this->messageType]["from"]["id"]);
         $this->fromUserName = $this->data[$this->messageType]["from"]["first_name"];
+        return $this;
     }
 
 
 
     /**
      * Summary of checkIfUserIsAdmin
-     * @return bool
      */
-    private function checkIfUserIsAdmin(): void
+    private function checkIfUserIsAdmin()
     {
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        // dd(env("TELEGRAM_CHAT_ADMINS_ID"));
-        // dd(env("CRON_TOKEN"));
-        // dd($adminsIdArray);
         if ((string)in_array($this->fromId, $adminsIdArray)) {
             $this->fromAdmin = true;
+            return $this;
         }
+        return $this;
     }
 
 
     /**
      * Репост из другой группы или нет
-     * @return bool
      */
-    private function setIsForwardMessage(): void
+    private function setIsForwardMessage()
     {
         if ($this->messageType === "message" || $this->messageType === "edited_message") {
             if (
@@ -166,13 +170,15 @@ class BaseMessageModel extends Model
                 array_key_exists("forward_origin", $this->data[$this->messageType])
             ) {
                 $this->isForwardMessage = true;
+                return $this;
             }
         }
+        return $this;
     }
 
 
 
-    private function setIsNewMemberJoinUpdate(): void
+    private function setIsNewMemberJoinUpdate()
     {
         if (empty($this->messageType)) {
             throw new Exception("Тип сообщения — пустая строка. Тип не задан в TelegramBotService.");
@@ -180,11 +186,13 @@ class BaseMessageModel extends Model
 
         if ($this->messageType !== "chat_member") {
             $this->isNewMemberJoinUpdate = false;
+            return $this;
         }
 
         if (!array_key_exists("new_chat_member", $this->data[$this->messageType])) {
             log::info("new_chat_member value не существует (blocknewvisitor");
             $this->isNewMemberJoinUpdate = false;
+            return $this;
         }
 
 
@@ -192,12 +200,15 @@ class BaseMessageModel extends Model
             //Не является новым подписчиком
             log::info("new_chat_member status !== member", $this->data);
             $this->isNewMemberJoinUpdate = false;
+            return $this;
         }
         if ($this->data[$this->messageType]["new_chat_member"]["user"]["id"] !== $this->fromId) {
             $this->invitedUsersId[] = $this->data[$this->messageType]["new_chat_member"]["user"]["id"];
             $this->isNewMemberJoinUpdate = true;
+            return $this;
         } else {
             $this->isNewMemberJoinUpdate = true;
+            return $this;
         }
     }
 
@@ -263,7 +274,7 @@ class BaseMessageModel extends Model
         return $this->messageType;
     }
 
-    public function setMessageId(): void
+    public function setMessageId()
     {
         // dd($this->messageType);
         if (
@@ -274,6 +285,8 @@ class BaseMessageModel extends Model
         }
 
         $this->messageId = $this->data[$this->messageType]["message_id"];
+
+        return $this;
     }
 
 
