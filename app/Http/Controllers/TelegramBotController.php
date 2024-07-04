@@ -26,10 +26,16 @@ class TelegramBotController extends Controller
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setWebhook",
             [
                 "url" => env("TELEGRAM_API_WEBHOOK_URL"),
-                "allowed_updates" => ["chat_member", "message", "edited_message"]
+                "allowed_updates" => [
+                    "chat_member",
+                    "message",
+                    "edited_message",
+                    "message_reaction",
+                    "message_reaction_count"
+                ]
             ]
         )->json(); //обязательно json
-
+        dd($http);
     }
 
 
@@ -80,18 +86,19 @@ class TelegramBotController extends Controller
         $message = new TelegramMessageModel($data);
         $filter = new FilterService($message);
         $service = new TelegramBotService($message);
+        $service->saveRawRequestData($data);
         $service->requestLog();
 
 
 
-        if (
-            $message->getType() !== "message" &&
-            $message->getType() !== "edited_message" &&
-            $message->getType() !== "chat_member"
-        ) {
-            log::info($message->getType(), $data);
-            return response('unknown message type', 200);
-        }
+        // if (
+        //     $message->getType() !== "message" &&
+        //     $message->getType() !== "edited_message" &&
+        //     $message->getType() !== "chat_member"
+        // ) {
+        //     response('unknown message type', 200);
+        //     throw new \Exception("Unknown message type: " . $data);
+        // }
 
 
 

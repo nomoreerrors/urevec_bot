@@ -876,5 +876,31 @@
             },
             "has_protected_content": true
         }
+    },
+    "21": {
+        "update_id": 895572161,
+        "message_reaction": {
+            "chat": {
+                "id": -1002222230714,
+                "title": "Testylvania",
+                "type": "supergroup"
+            },
+            "message_id": 1003,
+            "user": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "is_premium": true
+            },
+            "date": 1720084760,
+            "old_reaction": [],
+            "new_reaction": [
+                {
+                    "type": "emoji",
+                    "emoji": "\ud83d\udc4d"
+                }
+            ]
+        }
     }
 }

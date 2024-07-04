@@ -55,6 +55,21 @@ class TelegramBotService extends BaseService
     }
 
 
+    public function saveRawRequestData(array $data)
+    {
+        $this->data = $data;
+
+        $requestLog = Storage::json("rawrequest.json");
+
+        if (!$requestLog) {
+            Storage::put("rawrequest.json", json_encode($data));
+        } else {
+            $requestLog[] = $data;
+            Storage::put("rawrequest.json", json_encode($requestLog));
+        }
+    }
+
+
 
 
     /**

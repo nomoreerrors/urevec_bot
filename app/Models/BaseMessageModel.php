@@ -12,7 +12,7 @@ class BaseMessageModel extends Model
     use HasFactory;
 
 
-    private string $messageType;
+    private string $messageType = "";
 
     /** Репост из другого чата @var bool */
     private bool $isForwardMessage = false;
@@ -28,6 +28,10 @@ class BaseMessageModel extends Model
     /** Отдельное поле сущности: text_link  @var bool */
     private bool $hasTextLink = false;
 
+    private bool $isReactionUpdate = false;
+
+    private bool $isReactionCountUpdate = false;
+
     /** Message from admin or not */
     private bool $fromAdmin = false;
 
@@ -37,7 +41,7 @@ class BaseMessageModel extends Model
     private int $fromId = 0;
 
     /** Message sender nickname */
-    private string $fromUserName;
+    private string $fromUserName = "";
 
 
     private int $messageId = 0;
@@ -57,18 +61,23 @@ class BaseMessageModel extends Model
     {
         $this->data = $data;
 
+        log::info("NEW OBJECT TYPE DATA" . json_encode($this->data));
         if (array_key_exists("message", $data)) {
             $this->messageType = "message";
             $this->setText()
                 ->setMessageId()
-                ->setUserData();
+                ->setUserData()
+                ->checkIfUserIsAdmin()
+                ->setIsForwardMessage();
         }
 
         if (array_key_exists("edited_message", $data)) {
             $this->messageType = "edited_message";
             $this->setText()
                 ->setMessageId()
-                ->setUserData();
+                ->setUserData()
+                ->checkIfUserIsAdmin()
+                ->setIsForwardMessage();
         }
 
         if (array_key_exists("chat_member", $data)) {
@@ -80,17 +89,34 @@ class BaseMessageModel extends Model
             $this->messageType = "my_chat_member";
         }
 
+        if (array_key_exists("message_reaction", $data)) {
+            $this->messageType = "message_reaction";
+            $this->isReactionUpdate = true;
+        }
+        // log::info(json_encode($data));
+        if (array_key_exists("message_reaction_count", $data)) {
+            $this->messageType = "message_reaction_count";
+            $this->isReactionCountUpdate = true;
+        }
+
+        if ($this->messageType == "") {
+            response("ok", 200);
+            throw new Exception("Unknown message type :" . $this->data);
+        }
+
         $this->setEntities()
-            ->setUserData()
-            ->checkIfUserIsAdmin()
-            ->setIsForwardMessage();
+            ->setUserData();
     }
 
     private function setEntities()
     {
+
+        log::info("message type: " . $this->messageType);
         if (array_key_exists("entities", $this->data[$this->messageType])) {
+            // dd("message type: " . $this->messageType);
             $this->entities = $this->data[$this->messageType]["entities"];
             $this->setHasTextLink();
+            log::info("i'm okay!");
             return $this;
         } else
             $this->entities = [];
@@ -138,9 +164,15 @@ class BaseMessageModel extends Model
 
     private function setUserData()
     {
-        $this->fromId = $this->data[$this->messageType]["from"]["id"];
-        $this->fromUserName = $this->data[$this->messageType]["from"]["first_name"];
-        return $this;
+        if (
+            $this->messageType !== "message_reaction" &&
+            $this->messageType !== "message_reaction_count"
+        ) {
+
+            $this->fromId = $this->data[$this->messageType]["from"]["id"];
+            $this->fromUserName = $this->data[$this->messageType]["from"]["first_name"];
+            return $this;
+        }
     }
 
 
@@ -150,8 +182,16 @@ class BaseMessageModel extends Model
      */
     private function checkIfUserIsAdmin()
     {
+        if (
+            $this->messageType !== "message" &&
+            $this->messageType !== "edited_message"
+        ) {
+            throw new Exception("Проверка на администратора в неподходящем типе сообщения");
+        }
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        if ((string)in_array($this->fromId, $adminsIdArray)) {
+
+
+        if ((string) in_array($this->fromId, $adminsIdArray)) {
             $this->fromAdmin = true;
             return $this;
         }
@@ -213,6 +253,21 @@ class BaseMessageModel extends Model
     }
 
 
+    public function getIsReactionUpdate()
+    {
+        if ($this->messageType !== "message_reaction" && $this->messageType !== "message_reaction_count") {
+            throw new Exception("Сообщение не является уведомлениям о реакциях(эмодзи)");
+        }
+        $this->isReactionUpdate === true;
+    }
+
+    public function getIsReactionCountUpdate()
+    {
+        if ($this->messageType !== "message_reaction" && $this->messageType !== "message_reaction_count") {
+            throw new Exception("Сообщение не является уведомлениям о количестве реакций(эмодзи)");
+        }
+        $this->isReactionCountUpdate === true;
+    }
 
 
 
@@ -279,7 +334,9 @@ class BaseMessageModel extends Model
         // dd($this->messageType);
         if (
             $this->messageType !== "message" &&
-            $this->messageType !== "edited_message"
+            $this->messageType !== "edited_message" &&
+            $this->messageType !== "message_reaction" &&
+            $this->messageType !== "message_reaction_count"
         ) {
             throw new Exception("Попытка установить message_id неверному типу сообщения");
         }

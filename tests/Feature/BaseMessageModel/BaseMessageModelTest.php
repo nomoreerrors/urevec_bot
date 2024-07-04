@@ -26,8 +26,12 @@ class BaseMessageModelTest extends TestCase
         foreach ($this->testObjects as $object) {
             $message = new TelegramMessageModel($object);
 
+
             $this->assertNotEmpty($message->getType());
-            $this->assertNotEmpty($message->getFromId());
+
+            if ($message->getType() === "edited_message" || $message->getType() === "message") {
+                $this->assertNotEmpty($message->getFromId());
+            }
 
 
             $messageType = "";
