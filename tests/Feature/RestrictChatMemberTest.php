@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BaseTelegramRequestModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -13,12 +14,18 @@ use App\Models\TelegramMessageModel;
 
 class RestrictChatMemberTest extends TestCase
 {
-    public function test_restrict_user_by_id_user_found_return_true(): void
+    /**
+     * $this->testObjects["4"] - содержит id 100% существующего бота в группе
+     * @return void
+     */
+    public function test_restrict_user_by_id_return_true(): void
     {
 
 
-        $message = new TelegramMessageModel($this->testObjects["3"]);
+        $message = (new BaseTelegramRequestModel($this->testObjects["4"]))->create();
+
         $service = new TelegramBotService($message);
+
 
         $this->assertTrue($service->restrictChatMember());
     }
@@ -26,7 +33,7 @@ class RestrictChatMemberTest extends TestCase
 
     public function test_restrict_user_by_id_user_not_found_return_false(): void
     {
-        $message = new TelegramMessageModel($this->testObjects["19"]);
+        $message = (new BaseTelegramRequestModel($this->testObjects["19"]))->create();
         $service = new TelegramBotService($message);
 
         $this->assertFalse($service->restrictChatMember());

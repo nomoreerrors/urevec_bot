@@ -2,8 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\BaseTelegramRequestModel;
+use App\Models\ForwardMessageModel;
+use App\Models\InvitedUserUpdateModel;
+use App\Models\MessageModel;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
+use App\Models\NewMemberJoinUpdateModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,13 +16,15 @@ use Illuminate\Support\Facades\Storage;
 use ErrorException;
 use Exception;
 use App\Models\TelegramMessageModel;
+use App\Models\TextMessageModel;
 use Illuminate\Support\Facades\Config;
 
 class TelegramBotService extends BaseService
 {
 
-    public function __construct(private TelegramMessageModel $message)
+    public function __construct(private BaseTelegramRequestModel $message)
     {
+        // dd("here");
         $this->message = $message;
     }
 
@@ -32,25 +39,25 @@ class TelegramBotService extends BaseService
     {
         $requestLog = Storage::json("DONE.json");
 
-        $data = [
-            "IS ADMIN" => $this->message->getFromAdmin(),
-            "USER ID" => $this->message->getFromId(),
-            "USER NAME" => $this->message->getFromUserName(),
-            "MESSAGE TYPE" => $this->message->getMessageType(),
-            "MESSAGE HAS LINK" => $this->message->getHasLink(),
-            "MESSAGE IS FORWARD FROM ANOTHER GROUP" => $this->message->getIsForwardMessage(),
-            "NEW MEMBER JOIN UPDATE" => $this->message->getIsNewMemberJoinUpdate(),
-            "INVITED USERS ID" => $this->message->getInvitedUsersId(),
-        ];
+        // $data = [
+        //     "IS ADMIN" => $this->message->getFromAdmin(),
+        //     "USER ID" => $this->message->getFromId(),
+        //     "USER NAME" => $this->message->getFromUserName(),
+        //     "MESSAGE TYPE" => $this->message->getMessageType(),
+        //     "MESSAGE HAS LINK" => $this->message->getHasLink(),
+        //     "MESSAGE IS FORWARD FROM ANOTHER GROUP" => $this->message->getIsForwardMessage(),
+        //     "NEW MEMBER JOIN UPDATE" => $this->message->getIsNewMemberJoinUpdate(),
+        //     "INVITED USERS ID" => $this->message->getInvitedUsersId(),
+        // ];
 
 
-        if (!$requestLog) {
-            Storage::put("DONE.json", json_encode($data));
-        } else {
-            $requestLog[] = $data;
+        // if (!$requestLog) {
+        //     Storage::put("DONE.json", json_encode($data));
+        // } else {
+        //     $requestLog[] = $data;
 
-            Storage::put("DONE.json", json_encode($requestLog));
-        }
+        //     Storage::put("DONE.json", json_encode($requestLog));
+        // }
         // dd("here");
     }
 
@@ -79,10 +86,9 @@ class TelegramBotService extends BaseService
      */
     public function restrictChatMember(int $time = 86400, int $id = 0): bool
     {
-
         $until_date = time() + $time;
 
-
+        // dd($this->message->getFromId());
 
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
@@ -100,17 +106,21 @@ class TelegramBotService extends BaseService
         )->json();
 
         if ($response["ok"]) {
+
             return true;
         }
+
+
         if (
             $response["ok"] === false &&
-            $response["description"] === 'Bad Request: PARTICIPANT_ID_INVALID'
+            $response["description"] ===
+            'Bad Request: PARTICIPANT_ID_INVALID' ||
+            "Bad Request: invalid user_id specified"
         ) {
+            // dd($response, "USER ID: " . $this->message->getFromId() . PHP_EOL . get_class($this->message));
             return false;
         }
-
         throw new Exception("Не удалось заблокировать по id");
-        // return false;
     }
 
 
@@ -130,7 +140,12 @@ class TelegramBotService extends BaseService
     }
 
 
-
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+    //Эти медоты отправки и удаления сообщений надо отсюда убрать
     public function sendMessage(string $text_message): array
     {
         $response = Http::post(
@@ -148,12 +163,16 @@ class TelegramBotService extends BaseService
     public function banUser(int $time = 86400): bool
     {
         log::info("inside banNewUser");
+        try {
+            $this->restrictChatMember($time);
 
-        $this->restrictChatMember($time);
-        $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
-        $this->deleteMessage();
-        log::info("time from banUser: " . $time);
-        return true;
+            $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
+            $this->deleteMessage();
+            log::info("time from banUser: " . $time);
+            return true;
+        } catch (Exception $e) {
+            dd($e);
+        }
     }
 
 
@@ -165,37 +184,93 @@ class TelegramBotService extends BaseService
      */
     public function blockNewVisitor(): bool
     {
-
-        //Подписчик кого-то пригласил. Блокировка приглашенного подписчика.
-        //TODO: Поймать объект с несколькими приглашенными одновременно и обработать
-        $invitedUsers = $this->message->getInvitedUsersId();
-
-
-        if ($invitedUsers !== []) {
-            foreach ($invitedUsers as $user_id) {
-                $result = $this->restrictChatMember(id: $user_id);
-
-                if ($result) {
-                    log::info("Invited user blocked. : " . $this->message->getFromId());
-                }
-            }
-            return true;
-        }
-
-
-
-        if ($this->message->getIsNewMemberJoinUpdate()) {
+        if (
+            $this->message instanceof NewMemberJoinUpdateModel ||
+            $this->message instanceof InvitedUserUpdateModel
+        ) {
             $result = $this->restrictChatMember();
 
+
             if ($result) {
-
                 log::info("User blocked. Message id: " . $this->message->messageId . "user_id" . $this->message->getFromId());
-
                 return true;
             }
         }
 
 
+        if ($this->message instanceof InvitedUserUpdateModel) {
+            $invitedUsers = $this->message->getInvitedUsersIdArray();
+
+            if ($invitedUsers !== []) {
+                foreach ($invitedUsers as $user_id) {
+                    $result = $this->restrictChatMember(id: $user_id);
+
+                    if ($result) {
+                        log::info("Invited user blocked. : " . $this->message->getFromId());
+                    }
+                }
+                return true;
+            }
+        }
+
+        // dd($this->data);
+        return false;
+    }
+
+
+    public function blockUserIfMessageIsForward(): bool
+    {
+        if (
+            $this->message instanceof ForwardMessageModel &&
+            !$this->message->getFromAdmin()
+        ) {
+            if ($this->banUser());
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    public function blockUserIfMessageHasLink(): bool
+    {
+        if ($this->message->getFromAdmin()) {
+            return false;
+        }
+
+        if ($this->message instanceof MessageModel) {
+            if ($this->message->hasTextLink()) {
+
+                if ($this->banUser()) {
+                    return true;
+                };
+            }
+        }
+
+        if ($this->message instanceof TextMessageModel) {
+            if ($this->message->getHasLink()) {
+
+                if ($this->banUser()) {
+                    return true;
+                };
+            }
+        }
+        return false;
+    }
+
+
+    public function deleteMessageIfContainsBlackListWords(): bool
+    {
+        if (
+            $this->message instanceof TextMessageModel &&
+            !$this->message->getFromAdmin()
+        ) {
+            $filter = new FilterService($this->message);
+            if ($filter->wordsFilter()) {
+                $this->deleteMessage();
+            }
+        }
         return false;
     }
 }

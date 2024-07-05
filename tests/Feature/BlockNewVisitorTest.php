@@ -2,12 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Models\BaseTelegramRequestModel;
+use App\Models\InvitedUserUpdateModel;
+use App\Models\MessageModel;
+use App\Models\NewMemberJoinUpdateModel;
+use App\Models\StatusUpdateModel;
 use App\Models\TelegramMessageModel;
 use App\Services\TelegramBotService;
+use Error;
+use ErrorException;
+use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use Log;
+
+use function Laravel\Prompts\error;
 
 class BlockNewVisitorTest extends TestCase
 {
@@ -19,31 +29,38 @@ class BlockNewVisitorTest extends TestCase
     {
 
         foreach ($this->testObjects as $object) {
-
-
-            $message = new TelegramMessageModel($object);
-            $service = new TelegramBotService($message);
+            $message = (new BaseTelegramRequestModel($object))->create();
 
 
 
-            if ($message->getIsNewMemberJoinUpdate()) {
+            try {
+                if ($message instanceof MessageModel) {
+                    $service = new TelegramBotService($message);
+
+                    if ($message instanceof NewMemberJoinUpdateModel) {
+
+                        $result = $service->blockNewVisitor();
+                        if ($result === true) {
+                            $this->assertTrue($result);
+                        }
+                    }
 
 
-                $result = $service->blockNewVisitor();
-                if ($result === true) {
-                    $this->assertTrue($result);
+                    if (!$message instanceof NewMemberJoinUpdateModel) {
+
+                        $result = $service->blockNewVisitor();
+
+
+                        $this->assertFalse($result);
+                    }
                 }
+            } catch (Error $e) {
+                dd($object);
             }
         }
-
-
-        if (!$message->getIsNewMemberJoinUpdate()) {
-
-            $result = $service->blockNewVisitor();
-
-            $this->assertFalse($result);
-        }
     }
+
+
 
     /**
      * Make sure is new member and not left user
@@ -55,9 +72,9 @@ class BlockNewVisitorTest extends TestCase
         foreach ($this->testObjects as $object) {
 
 
-            $message = new TelegramMessageModel($object);
+            $message = (new BaseTelegramRequestModel($object))->create();
             $service = new TelegramBotService($message);
-            if (array_key_exists("chat_member", $object)) {
+            if ($message instanceof StatusUpdateModel) {
 
                 if ($object["chat_member"]["new_chat_member"]["status"] !== "member") {
                     $result = $service->blockNewVisitor();
@@ -75,12 +92,11 @@ class BlockNewVisitorTest extends TestCase
     {
 
         foreach ($this->testObjects as $object) {
-            $message = new TelegramMessageModel($object);
+            $message = (new BaseTelegramRequestModel($object))->create();
             $service = new TelegramBotService($message);
 
 
-
-            if ($message->getInvitedUsersId() !== []) {
+            if ($message instanceof InvitedUserUpdateModel) {
 
                 $result = $service->blockNewVisitor();
                 if ($result === true) {

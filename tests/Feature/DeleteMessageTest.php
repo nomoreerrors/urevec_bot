@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\BaseTelegramRequestModel;
+use App\Models\TextMessageModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -23,10 +25,10 @@ class DeleteMessageTest extends TestCase
     public function test_messsage_id_not_found_return_description_key_value_equals_message_not_found(): void
     {
         foreach ($this->testObjects as $object) {
-            $message = new TelegramMessageModel($object);
+            $message = (new BaseTelegramRequestModel($object))->create();
             $service = new TelegramBotService($message);
 
-            if ($message->getText()) {
+            if ($message instanceof TextMessageModel) {
 
                 $response = $service->deleteMessage();
 

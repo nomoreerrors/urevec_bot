@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\TextMessageModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\FilterService;
 use Illuminate\Support\Facades\Storage;
-use App\Models\TelegramMessageModel;
 use App\Services\TelegramBotService;
+use App\Models\BaseTelegramRequestModel;
 use Exception;
 use App\Services\Filter;
 
@@ -23,12 +24,15 @@ class WordsFilterTest extends TestCase
 
 
         foreach ($this->testObjects as $object) {
-            $message = new TelegramMessageModel($object);
+            $message = (new BaseTelegramRequestModel($object))->create();
             $filter = new FilterService($message);
+            $service = new TelegramBotService($message);
 
 
-            if (!empty($message->getText())) {
+
+            if ($message instanceof TextMessageModel) {
                 foreach ($badWords as $word) {
+
                     if (str_contains($message->getText(), mb_strtolower($word))) {
                         $result = $filter->wordsFilter();
                         $this->assertTrue($result);

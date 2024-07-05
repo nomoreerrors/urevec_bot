@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BaseTelegramRequestModel;
 use App\Models\TelegramMessageModel;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
@@ -14,10 +15,10 @@ class FilterService extends BaseService
 {
 
 
-    private TelegramMessageModel $message;
+    private BaseTelegramRequestModel $message;
 
 
-    public function __construct(TelegramMessageModel $message)
+    public function __construct(BaseTelegramRequestModel $message)
     {
         $this->message = $message;
     }

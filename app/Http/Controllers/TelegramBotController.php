@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BaseTelegramRequestModel;
+use App\Models\ForwardMessageModel;
+use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
-use App\Models\TelegramMessageModel;
+use App\Models\NewMemberJoinUpdateModel;
+use App\Models\TextMessageModel;
 use App\Services\FilterService;
 use App\Services\ManageChatSettingsService;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\TelegramBotService;
-use ErrorException;
 
 class TelegramBotController extends Controller
 {
@@ -60,6 +61,8 @@ class TelegramBotController extends Controller
                     return response('ok', 200, ['mode' => 'night_mode']);
                 }
             }
+
+
             if ($data["mode"] === "light_mode") {
                 $result = $chatPermissions->setPermissionsToLightMode();
 
@@ -77,55 +80,32 @@ class TelegramBotController extends Controller
 
     public function webhookHandler(Request $request)
     {
-
-        if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
-            throw new \Exception("Переменная TELEGRAM_CHAT_ADMINS_ID не установлена, либо переменные .env недоступны");
-        }
-
         $data = $request->all();
-        $message = new TelegramMessageModel($data);
-        $filter = new FilterService($message);
+
+        $message = (new BaseTelegramRequestModel($data))->create();
+
         $service = new TelegramBotService($message);
         $service->saveRawRequestData($data);
         $service->requestLog();
 
 
 
-        // if (
-        //     $message->getType() !== "message" &&
-        //     $message->getType() !== "edited_message" &&
-        //     $message->getType() !== "chat_member"
-        // ) {
-        //     response('unknown message type', 200);
-        //     throw new \Exception("Unknown message type: " . $data);
-        // }
+        if ($service->blockNewVisitor()) {
+            return response('new member blocked for 24 hours', 200);
+        };
 
-
-
-
-        if (!$message->getFromAdmin()) {
-
-            if ($message->getIsNewMemberJoinUpdate()) {
-                $service->blockNewVisitor();
-
-                return response('new member blocked for 24 hours', 200);
-            }
-
-
-
-            if ($message->getHasLink() || $message->getIsForwardMessage()) {
-                $isBlocked = $service->banUser();
-                if ($isBlocked) {
-                    return response('user blocked', 200);
-                }
-            }
-
-
-            if ($filter->wordsFilter()) {
-                $service->deleteMessage();
-                return response("Message deleted by filter", 200);
-            }
+        if ($service->blockUserIfMessageIsForward()) {
+            return response('user blocked', 200);
         }
+
+        if ($service->blockUserIfMessageHasLink()) {
+            return response('user blocked', 200);
+        }
+
+        if ($service->deleteMessageIfContainsBlackListWords()) {
+            return response("Message deleted by filter", 200);
+        }
+
 
 
         return response('default response', 200);
