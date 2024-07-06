@@ -11,8 +11,6 @@ class InvitedUserUpdateModel extends StatusUpdateModel
     use HasFactory;
 
 
-    protected string $messageType = "chat_member";
-
     protected array $invitedUsersIdArray = [];
 
 
@@ -24,7 +22,7 @@ class InvitedUserUpdateModel extends StatusUpdateModel
 
 
 
-    protected function setInvitedUsersIdArray()
+    private function setInvitedUsersIdArray()
     {
         foreach ($this->data[$this->messageType]["new_chat_member"] as $member) {
             if (is_array($member) && array_key_exists("id", $member)) {

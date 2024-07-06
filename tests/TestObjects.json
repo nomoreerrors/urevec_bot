@@ -908,5 +908,25 @@
                 }
             ]
         }
+    },
+    "24": {
+        "update_id": 895573170,
+        "message": {
+            "message_id": 1853,
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "is_premium": true
+            },
+            "chat": {
+                "id": -1002222230714,
+                "title": "Testylvania",
+                "type": "supergroup"
+            },
+            "date": 1720273208,
+            "text": "desperados"
+        }
     }
 }

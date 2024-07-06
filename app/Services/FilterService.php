@@ -56,6 +56,20 @@ class FilterService extends BaseService
         );
 
         $string = mb_strtolower($string);
+
+        foreach ($phrases as $phrase) {
+            if (str_contains($string, $phrase)) {
+                Storage::append(
+                    "words_deleted_by_filter.txt",
+                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
+                        "WORD: " . $phrase . PHP_EOL . "FROM TEXT: " .
+                        $this->message->getText() . PHP_EOL
+                );
+                return true;
+            }
+        }
+
+
         $arrayFromString = explode(" ", $string);
 
         foreach ($arrayFromString as $key => $value) {
@@ -78,17 +92,7 @@ class FilterService extends BaseService
             }
         }
 
-        foreach ($phrases as $phrase) {
-            if (str_contains($string, $phrase)) {
-                Storage::append(
-                    "words_deleted_by_filter.txt",
-                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
-                        "WORD: " . $phrase . PHP_EOL . "FROM TEXT: " .
-                        $this->message->getText() . PHP_EOL
-                );
-                return true;
-            }
-        }
+
 
         return false;
     }

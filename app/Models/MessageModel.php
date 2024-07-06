@@ -18,6 +18,8 @@ class MessageModel extends BaseTelegramRequestModel
 
     protected int $fromId = 0;
 
+    protected bool $hasLink = false;
+
 
     public function __construct(array $data)
     {

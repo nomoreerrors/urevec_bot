@@ -13,3 +13,8 @@ Route::get('/user', function (Request $request) {
 //эквивалентно https://shuangyu.ru/urevec_bot/api/webhook на хостинге
 Route::post('/webhook', [TelegramBotController::class, 'webhookHandler'])
     ->middleware(TelegramApiMiddleware::class);
+
+
+// Route::post('/webhook', [TelegramBotController::class, 'webhookHandler'])
+//     ->middleware(TelegramApiMiddleware::class)
+//     ->middleware('auth:sanctum');
