@@ -32,11 +32,13 @@ class BaseTelegramRequestModel extends Model
     protected int $fromId = 0;
 
 
+
     public function __construct(array $data)
     {
         $this->data = $data;
         $this->setMessageType()
             ->setFromId()
+            ->setFromAdmin()
             ->setMessageId()
             ->setFromUserName();
     }
@@ -154,16 +156,13 @@ class BaseTelegramRequestModel extends Model
     protected function setFromAdmin()
     {
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-
-
         if ((string) in_array($this->fromId, $adminsIdArray)) {
             $this->fromAdmin = true;
-
             return $this;
         }
+
         return $this;
     }
-
 
 
     protected function setMessageType()

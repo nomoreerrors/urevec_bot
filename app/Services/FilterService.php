@@ -34,8 +34,10 @@ class FilterService extends BaseService
             return false;
         }
         $badWords = json_decode(Storage::get('badwords.json'), true);
-        if (empty($badWords)) {
-            throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json");
+        $phrases = json_decode(Storage::get('badPhrases.json'), true);
+
+        if (empty($badWords) || empty($phrases)) {
+            throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json или badPhrases.json");
         }
 
         if (empty($this->message->getText())) {
@@ -43,9 +45,47 @@ class FilterService extends BaseService
         }
 
 
-        foreach ($badWords as $word) {
-            if (str_contains($this->message->getText(), mb_strtolower($word))) {
-                log::info($word);
+
+        $string = str_replace(
+            [
+                '.', ',', '!', '?', '&',
+                '/', '"', '(', ')', ';'
+            ],
+            " ",
+            $this->message->getText()
+        );
+
+        $string = mb_strtolower($string);
+        $arrayFromString = explode(" ", $string);
+
+        foreach ($arrayFromString as $key => $value) {
+
+            if (strlen($value) <= 6) { //Unicode занимает больше битов
+                unset($arrayFromString[$key]);
+            }
+        }
+
+        foreach ($arrayFromString as $key => $value) {
+
+            if (in_array($value, $badWords)) {
+                Storage::append(
+                    "words_deleted_by_filter.txt",
+                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
+                        "WORD: " . $value . PHP_EOL . "FROM TEXT: " .
+                        $this->message->getText() . PHP_EOL
+                );
+                return true;
+            }
+        }
+
+        foreach ($phrases as $phrase) {
+            if (str_contains($string, $phrase)) {
+                Storage::append(
+                    "words_deleted_by_filter.txt",
+                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
+                        "WORD: " . $phrase . PHP_EOL . "FROM TEXT: " .
+                        $this->message->getText() . PHP_EOL
+                );
                 return true;
             }
         }

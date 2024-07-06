@@ -14,6 +14,8 @@ class MessageModel extends BaseTelegramRequestModel
 
     protected bool $hasTextLink = false;
 
+    protected bool $hasEntities = false;
+
     protected int $fromId = 0;
 
 
@@ -21,39 +23,41 @@ class MessageModel extends BaseTelegramRequestModel
     {
         parent::__construct($data);
         $this->data = $data;
-
-        $this->setHasTextLink()
-            ->setEntities()
-            ->setMessageId()
-            ->setFromAdmin();
+        $this->setHasEntities()
+            ->setHasTextLink();
     }
 
 
-    protected function setEntities()
+    protected function setHasEntities()
     {
-        if (array_key_exists("entities", $this->data[$this->messageType])) {
-            $this->entities = $this->data[$this->messageType]["entities"];
-            $this->setHasTextLink();
 
+        if (array_key_exists("entities", $this->data[$this->messageType])) {
+            // dd("here");
+            $this->hasEntities = true;
+            $this->setHasTextLink();
             return $this;
         } else
-            $this->entities = [];
+            $this->hasEntities = false;
         return $this;
     }
 
 
     protected function setHasTextLink()
     {
-        if (
-            json_encode(str_contains(json_encode($this->entities), "text_link")) ||
-            json_encode(str_contains(json_encode($this->entities), "url"))
-        ) {
-            $this->hasTextLink = true;
+        if ($this->hasEntities) {
+
+            $entitiesToString = json_encode($this->data[$this->messageType]["entities"]);
+
+            // dd($entitiesToString);
+
+            if (str_contains($entitiesToString, "text_link") || str_contains($entitiesToString, "url")) {
+                $this->hasTextLink = true;
+
+                return $this;
+            }
             return $this;
         }
-        return $this;
     }
-
 
 
 
@@ -76,15 +80,14 @@ class MessageModel extends BaseTelegramRequestModel
     }
 
 
-    public function getEntities(): array
+    public function getHasEntities(): bool
     {
-        return $this->entities;
+        return $this->hasEntities;
     }
 
 
     public function hasTextLink()
     {
-        $this->hasTextLink = true;
-        return $this;
+        return $this->hasTextLink;
     }
 }

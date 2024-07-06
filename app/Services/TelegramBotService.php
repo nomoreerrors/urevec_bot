@@ -9,6 +9,7 @@ use App\Models\MessageModel;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use App\Models\NewMemberJoinUpdateModel;
+use App\Models\StatusUpdateModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -38,26 +39,57 @@ class TelegramBotService extends BaseService
     public function requestLog()
     {
         $requestLog = Storage::json("DONE.json");
-
-        // $data = [
-        //     "IS ADMIN" => $this->message->getFromAdmin(),
-        //     "USER ID" => $this->message->getFromId(),
-        //     "USER NAME" => $this->message->getFromUserName(),
-        //     "MESSAGE TYPE" => $this->message->getMessageType(),
-        //     "MESSAGE HAS LINK" => $this->message->getHasLink(),
-        //     "MESSAGE IS FORWARD FROM ANOTHER GROUP" => $this->message->getIsForwardMessage(),
-        //     "NEW MEMBER JOIN UPDATE" => $this->message->getIsNewMemberJoinUpdate(),
-        //     "INVITED USERS ID" => $this->message->getInvitedUsersId(),
-        // ];
+        $time = date("F j, Y, g:i a");
 
 
-        // if (!$requestLog) {
-        //     Storage::put("DONE.json", json_encode($data));
-        // } else {
-        //     $requestLog[] = $data;
+        $data["0"] = [
+            "TIME" => $time,
+            "FROM ADMIN" => $this->message->getFromAdmin(),
+            "FROM USER ID" => $this->message->getFromId(),
+            "FROM USER NAME" => $this->message->getFromUserName(),
+            "MESSAGE ID" => $this->message->getMessageId(),
+            "MESSAGE TYPE" => $this->message->getType(),
+        ];
 
-        //     Storage::put("DONE.json", json_encode($requestLog));
-        // }
+        // dd($this->message->hasTextLink());
+
+        if ($this->message instanceof MessageModel) {
+
+            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->hasTextLink();
+
+            if ($this->message instanceof TextMessageModel) {
+                $data["0"]["MESSAGE HAS LINK"] =  $this->message->getHasLink();
+                $data["0"]["TEXT"] = $this->message->getText();
+            }
+        }
+
+        if ($this->message instanceof StatusUpdateModel) {
+            $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
+            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+            $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
+
+            if ($this->message instanceof NewMemberJoinUpdateModel) {
+
+                $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+            }
+
+            if ($this->message instanceof InvitedUserUpdateModel) {
+
+                $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
+                $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+            }
+        }
+
+
+        if (!$requestLog) {
+            Storage::put("DONE.json", json_encode($data));
+        } else {
+            $requestLog[] = $data;
+
+            Storage::put("DONE.json", json_encode($requestLog));
+        }
         // dd("here");
     }
 
@@ -262,9 +294,25 @@ class TelegramBotService extends BaseService
 
     public function deleteMessageIfContainsBlackListWords(): bool
     {
+        // if (
+        //     $this->message instanceof TextMessageModel &&
+        //     !$this->message->getFromAdmin()
+        // ) {
+        //     $filter = new FilterService($this->message);
+        //     if ($filter->wordsFilter()) {
+        //         $this->deleteMessage();
+        //     }
+        // }
+        // return false;
+
+
+
+        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
+        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
+        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
+        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
         if (
-            $this->message instanceof TextMessageModel &&
-            !$this->message->getFromAdmin()
+            $this->message instanceof TextMessageModel
         ) {
             $filter = new FilterService($this->message);
             if ($filter->wordsFilter()) {

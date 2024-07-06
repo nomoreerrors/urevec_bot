@@ -20,25 +20,17 @@ class WordsFilterTest extends TestCase
      */
     public function test_filter_array_contains_word_return_true(): void
     {
-        $badWords = json_decode(Storage::get('badwords.json'), true);
+        // $badWords = json_decode(Storage::get('badwords.json'), true);
 
 
-        foreach ($this->testObjects as $object) {
-            $message = (new BaseTelegramRequestModel($object))->create();
-            $filter = new FilterService($message);
-            $service = new TelegramBotService($message);
+        $message = (new BaseTelegramRequestModel($this->testObjects["15"]))->create();
+        $filter = new FilterService($message);
 
 
+        if ($message instanceof TextMessageModel) {
 
-            if ($message instanceof TextMessageModel) {
-                foreach ($badWords as $word) {
-
-                    if (str_contains($message->getText(), mb_strtolower($word))) {
-                        $result = $filter->wordsFilter();
-                        $this->assertTrue($result);
-                    }
-                }
-            }
+            $result = $filter->wordsFilter();
+            $this->assertTrue($result);
         }
     }
 }

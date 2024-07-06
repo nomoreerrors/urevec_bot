@@ -12,12 +12,6 @@ class TextMessageModel extends MessageModel
     use HasFactory;
 
 
-    protected string $messageType = "message";
-
-    protected bool $isTextMessage = true;
-
-
-
 
 
     public function __construct(array $data)
@@ -27,19 +21,6 @@ class TextMessageModel extends MessageModel
             ->setHasLink();
     }
 
-
-
-    protected function setHasTextLink()
-    {
-        if (
-            json_encode(str_contains(json_encode($this->entities), "text_link")) ||
-            json_encode(str_contains(json_encode($this->entities), "url"))
-        ) {
-            $this->hasTextLink = true;
-            return $this;
-        }
-        return $this;
-    }
 
 
     protected function setText()
@@ -84,11 +65,6 @@ class TextMessageModel extends MessageModel
         return $this->hasLink;
     }
 
-
-    public function getEntities(): array
-    {
-        return $this->entities;
-    }
 
 
     public function getFromUserName(): string
