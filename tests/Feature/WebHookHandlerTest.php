@@ -87,8 +87,10 @@ class WebHookHandlerTest extends TestCase
 
 
             if ($message instanceof InvitedUserUpdateModel) {
+
                 $response = $this->post("api/webhook", $object);
 
+                // dd($response);
                 if ($response->getOriginalContent() !== "default response") {
                     $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
                 }

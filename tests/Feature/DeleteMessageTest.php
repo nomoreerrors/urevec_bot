@@ -32,9 +32,7 @@ class DeleteMessageTest extends TestCase
 
                 $response = $service->deleteMessage();
 
-                if (array_key_exists("description", $response)) {
-                    $this->assertTrue($response["description"] === "Bad Request: message to delete not found");
-                }
+                $this->assertFalse($response);
             }
         }
     }

@@ -44,10 +44,7 @@ class TelegramBotService
 
         $data["0"] = [
             "TIME" => $time,
-            "FROM ADMIN" => $this->message->getFromAdmin(),
-            "FROM USER ID" => $this->message->getFromId(),
             "FROM USER NAME" => $this->message->getFromUserName(),
-            "MESSAGE ID" => $this->message->getMessageId(),
             "MESSAGE TYPE" => $this->message->getType(),
         ];
 
@@ -55,8 +52,10 @@ class TelegramBotService
 
         if ($this->message instanceof MessageModel) {
 
+            $data["0"]["FROM ADMIN"] = $this->message->getFromAdmin();
+            $data["0"]["FROM USER ID"] = $this->message->getFromId();
+            $data["0"]["MESSAGE_ID"] = $this->message->getFromId();
             $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->hasTextLink();
-
             if ($this->message instanceof TextMessageModel) {
                 $data["0"]["MESSAGE HAS LINK"] =  $this->message->getHasLink();
                 $data["0"]["TEXT"] = $this->message->getText();
@@ -90,7 +89,6 @@ class TelegramBotService
 
             Storage::put("DONE.json", json_encode($requestLog));
         }
-        // dd("here");
     }
 
 
@@ -156,19 +154,22 @@ class TelegramBotService
     }
 
 
-    public function deleteMessage(): array
+    public function deleteMessage(): bool
     {
-        // dd("deleteMessage");
-        $response = Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
-            [
-                "chat_id" => env("TELEGRAM_CHAT_ID"),
-                "message_id" => $this->message->getMessageId()
-            ]
-        )->json();
+        if ($this->message instanceof MessageModel) {
+            $response = Http::post(
+                env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
+                [
+                    "chat_id" => env("TELEGRAM_CHAT_ID"),
+                    "message_id" => $this->message->getMessageId()
+                ]
+            )->json();
 
-
-        return $response;
+            if ($response["ok"]) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -220,11 +221,14 @@ class TelegramBotService
             $this->message instanceof NewMemberJoinUpdateModel ||
             $this->message instanceof InvitedUserUpdateModel
         ) {
+
+
             $result = $this->restrictChatMember();
 
 
             if ($result) {
-                log::info("User blocked. Message id: " . $this->message->messageId . "user_id" . $this->message->getFromId());
+                log::info("User blocked. Message id: " .
+                    $this->message->messageId . "user_id: " . $this->message->getFromId());
                 return true;
             }
         }
@@ -238,7 +242,7 @@ class TelegramBotService
                     $result = $this->restrictChatMember(id: $user_id);
 
                     if ($result) {
-                        log::info("Invited user blocked. : " . $this->message->getFromId());
+                        log::info("Invited user blocked. USER_ID: " . $user_id);
                     }
                 }
                 return true;
@@ -294,25 +298,9 @@ class TelegramBotService
 
     public function deleteMessageIfContainsBlackListWords(): bool
     {
-        // if (
-        //     $this->message instanceof TextMessageModel &&
-        //     !$this->message->getFromAdmin()
-        // ) {
-        //     $filter = new FilterService($this->message);
-        //     if ($filter->wordsFilter()) {
-        //         $this->deleteMessage();
-        //     }
-        // }
-        // return false;
-
-
-
-        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
-        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
-        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
-        //ТЕСТОВЫЙ ВАРИАНТ БЕЗ ПРОВЕРКИ АДМИНИСТРАТОРА
         if (
-            $this->message instanceof TextMessageModel
+            $this->message instanceof TextMessageModel &&
+            !$this->message->getFromAdmin()
         ) {
             $filter = new FilterService($this->message);
             if ($filter->wordsFilter()) {

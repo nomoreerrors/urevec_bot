@@ -17,18 +17,13 @@ class BaseTelegramRequestModel extends Model
 
     protected string $messageType = "";
 
-
-    protected int $messageId = 0;
-
-
     protected bool $fromAdmin = false;
-
 
     protected array $data;
 
+    protected int $chatId = 0;
 
     protected string $fromUserName = "";
-
     /** Sender id */
     protected int $fromId = 0;
 
@@ -40,7 +35,7 @@ class BaseTelegramRequestModel extends Model
         $this->setMessageType()
             ->setFromId()
             ->setFromAdmin()
-            ->setMessageId()
+            ->setChatId()
             ->setFromUserName();
     }
 
@@ -108,30 +103,45 @@ class BaseTelegramRequestModel extends Model
         throw new Exception("Неопознанный тип объекта. Невозможно создать экземпляр модели ");
     }
 
+    // public function getMessageId(): int
+    // {
+    //     if ($this instanceof InvitedUserUpdateModel) {
+    //         dd(get_called_class());
+    //     }
+    //     if (empty($this->messageId)) {
+    //         dd($this->data);
+    //         $this->errorLog(__METHOD__);
+    //     }
+    //     return $this->messageId;
+    // }
+
+
+    protected function errorLog(string $method)
+    {
+        log::error(
+            "ERROR: " . $method . " НЕ УСТАНОВЛЕН. " . PHP_EOL .
+                "ВОЗМОЖНО НЕ ПЕРЕДАН PARENT CONSTRUCTOR МОДЕЛИ",
+            [PHP_EOL . __CLASS__ . PHP_EOL . "AT LINE: " . __LINE__ . PHP_EOL .
+                " CLASS: " . get_called_class()]
+        );
+        response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+
 
 
     public function getType(): string
     {
+        if (empty($this->messageType)) {
+            $this->errorLog(__METHOD__);
+        }
         return $this->messageType;
     }
 
 
-    public function getMessageId(): int
-    {
-        return $this->messageId;
-    }
 
 
 
-    protected function setMessageId()
-    {
-        if (array_key_exists("message_id", $this->data[$this->messageType])) {
 
-            $this->messageId = $this->data[$this->messageType]["message_id"];
-        }
-
-        return $this;
-    }
 
 
 
@@ -163,6 +173,9 @@ class BaseTelegramRequestModel extends Model
     protected function setFromAdmin()
     {
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
+        if (empty($this->fromId) || empty($adminsIdArray)) {
+            $this->errorLog("FROM ID или ADMINS ID ARRAY");
+        }
         if ((string) in_array($this->fromId, $adminsIdArray)) {
             $this->fromAdmin = true;
             return $this;
@@ -196,6 +209,20 @@ class BaseTelegramRequestModel extends Model
     }
 
 
+    protected function setChatId(): static
+    {
+        try {
+
+            $this->chatId = $this->data[$this->messageType]["chat"]["id"];
+        } catch (Exception $e) {
+
+            log::error("CHAT_ID НЕ УСТАНОВЛЕН. Ошибка: " . $e->getMessage());
+            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        return $this;
+    }
+
+
 
     protected function setFromUserName()
     {
@@ -211,7 +238,7 @@ class BaseTelegramRequestModel extends Model
         if ($type === "" || $this->messageType === "") {
 
             response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-            throw new Exception("Ключ from || user отсутствует. Неизвестный объект.");
+            log::error("Ключ from || user отсутствует. Неизвестный объект.");
         }
 
         $this->fromUserName = $this->data[$this->messageType][$type]["first_name"];
@@ -221,8 +248,21 @@ class BaseTelegramRequestModel extends Model
     }
 
 
+    public function getFromId(): int
+    {
+        if (empty($this->fromId)) {
+            $this->errorLog(__METHOD__);
+        }
+        return $this->fromId;
+    }
+
+
+
     public function getFromUserName(): string
     {
+        if (empty($this->fromUserName)) {
+            $this->errorLog(__METHOD__);
+        }
         return $this->fromUserName;
     }
 
@@ -233,8 +273,11 @@ class BaseTelegramRequestModel extends Model
     }
 
 
-    public function getFromId(): int
+    public function getChatId(): int
     {
-        return $this->fromId;
+        if (empty($this->chatId)) {
+            $this->errorLog(__METHOD__);
+        }
+        return $this->chatId;
     }
 }

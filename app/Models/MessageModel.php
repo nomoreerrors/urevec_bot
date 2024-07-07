@@ -14,6 +14,8 @@ class MessageModel extends BaseTelegramRequestModel
 
     protected bool $hasTextLink = false;
 
+    protected int $messageId = 0;
+
     protected bool $hasEntities = false;
 
     protected int $fromId = 0;
@@ -24,8 +26,8 @@ class MessageModel extends BaseTelegramRequestModel
     public function __construct(array $data)
     {
         parent::__construct($data);
-        $this->data = $data;
         $this->setHasEntities()
+            ->setMessageId()
             ->setHasTextLink();
     }
 
@@ -41,6 +43,29 @@ class MessageModel extends BaseTelegramRequestModel
         } else
             $this->hasEntities = false;
         return $this;
+    }
+
+
+    protected function setMessageId()
+    {
+        if (array_key_exists("message_id", $this->data[$this->messageType])) {
+
+            $this->messageId = $this->data[$this->messageType]["message_id"];
+        }
+
+        return $this;
+    }
+
+
+
+
+    public function getMessageId(): int
+    {
+        if (empty($this->messageId)) {
+            dd($this->data);
+            $this->errorLog(__METHOD__);
+        }
+        return $this->messageId;
     }
 
 

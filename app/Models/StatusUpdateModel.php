@@ -15,7 +15,7 @@ class StatusUpdateModel extends BaseTelegramRequestModel
 
     public function __construct(array $data)
     {
-        $this->data = $data;
+        parent::__construct($data);
         $this->setFromId()
             ->setFromUserName();
     }

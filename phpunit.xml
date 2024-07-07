@@ -30,6 +30,7 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="CRON_TOKEN" value="vojiweoiweu1038002040-*"/>
+        <env name="ALLOWED_IP_ADRESSES" value="37.19.77.114,91.108.6.130,37.19.76.28,127.0.0.1,91.108.6.17"/>
         <env name="TELEGRAM_CHAT_ADMINS_ID" value="1087968824,754429643,661829140"/>
         <!-- <env name="TELEGRAM_CHAT_ADMINS_ID" value="754429643,661829140"/> -->
     </php>

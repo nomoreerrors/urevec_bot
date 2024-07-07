@@ -10,9 +10,6 @@ class ForwardMessageModel extends MessageModel
     use HasFactory;
 
 
-    protected bool $isForwardMessage = true;
-
-
 
     public function __construct(array $data)
     {

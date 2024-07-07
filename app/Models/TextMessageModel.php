@@ -12,6 +12,7 @@ class TextMessageModel extends MessageModel
     use HasFactory;
 
 
+    protected string $text = "";
 
 
     public function __construct(array $data)
@@ -22,20 +23,11 @@ class TextMessageModel extends MessageModel
     }
 
 
-
     protected function setText()
     {
         $this->text = $this->data[$this->messageType]["text"];
         $this->setHasLink();
         return $this;
-    }
-
-
-
-
-    public function getFromAdmin(): bool
-    {
-        return $this->fromAdmin;
     }
 
 
@@ -56,6 +48,9 @@ class TextMessageModel extends MessageModel
 
     public function getText(): string
     {
+        if (empty($this->text)) {
+            $this->errorLog(__METHOD__);
+        }
         return $this->text;
     }
 
@@ -63,18 +58,5 @@ class TextMessageModel extends MessageModel
     public function getHasLink(): bool
     {
         return $this->hasLink;
-    }
-
-
-
-    public function getFromUserName(): string
-    {
-        return  $this->fromUserName;
-    }
-
-
-    public function getMessageId(): int
-    {
-        return $this->messageId;
     }
 }

@@ -17,6 +17,7 @@ class InvitedUserUpdateModel extends StatusUpdateModel
     public function __construct(array $data)
     {
         parent::__construct($data);
+
         $this->setInvitedUsersIdArray();
     }
 
@@ -35,6 +36,9 @@ class InvitedUserUpdateModel extends StatusUpdateModel
 
     public function getInvitedUsersIdArray(): array
     {
+        if (empty($this->invitedUsersIdArray)) {
+            $this->errorLog(__METHOD__);
+        }
         return $this->invitedUsersIdArray;
     }
 }
