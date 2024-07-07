@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class MessageReactionModel extends BaseTelegramRequestModel
 {
     use HasFactory;
+
+    public function __construct(array $data)
+    {
+        parent::__construct($data);
+    }
 }

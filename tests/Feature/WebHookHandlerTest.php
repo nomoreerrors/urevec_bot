@@ -33,9 +33,9 @@ class WebHookHandlerTest extends TestCase
                     $response = $this->post("api/webhook", $object);
 
                     try {
+                        // dd($response);
                         log::info($response->getOriginalContent());
                         $this->assertTrue($response->getOriginalContent() === "user blocked");
-                        // dd($response);
                     } catch (Exception $e) {
                         dd($object);
                     }

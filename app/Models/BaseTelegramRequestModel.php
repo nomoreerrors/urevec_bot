@@ -5,6 +5,7 @@ namespace App\Models;
 use Error;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Symfony\Component\HttpFoundation\Response;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -44,8 +45,9 @@ class BaseTelegramRequestModel extends Model
     }
 
 
-    public function create()
+    public function create(): BaseTelegramRequestModel
     {
+
         if (array_key_exists("message", $this->data)) {
             if (
                 array_key_exists("forward_from_chat", $this->data["message"]) ||
@@ -101,6 +103,9 @@ class BaseTelegramRequestModel extends Model
         if (array_key_exists("message_reaction_count", $this->data)) {
             return new MessageReactionCountModel($this->data);
         }
+
+        response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+        throw new Exception("Неопознанный тип объекта. Невозможно создать экземпляр модели ");
     }
 
 
@@ -143,6 +148,8 @@ class BaseTelegramRequestModel extends Model
         }
 
         if ($type === "" || $this->messageType === "") {
+
+            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
             throw new Exception("Ключ from || user отсутствует. Неизвестный объект.");
         }
 
@@ -180,6 +187,7 @@ class BaseTelegramRequestModel extends Model
         } elseif (array_key_exists("message_reaction_count", $this->data)) {
             $this->messageType = "message_reaction_count";
         } else {
+            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
             throw new Exception("Неопознанный тип сообщения");
         }
 
@@ -201,6 +209,8 @@ class BaseTelegramRequestModel extends Model
         }
 
         if ($type === "" || $this->messageType === "") {
+
+            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
             throw new Exception("Ключ from || user отсутствует. Неизвестный объект.");
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
+use Symfony\Component\HttpFoundation\Response;
 use App\Models\MessageModel;
 use App\Models\NewMemberJoinUpdateModel;
 use App\Models\TextMessageModel;
@@ -18,6 +19,8 @@ use App\Services\TelegramBotService;
 
 class TelegramBotController extends Controller
 {
+
+    // public const CRON_TOKEN = env("CRON_TOKEN");
 
 
     public function setWebhook()
@@ -44,6 +47,8 @@ class TelegramBotController extends Controller
     {
         $data = $request->all();
 
+        Storage::append("cron_requests.txt", json_encode($data));
+
         $chatPermissions = new ManageChatSettingsService();
 
         $cronToken = array_key_exists("token", $data) ? $data["token"] : null;
@@ -58,7 +63,7 @@ class TelegramBotController extends Controller
                 $result = $chatPermissions->setPermissionsToNightMode();
                 if ($result) {
                     log::info("Set to night mode time :" . time());
-                    return response('ok', 200, ['mode' => 'night_mode']);
+                    return response('ok', Response::HTTP_OK, ['mode' => 'night_mode']);
                 }
             }
 
@@ -68,12 +73,12 @@ class TelegramBotController extends Controller
 
                 if ($result) {
                     log::info("Set to light mode time . " . time());
-                    return response('ok', 200,  ['mode' => 'light_mode']);
+                    return response('ok', Response::HTTP_OK,  ['mode' => 'light_mode']);
                 }
             }
         }
         log::error("Failed to switch night/light permissions mode");
-        return response("Failed switch to night/light permissions mode", 200);
+        return response("Failed switch to night/light permissions mode", Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 
 
@@ -81,7 +86,7 @@ class TelegramBotController extends Controller
     public function webhookHandler(Request $request)
     {
         $data = $request->all();
-        // Storage::put("serverrequest.json", $request);
+
 
         $message = (new BaseTelegramRequestModel($data))->create();
 
@@ -92,24 +97,24 @@ class TelegramBotController extends Controller
 
 
         if ($service->blockNewVisitor()) {
-            return response('new member blocked for 24 hours', 200);
+            return response('new member blocked for 24 hours', Response::HTTP_OK);
         };
 
         if ($service->blockUserIfMessageIsForward()) {
-            return response('user blocked', 200);
+            return response('user blocked', Response::HTTP_OK);
         }
 
         if ($service->blockUserIfMessageHasLink()) {
-            return response('user blocked', 200);
+            return response('user blocked', Response::HTTP_OK);
         }
 
         if ($service->deleteMessageIfContainsBlackListWords()) {
-            return response("Message deleted by filter", 200);
+            return response("Message deleted by filter", Response::HTTP_OK);
         }
 
 
 
-        return response('default response', 200);
+        return response('default response', Response::HTTP_OK);
     }
 
 

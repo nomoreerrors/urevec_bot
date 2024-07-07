@@ -29,13 +29,13 @@ class SetPermissionsDayNightModeTest extends TestCase
 
     public function testSwitchPermissionsNightLightModeReturn(): void
     {
+
         $response = $this->post("/setChatPermissions", [
             "token" => env("CRON_TOKEN"),
             "mode" => "night_mode"
         ]);
-
+        // dd($response);
         $this->assertEquals("night_mode", $response->headers->get("mode"));
-
 
         $response = $this->post("/setChatPermissions", ["token" => env("CRON_TOKEN"), "mode" => "light_mode"]);
         $this->assertEquals("light_mode", $response->headers->get("mode"));

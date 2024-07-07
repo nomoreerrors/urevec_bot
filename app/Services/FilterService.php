@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\TelegramMessageModel;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -37,6 +37,9 @@ class FilterService extends BaseService
         $phrases = json_decode(Storage::get('badPhrases.json'), true);
 
         if (empty($badWords) || empty($phrases)) {
+            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+
             throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json или badPhrases.json");
         }
 

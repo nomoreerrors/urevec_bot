@@ -20,7 +20,7 @@ use App\Models\TelegramMessageModel;
 use App\Models\TextMessageModel;
 use Illuminate\Support\Facades\Config;
 
-class TelegramBotService extends BaseService
+class TelegramBotService
 {
 
     public function __construct(private BaseTelegramRequestModel $message)
@@ -65,20 +65,20 @@ class TelegramBotService extends BaseService
 
         if ($this->message instanceof StatusUpdateModel) {
             $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
-            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
             $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
 
             if ($this->message instanceof NewMemberJoinUpdateModel) {
 
                 $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
             }
 
             if ($this->message instanceof InvitedUserUpdateModel) {
 
                 $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
                 $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->data["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
             }
         }
 
@@ -96,7 +96,7 @@ class TelegramBotService extends BaseService
 
     public function saveRawRequestData(array $data)
     {
-        $this->data = $data;
+        $this->message->data = $data;
 
         $requestLog = Storage::json("rawrequest.json");
 
@@ -245,7 +245,7 @@ class TelegramBotService extends BaseService
             }
         }
 
-        // dd($this->data);
+        // dd($this->message->data);
         return false;
     }
 

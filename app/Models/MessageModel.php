@@ -30,7 +30,7 @@ class MessageModel extends BaseTelegramRequestModel
     }
 
 
-    protected function setHasEntities()
+    protected function setHasEntities(): static
     {
 
         if (array_key_exists("entities", $this->data[$this->messageType])) {
@@ -44,7 +44,7 @@ class MessageModel extends BaseTelegramRequestModel
     }
 
 
-    protected function setHasTextLink()
+    protected function setHasTextLink(): static
     {
         if ($this->hasEntities) {
 
@@ -57,17 +57,9 @@ class MessageModel extends BaseTelegramRequestModel
 
                 return $this;
             }
-            return $this;
         }
+        return $this;
     }
-
-
-
-
-
-
-
-
 
 
     public function getText(): string
