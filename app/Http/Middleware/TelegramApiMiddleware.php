@@ -45,7 +45,8 @@ class TelegramApiMiddleware
         if (!in_array($request->ip(), $allowedIps)) {
 
             log::info("ЗАПРОС К СЕРВЕРУ С НЕИЗВЕСТНОГО IP ИЛИ ENV-СПИСОК РАЗРЕШЕННЫХ АДРЕСОВ НЕ УСТАНОВЛЕН: " . $request->ip());
-            return response(Response::$statusTexts[403], Response::HTTP_FORBIDDEN);
+            // return response(Response::$statusTexts[403], Response::HTTP_FORBIDDEN);
+            //ВРЕМЕННО ОТКЛЮЧИЛ ОТВЕТ, ЧТОБЫ ПРОВЕРИТЬ ДИНАМИЧЕСКИЙ IP TELEGRAM
         }
 
         return $next($request);
