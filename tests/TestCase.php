@@ -7,6 +7,7 @@ use App\Services\ManageChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
 use App\Models\TelegramMessageModel;
+use App\Services\CONSTANTS;
 
 
 abstract class TestCase extends BaseTestCase

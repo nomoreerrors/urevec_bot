@@ -18,6 +18,7 @@ class InvitedUserUpdateModel extends StatusUpdateModel
     {
         parent::__construct($data);
 
+
         $this->setInvitedUsersIdArray();
     }
 

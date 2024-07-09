@@ -4,24 +4,74 @@ namespace App\Http\Controllers;
 
 use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
+use App\Models\UnknownObjectModel;
+use App\Services\BotErrorNotificationService;
 use App\Models\InvitedUserUpdateModel;
+use App\Exceptions\TelegramModelError;
+use Exception;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\MessageModel;
-use App\Models\NewMemberJoinUpdateModel;
-use App\Models\TextMessageModel;
-use App\Services\FilterService;
+use App\Services\Constants;
 use App\Services\ManageChatSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\TelegramBotService;
+use ErrorException;
+
 
 class TelegramBotController extends Controller
 {
 
     // public const CRON_TOKEN = env("CRON_TOKEN");
 
+
+
+
+    public function webhookHandler(Request $request)
+    {
+        // dd(CONSTANTS::EMPTY_PROPERTY);
+        $data = $request->all();
+        $message = (new BaseTelegramRequestModel($data))->create();
+        $service = new TelegramBotService($message);
+        // $service->saveRawRequestData(); //теперь в middleware
+        $service->prettyRequestLog();
+
+
+
+
+
+
+        if ($service->blockNewVisitor()) {
+            return response(CONSTANTS::NEW_MEMBER_RESTRICTED, Response::HTTP_OK);
+        };
+
+        if ($service->blockUserIfMessageIsForward()) {
+            return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
+        }
+
+        if ($service->blockUserIfMessageHasLink()) {
+            return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
+        }
+
+        if ($service->deleteMessageIfContainsBlackListWords()) {
+            return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
+        }
+
+
+
+        return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
+    }
+
+
+    public function getWebhookInfo()
+    {
+        $http = Http::get(env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getWebhookInfo")
+            ->json(); //Обязательно json
+        dd($http);
+        // Storage::put("NEWHOOK.txt", json_encode($http));
+    }
 
     public function setWebhook()
     {
@@ -79,51 +129,6 @@ class TelegramBotController extends Controller
         }
         log::error("Failed to switch night/light permissions mode");
         return response("Failed switch to night/light permissions mode", Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
-
-
-
-    public function webhookHandler(Request $request)
-    {
-        $data = $request->all();
-
-
-        $message = (new BaseTelegramRequestModel($data))->create();
-
-        $service = new TelegramBotService($message);
-        $service->saveRawRequestData($data);
-        $service->requestLog();
-
-
-
-        if ($service->blockNewVisitor()) {
-            return response('new member blocked for 24 hours', Response::HTTP_OK);
-        };
-
-        if ($service->blockUserIfMessageIsForward()) {
-            return response('user blocked', Response::HTTP_OK);
-        }
-
-        if ($service->blockUserIfMessageHasLink()) {
-            return response('user blocked', Response::HTTP_OK);
-        }
-
-        if ($service->deleteMessageIfContainsBlackListWords()) {
-            return response("Message deleted by filter", Response::HTTP_OK);
-        }
-
-
-
-        return response('default response', Response::HTTP_OK);
-    }
-
-
-    public function getWebhookInfo()
-    {
-        $http = Http::get(env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getWebhookInfo")
-            ->json(); //Обязательно json
-        dd($http);
-        // Storage::put("NEWHOOK.txt", json_encode($http));
     }
 
 

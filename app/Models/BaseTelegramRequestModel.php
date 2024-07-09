@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Exceptions\TelegramModelError;
+use App\Services\BotErrorNotificationService;
+use DeepCopy\Exception\PropertyException;
 use Error;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\CONSTANTS;
+use PHPUnit\Event\Test\NoticeTriggeredSubscriber;
 use Symfony\Component\HttpFoundation\Response;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +37,7 @@ class BaseTelegramRequestModel extends Model
     public function __construct(array $data)
     {
         $this->data = $data;
+
         $this->setMessageType()
             ->setFromId()
             ->setFromAdmin()
@@ -39,10 +45,13 @@ class BaseTelegramRequestModel extends Model
             ->setFromUserName();
     }
 
-
+    /**
+     * Summary of create
+     * @throws TelegramModelError
+     * @return \App\Models\BaseTelegramRequestModel
+     */
     public function create(): BaseTelegramRequestModel
     {
-
         if (array_key_exists("message", $this->data)) {
             if (
                 array_key_exists("forward_from_chat", $this->data["message"]) ||
@@ -70,7 +79,6 @@ class BaseTelegramRequestModel extends Model
         }
 
 
-
         if (array_key_exists("chat_member", $this->data)) {
             if (
                 $this->data["chat_member"]["new_chat_member"]["status"] !==
@@ -94,37 +102,10 @@ class BaseTelegramRequestModel extends Model
         }
 
 
-
         if (array_key_exists("message_reaction_count", $this->data)) {
             return new MessageReactionCountModel($this->data);
         }
-
-        response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-        throw new Exception("Неопознанный тип объекта. Невозможно создать экземпляр модели ");
-    }
-
-    // public function getMessageId(): int
-    // {
-    //     if ($this instanceof InvitedUserUpdateModel) {
-    //         dd(get_called_class());
-    //     }
-    //     if (empty($this->messageId)) {
-    //         dd($this->data);
-    //         $this->errorLog(__METHOD__);
-    //     }
-    //     return $this->messageId;
-    // }
-
-
-    protected function errorLog(string $method)
-    {
-        log::error(
-            "ERROR: " . $method . " НЕ УСТАНОВЛЕН. " . PHP_EOL .
-                "ВОЗМОЖНО НЕ ПЕРЕДАН PARENT CONSTRUCTOR МОДЕЛИ",
-            [PHP_EOL . __CLASS__ . PHP_EOL . "AT LINE: " . __LINE__ . PHP_EOL .
-                " CLASS: " . get_called_class()]
-        );
-        response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+        $this->propertyErrorHandler(CONSTANTS::UNKNOWN_OBJECT_TYPE);
     }
 
 
@@ -132,12 +113,32 @@ class BaseTelegramRequestModel extends Model
     public function getType(): string
     {
         if (empty($this->messageType)) {
-            $this->errorLog(__METHOD__);
+
+            $this->propertyErrorHandler();
         }
         return $this->messageType;
     }
 
-
+    /**
+     * Summary of propertyErrorHandler
+     * @param string $message
+     * @throws \App\Exceptions\TelegramModelError
+     * @return never
+     */
+    protected function propertyErrorHandler(string $message = "")
+    {
+        throw new TelegramModelError(
+            $message !== "" ? $message : CONSTANTS::EMPTY_PROPERTY .
+                "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
+                "FROM_ADMIN PROPERTY: " . $this->fromAdmin . PHP_EOL .
+                "FROM_ID PROPERTY: " . $this->fromId . PHP_EOL .
+                "FROM_USER_NAME PROPERTY: " . $this->fromUserName . PHP_EOL .
+                "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL,
+            $this->getJsonData(),
+            __METHOD__,
+            get_called_class()
+        );
+    }
 
 
 
@@ -157,14 +158,16 @@ class BaseTelegramRequestModel extends Model
             $type = "user";
         }
 
-        if ($type === "" || $this->messageType === "") {
-
-            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-            throw new Exception("Ключ from || user отсутствует. Неизвестный объект.");
+        if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
+            $type = "actor_chat";
         }
 
-        $this->fromId = $this->data[$this->messageType][$type]["id"];
 
+        try {
+            $this->fromId = $this->data[$this->messageType][$type]["id"];
+        } catch (Exception) {
+            $this->propertyErrorHandler();
+        }
 
         return $this;
     }
@@ -173,12 +176,15 @@ class BaseTelegramRequestModel extends Model
     protected function setFromAdmin()
     {
         $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        if (empty($this->fromId) || empty($adminsIdArray)) {
-            $this->errorLog("FROM ID или ADMINS ID ARRAY");
-        }
-        if ((string) in_array($this->fromId, $adminsIdArray)) {
-            $this->fromAdmin = true;
-            return $this;
+
+        try {
+
+            if ((string) in_array($this->fromId, $adminsIdArray)) {
+                $this->fromAdmin = true;
+                return $this;
+            }
+        } catch (Exception) {
+            $this->propertyErrorHandler();
         }
 
         return $this;
@@ -200,13 +206,13 @@ class BaseTelegramRequestModel extends Model
         } elseif (array_key_exists("message_reaction_count", $this->data)) {
             $this->messageType = "message_reaction_count";
         } else {
-            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-            throw new Exception("Неопознанный тип сообщения");
+            $this->propertyErrorHandler();
         }
 
 
         return $this;
     }
+
 
 
     protected function setChatId(): static
@@ -216,8 +222,7 @@ class BaseTelegramRequestModel extends Model
             $this->chatId = $this->data[$this->messageType]["chat"]["id"];
         } catch (Exception $e) {
 
-            log::error("CHAT_ID НЕ УСТАНОВЛЕН. Ошибка: " . $e->getMessage());
-            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+            $this->propertyErrorHandler();
         }
         return $this;
     }
@@ -235,14 +240,18 @@ class BaseTelegramRequestModel extends Model
             $type = "user";
         }
 
-        if ($type === "" || $this->messageType === "") {
-
-            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-            log::error("Ключ from || user отсутствует. Неизвестный объект.");
+        if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
+            $type = "actor_chat";
         }
 
-        $this->fromUserName = $this->data[$this->messageType][$type]["first_name"];
+        try {
 
+            $this->fromUserName =
+                $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
+        } catch (Exception) {
+
+            $this->propertyErrorHandler();
+        }
 
         return $this;
     }
@@ -251,7 +260,8 @@ class BaseTelegramRequestModel extends Model
     public function getFromId(): int
     {
         if (empty($this->fromId)) {
-            $this->errorLog(__METHOD__);
+
+            $this->propertyErrorHandler();
         }
         return $this->fromId;
     }
@@ -261,7 +271,7 @@ class BaseTelegramRequestModel extends Model
     public function getFromUserName(): string
     {
         if (empty($this->fromUserName)) {
-            $this->errorLog(__METHOD__);
+            $this->propertyErrorHandler();
         }
         return $this->fromUserName;
     }
@@ -276,8 +286,24 @@ class BaseTelegramRequestModel extends Model
     public function getChatId(): int
     {
         if (empty($this->chatId)) {
-            $this->errorLog(__METHOD__);
+            $this->propertyErrorHandler();
         }
         return $this->chatId;
+    }
+
+
+    public function getData(): array
+    {
+        if (empty($this->data)) {
+            $this->propertyErrorHandler();
+        }
+        return $this->data;
+    }
+
+
+    public function getJsonData(): string
+    {
+
+        return json_encode($this->data);
     }
 }

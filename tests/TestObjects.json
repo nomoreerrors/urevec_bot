@@ -928,5 +928,33 @@
             "date": 1720273208,
             "text": "desperados"
         }
+    },
+    "25": {
+        "update_id": 895573227,
+        "message_reaction": {
+            "chat": {
+                "id": -1002222230714,
+                "title": "Testylvania",
+                "type": "supergroup"
+            },
+            "message_id": 1876,
+            "actor_chat": {
+                "id": -1002222230714,
+                "title": "Testylvania",
+                "type": "supergroup"
+            },
+            "date": 1720340957,
+            "old_reaction": [],
+            "new_reaction": [
+                {
+                    "type": "emoji",
+                    "emoji": "\ud83d\udc4e"
+                },
+                {
+                    "type": "emoji",
+                    "emoji": "\u2764"
+                }
+            ]
+        }
     }
 }

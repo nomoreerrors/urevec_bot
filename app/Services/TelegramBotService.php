@@ -6,9 +6,9 @@ use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use App\Models\NewMemberJoinUpdateModel;
+use App\Exceptions\TelegramModelError;
 use App\Models\StatusUpdateModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -19,6 +19,7 @@ use Exception;
 use App\Models\TelegramMessageModel;
 use App\Models\TextMessageModel;
 use Illuminate\Support\Facades\Config;
+
 
 class TelegramBotService
 {
@@ -36,9 +37,9 @@ class TelegramBotService
      * @param array $data
      * @return void
      */
-    public function requestLog()
+    public function prettyRequestLog()
     {
-        $requestLog = Storage::json("DONE.json");
+        $requestLog = Storage::json("pretty_request_log.json");
         $time = date("F j, Y, g:i a");
 
 
@@ -64,47 +65,45 @@ class TelegramBotService
 
         if ($this->message instanceof StatusUpdateModel) {
             $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
-            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
+            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
             $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
 
             if ($this->message instanceof NewMemberJoinUpdateModel) {
 
                 $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
             }
 
             if ($this->message instanceof InvitedUserUpdateModel) {
 
                 $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
                 $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->data["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
             }
         }
 
 
         if (!$requestLog) {
-            Storage::put("DONE.json", json_encode($data));
+            Storage::put("pretty_request_log.json", json_encode($data));
         } else {
             $requestLog[] = $data;
 
-            Storage::put("DONE.json", json_encode($requestLog));
+            Storage::put("pretty_request_log.json", json_encode($requestLog));
         }
     }
 
 
-    public function saveRawRequestData(array $data)
-    {
-        $this->message->data = $data;
+    // public function saveRawRequestData()
+    // {
+    //     $requestLog = Storage::json("rawrequest.json");
 
-        $requestLog = Storage::json("rawrequest.json");
-
-        if (!$requestLog) {
-            Storage::put("rawrequest.json", json_encode($data));
-        } else {
-            $requestLog[] = $data;
-            Storage::put("rawrequest.json", json_encode($requestLog));
-        }
-    }
+    //     if (!$requestLog) {
+    //         Storage::put("rawrequest.json", json_encode($this->message->getData()));
+    //     } else {
+    //         $requestLog[] = $this->message->getData();
+    //         Storage::put("rawrequest.json", json_encode($requestLog));
+    //     }
+    // }
 
 
 
@@ -147,10 +146,15 @@ class TelegramBotService
             'Bad Request: PARTICIPANT_ID_INVALID' ||
             "Bad Request: invalid user_id specified"
         ) {
-            // dd($response, "USER ID: " . $this->message->getFromId() . PHP_EOL . get_class($this->message));
+            $error = "ERROR: ВХОДЯЩИЙ ЗАПРОС С НЕИЗВЕСТНОГО CHAT_ID ИЛИ СПИСОК РАЗРЕШЕННЫХ ЧАТОВ В ФАЙЛЕ ENV НЕ УСТАНОВЛЕН."
+                . PHP_EOL . "CHAT_ID: " . $this->message->getChatId()
+                . PHP_EOL . __CLASS__;;
+
+            log::info($error);
+            BotErrorNotificationService::send($error);
+            response(Response::$statusTexts[403], Response::HTTP_FORBIDDEN);
             return false;
         }
-        throw new Exception("Не удалось заблокировать по id");
     }
 
 
@@ -173,12 +177,7 @@ class TelegramBotService
     }
 
 
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
-    //Эти медоты отправки и удаления сообщений надо отсюда убрать
+
     public function sendMessage(string $text_message): array
     {
         $response = Http::post(
@@ -201,13 +200,25 @@ class TelegramBotService
 
             $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
-            log::info("time from banUser: " . $time);
+
             return true;
         } catch (Exception $e) {
-            dd($e);
+            $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "UPDATE_ID: " . $this->message->getData()["udpate_id"]
+                . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
+
+            log::info($error . PHP_EOL . PHP_EOL . $e->getTraceAsString());
+            BotErrorNotificationService::send($error);
         }
+        return false;
     }
 
+
+    public function exceptionTestMethod()
+    {
+        // dd(json_encode($this->message->getData()));
+        print($this->message->getJsonData());
+        throw new TelegramModelError("СООБЩЕНИЕ ОБ ОШИБКЕ!", data: $this->message->getJsonData());
+    }
 
 
     /**
@@ -222,14 +233,20 @@ class TelegramBotService
             $this->message instanceof InvitedUserUpdateModel
         ) {
 
+            try {
+                $result = $this->restrictChatMember();
 
-            $result = $this->restrictChatMember();
+                if ($result) {
+                    log::info("User blocked. " . "user_id: " . $this->message->getFromId());
+                    return true;
+                }
+            } catch (Exception $e) {
 
+                $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "message data: " . json_encode($this->message->getData())
+                    . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
 
-            if ($result) {
-                log::info("User blocked. Message id: " .
-                    $this->message->messageId . "user_id: " . $this->message->getFromId());
-                return true;
+                log::info($error . PHP_EOL . $e->getTraceAsString());
+                BotErrorNotificationService::send($error);
             }
         }
 
@@ -248,8 +265,6 @@ class TelegramBotService
                 return true;
             }
         }
-
-        // dd($this->message->data);
         return false;
     }
 

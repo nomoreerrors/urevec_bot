@@ -48,9 +48,14 @@ class MessageModel extends BaseTelegramRequestModel
 
     protected function setMessageId()
     {
+
         if (array_key_exists("message_id", $this->data[$this->messageType])) {
 
             $this->messageId = $this->data[$this->messageType]["message_id"];
+        }
+
+        if (empty($this->messageId)) {
+            dd($this->data);
         }
 
         return $this;

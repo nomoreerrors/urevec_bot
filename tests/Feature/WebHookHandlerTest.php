@@ -15,6 +15,8 @@ use Exception;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\TextMessageModel;
+use App\Services\CONSTANTS;
+use App\Services\ErrorMessages;
 use Error;
 
 class WebHookHandlerTest extends TestCase
@@ -31,11 +33,12 @@ class WebHookHandlerTest extends TestCase
                 if ($message->getHasLink() || $message->hasTextLink()) {
 
                     $response = $this->post("api/webhook", $object);
+                    // dd($response);
 
                     try {
                         // dd($response);
                         log::info($response->getOriginalContent());
-                        $this->assertTrue($response->getOriginalContent() === "user blocked");
+                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
                     } catch (Exception $e) {
                         dd($object);
                     }
@@ -55,14 +58,14 @@ class WebHookHandlerTest extends TestCase
                 if (!$message->getFromAdmin()) {
 
                     $response = $this->post("api/webhook", $object);
-                    $this->assertTrue($response->getOriginalContent() === "user blocked");
+                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
                 }
 
 
                 if ($message->getFromAdmin()) {
 
                     $response = $this->post("api/webhook", $object);
-                    $this->assertTrue($response->getOriginalContent() === "default response");
+                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::DEFAULT_RESPONSE);
                 }
             }
         }
@@ -79,9 +82,9 @@ class WebHookHandlerTest extends TestCase
             if ($message instanceof NewMemberJoinUpdateModel) {
                 $response = $this->post("api/webhook", $object);
 
-                if ($response->getOriginalContent() !== "default response") {
+                if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
 
-                    $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
                 }
             }
 
@@ -91,8 +94,8 @@ class WebHookHandlerTest extends TestCase
                 $response = $this->post("api/webhook", $object);
 
                 // dd($response);
-                if ($response->getOriginalContent() !== "default response") {
-                    $this->assertTrue($response->getOriginalContent() === "new member blocked for 24 hours");
+                if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
+                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
                 }
             }
         }
