@@ -9,6 +9,7 @@ use App\Models\MessageModel;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\NewMemberJoinUpdateModel;
 use App\Exceptions\TelegramModelError;
+use App\Exceptions\TelegramModelException;
 use App\Models\StatusUpdateModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -213,12 +214,7 @@ class TelegramBotService
     }
 
 
-    public function exceptionTestMethod()
-    {
-        // dd(json_encode($this->message->getData()));
-        print($this->message->getJsonData());
-        throw new TelegramModelError("СООБЩЕНИЕ ОБ ОШИБКЕ!", data: $this->message->getJsonData());
-    }
+
 
 
     /**
@@ -228,10 +224,7 @@ class TelegramBotService
      */
     public function blockNewVisitor(): bool
     {
-        if (
-            $this->message instanceof NewMemberJoinUpdateModel ||
-            $this->message instanceof InvitedUserUpdateModel
-        ) {
+        if ($this->message instanceof NewMemberJoinUpdateModel) {
 
             try {
                 $result = $this->restrictChatMember();
