@@ -991,5 +991,59 @@
                 "status": "member"
             }
         }
+    },
+    "27": {
+        "update_id": 267307532,
+        "chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 754429643,
+                "is_bot": false,
+                "first_name": "LS",
+                "username": "nomoreerrors",
+                "language_code": "ru",
+                "is_premium": true
+            },
+            "date": 1720566056,
+            "old_chat_member": {
+                "user": {
+                    "id": 955845083,
+                    "is_bot": false,
+                    "first_name": "\u041a\u0438\u0440\u0438\u043b\u043b",
+                    "last_name": "\u0418\u0432\u0430\u043d\u043e\u0432\u0438\u0447"
+                },
+                "status": "restricted",
+                "until_date": 1720596821,
+                "can_send_messages": false,
+                "can_send_media_messages": false,
+                "can_send_audios": false,
+                "can_send_documents": false,
+                "can_send_photos": false,
+                "can_send_videos": false,
+                "can_send_video_notes": false,
+                "can_send_voice_notes": false,
+                "can_send_polls": false,
+                "can_send_other_messages": false,
+                "can_add_web_page_previews": false,
+                "can_change_info": false,
+                "can_invite_users": false,
+                "can_pin_messages": false,
+                "can_manage_topics": false,
+                "is_member": true
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 955845083,
+                    "is_bot": false,
+                    "first_name": "\u041a\u0438\u0440\u0438\u043b\u043b",
+                    "last_name": "\u0418\u0432\u0430\u043d\u043e\u0432\u0438\u0447"
+                },
+                "status": "member"
+            }
+        }
     }
 }

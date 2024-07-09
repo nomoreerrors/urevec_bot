@@ -224,43 +224,46 @@ class TelegramBotService
      */
     public function blockNewVisitor(): bool
     {
-        if ($this->message instanceof NewMemberJoinUpdateModel) {
+        if (!$this->message->getFromAdmin()) {
+            if ($this->message instanceof NewMemberJoinUpdateModel) {
 
-            try {
+                try {
 
-                $result = $this->restrictChatMember();
-
-                if ($result) {
-                    log::info("User blocked. " . "user_id: " . $this->message->getFromId());
-                    return true;
-                }
-            } catch (Exception $e) {
-
-                $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "message data: " . json_encode($this->message->getData())
-                    . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
-
-                log::info($error . PHP_EOL . $e->getTraceAsString());
-                BotErrorNotificationService::send($error);
-            }
-        }
-
-
-        if ($this->message instanceof InvitedUserUpdateModel) {
-            $invitedUsers = $this->message->getInvitedUsersIdArray();
-
-
-            if ($invitedUsers !== []) {
-                foreach ($invitedUsers as $user_id) {
-
-                    $result = $this->restrictChatMember(id: $user_id);
+                    $result = $this->restrictChatMember();
 
                     if ($result) {
-                        log::info("Invited user blocked. USER_ID: " . $user_id);
+                        log::info("User blocked. " . "user_id: " . $this->message->getFromId());
+                        return true;
                     }
+                } catch (Exception $e) {
+
+                    $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "message data: " . json_encode($this->message->getData())
+                        . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
+
+                    log::info($error . PHP_EOL . $e->getTraceAsString());
+                    BotErrorNotificationService::send($error);
                 }
-                return true;
+            }
+
+
+            if ($this->message instanceof InvitedUserUpdateModel) {
+                $invitedUsers = $this->message->getInvitedUsersIdArray();
+
+
+                if ($invitedUsers !== []) {
+                    foreach ($invitedUsers as $user_id) {
+
+                        $result = $this->restrictChatMember(id: $user_id);
+
+                        if ($result) {
+                            log::info("Invited user blocked. USER_ID: " . $user_id);
+                        }
+                    }
+                    return true;
+                }
             }
         }
+
         return false;
     }
 
