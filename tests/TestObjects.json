@@ -956,5 +956,40 @@
                 }
             ]
         }
+    },
+    "26": {
+        "update_id": 267307497,
+        "chat_member": {
+            "chat": {
+                "id": -1001522860812,
+                "title": "\u0427\u0430\u0442 | \u041c\u0438\u043a\u0440\u043e\u0440\u0430\u0439\u043e\u043d \u042e\u0440\u044c\u0435\u0432\u0435\u0446",
+                "type": "supergroup"
+            },
+            "from": {
+                "id": 193229804,
+                "is_bot": false,
+                "first_name": "Ann Lee",
+                "username": "an_n_lee"
+            },
+            "date": 1720562541,
+            "old_chat_member": {
+                "user": {
+                    "id": 1022956396,
+                    "is_bot": false,
+                    "first_name": "\ud83d\udda4Gaagg\ud83d\udda4",
+                    "username": "Gaagg_g"
+                },
+                "status": "left"
+            },
+            "new_chat_member": {
+                "user": {
+                    "id": 1022956396,
+                    "is_bot": false,
+                    "first_name": "\ud83d\udda4Gaagg\ud83d\udda4",
+                    "username": "Gaagg_g"
+                },
+                "status": "member"
+            }
+        }
     }
 }

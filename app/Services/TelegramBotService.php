@@ -227,6 +227,7 @@ class TelegramBotService
         if ($this->message instanceof NewMemberJoinUpdateModel) {
 
             try {
+
                 $result = $this->restrictChatMember();
 
                 if ($result) {
@@ -247,8 +248,10 @@ class TelegramBotService
         if ($this->message instanceof InvitedUserUpdateModel) {
             $invitedUsers = $this->message->getInvitedUsersIdArray();
 
+
             if ($invitedUsers !== []) {
                 foreach ($invitedUsers as $user_id) {
+
                     $result = $this->restrictChatMember(id: $user_id);
 
                     if ($result) {
