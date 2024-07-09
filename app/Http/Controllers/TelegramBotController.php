@@ -31,11 +31,12 @@ class TelegramBotController extends Controller
 
     public function webhookHandler(Request $request)
     {
-        // dd(CONSTANTS::EMPTY_PROPERTY);
+        // dd(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2));
+
         $data = $request->all();
         $message = (new BaseTelegramRequestModel($data))->create();
         $service = new TelegramBotService($message);
-        // $service->saveRawRequestData(); //теперь в middleware
+
         $service->prettyRequestLog();
 
 

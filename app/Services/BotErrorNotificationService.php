@@ -12,11 +12,6 @@ use Illuminate\Support\Facades\Storage;
 
 class BotErrorNotificationService
 {
-    public function __construct()
-    {
-        //
-    }
-
 
     public static function send(string $message)
     {

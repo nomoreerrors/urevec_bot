@@ -6,36 +6,41 @@ use App\Services\BotErrorNotificationService;
 use ErrorException;
 use Illuminate\Support\Facades\Log;
 
-class TelegramModelError extends ErrorException
+class TelegramModelException extends ErrorException
 {
 
     protected string $info = "";
 
+    protected string $data = "";
 
     public function __construct(
         string $message = "",
-        protected string $data,
         protected string $method,
-        protected string $called_class
     ) {
         parent::__construct($message);
         $this->message = PHP_EOL . $message;
-        $this->data = print_r(json_decode($data, true), true);
+        $this->data = print_r(request()->all(), true);
 
-        $this->info = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL . $this->getFile() . PHP_EOL .
-            "AT LINE: " . $this->getLine() . PHP_EOL . "FROM METHOD: " . $method . PHP_EOL;
-
-        $this->sender();
+        $this->setInfo()
+            ->sender();
     }
 
 
-    private function sender(): void
+    protected function sender(): static
     {
-        // dd($this->info);
+        // dd($this->data);
         BotErrorNotificationService::send($this->info . PHP_EOL . $this->data);
+        return $this;
     }
 
 
+    protected function setInfo()
+    {
+        $this->info = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
+            "LINE: " . $this->getLine() . PHP_EOL . "FROM METHOD: " . $this->method . PHP_EOL;
+
+        return $this;
+    }
 
 
     public function getData(): string

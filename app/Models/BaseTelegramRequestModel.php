@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Exceptions\TelegramModelError;
+use App\Exceptions\TelegramModelException;
 use App\Services\BotErrorNotificationService;
 use DeepCopy\Exception\PropertyException;
 use Error;
@@ -47,7 +47,7 @@ class BaseTelegramRequestModel extends Model
 
     /**
      * Summary of create
-     * @throws TelegramModelError
+     * @throws TelegramModelException
      * @return \App\Models\BaseTelegramRequestModel
      */
     public function create(): BaseTelegramRequestModel
@@ -122,12 +122,12 @@ class BaseTelegramRequestModel extends Model
     /**
      * Summary of propertyErrorHandler
      * @param string $message
-     * @throws \App\Exceptions\TelegramModelError
+     * @throws \App\Exceptions\TelegramModelException
      * @return never
      */
     protected function propertyErrorHandler(string $message = "")
     {
-        throw new TelegramModelError(
+        throw new TelegramModelException(
             $message !== "" ? $message : CONSTANTS::EMPTY_PROPERTY .
                 "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
                 "FROM_ADMIN PROPERTY: " . $this->fromAdmin . PHP_EOL .
@@ -135,8 +135,7 @@ class BaseTelegramRequestModel extends Model
                 "FROM_USER_NAME PROPERTY: " . $this->fromUserName . PHP_EOL .
                 "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL,
             $this->getJsonData(),
-            __METHOD__,
-            get_called_class()
+            __METHOD__
         );
     }
 
