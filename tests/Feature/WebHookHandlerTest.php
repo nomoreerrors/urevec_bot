@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\TelegramModelException;
 use App\Models\TelegramMessageModel;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,10 +77,20 @@ class WebHookHandlerTest extends TestCase
     public function test_new_user_restricted_automatically(): void
     {
         foreach ($this->testObjects as $object) {
-            $message = (new BaseTelegramRequestModel($object))->create();
+            try {
+
+                $message = (new BaseTelegramRequestModel($object))->create();
+                if ($message === null) {
+                    log::info(json_encode($message));
+                }
+            } catch (TelegramModelException $e) {
+
+                dd($e->getInfo(), $e->getData()); 
+            }
 
 
             if ($message instanceof NewMemberJoinUpdateModel) {
+                // dd("here");
                 $response = $this->post("api/webhook", $object);
 
                 if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {

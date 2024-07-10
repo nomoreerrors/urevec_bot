@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\BanUserFailedException;
+use App\Exceptions\RestrictMemberFailedException;
+use App\Exceptions\TelegramModelException;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
+use App\Models\NewMemberJoinUpdateModel;
 use App\Models\UnknownObjectModel;
 use App\Services\BotErrorNotificationService;
 use App\Models\InvitedUserUpdateModel;
@@ -43,23 +47,36 @@ class TelegramBotController extends Controller
 
 
 
+        try {
+            if ($service->blockNewVisitor()) {
+                return response(CONSTANTS::NEW_MEMBER_RESTRICTED, Response::HTTP_OK);
+            }
 
-        if ($service->blockNewVisitor()) {
-            return response(CONSTANTS::NEW_MEMBER_RESTRICTED, Response::HTTP_OK);
-        };
+            if ($service->blockUserIfMessageIsForward()) {
+                return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
+            }
 
-        if ($service->blockUserIfMessageIsForward()) {
-            return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
+            if ($service->ifMessageHasLinkBlockUser()) {
+                return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
+            }
+
+            if ($service->deleteMessageIfContainsBlackListWords()) {
+                return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
+            }
+
+
+        } catch (TelegramModelException $e) {
+             Log::error($e->getInfo() . $e->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+        } catch (RestrictMemberFailedException $e) {
+             Log::error($e->getInfo() . $e->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+        } catch (BanUserFailedException $e) {
+            Log::error($e->getInfo() . $e->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        if ($service->blockUserIfMessageHasLink()) {
-            return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
-        }
-
-        if ($service->deleteMessageIfContainsBlackListWords()) {
-            return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
-        }
-
 
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);

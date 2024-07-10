@@ -12,6 +12,7 @@ use App\Services\CONSTANTS;
 use PHPUnit\Event\Test\NoticeTriggeredSubscriber;
 use Symfony\Component\HttpFoundation\Response;
 use Exception;
+use GuzzleHttp\Psr7\Message;
 use Illuminate\Support\Facades\Log;
 
 class BaseTelegramRequestModel extends Model
@@ -37,12 +38,11 @@ class BaseTelegramRequestModel extends Model
     public function __construct(array $data)
     {
         $this->data = $data;
-
-        $this->setMessageType()
-            ->setFromId()
-            ->setFromAdmin()
-            ->setChatId()
-            ->setFromUserName();
+            $this->setMessageType()
+                ->setFromId()
+                ->setFromAdmin()
+                ->setChatId()
+                ->setFromUserName();
     }
 
     /**
@@ -50,74 +50,26 @@ class BaseTelegramRequestModel extends Model
      * @throws TelegramModelException
      * @return \App\Models\BaseTelegramRequestModel
      */
-    public function create(): BaseTelegramRequestModel
+    public function create()
     {
-        if (array_key_exists("message", $this->data)) {
-            if (
-                array_key_exists("forward_from_chat", $this->data["message"]) ||
-                array_key_exists("forward_origin", $this->data["message"])
-            ) {
-                return new ForwardMessageModel($this->data);
-            }
-            if (!array_key_exists("text", $this->data["message"])) {
-                return new MessageModel($this->data);
-            } else return new TextMessageModel($this->data);
+        try {
+            
+            $model = $this->createMessageModel()
+                          ->createTextMessageModel()
+                          ->createForwardMessageModel()
+                          ->createStatusUpdateModel()
+                          ->createNewMemberJoinUpdateModel()
+                          ->createNewMemberJoinUpdateModel()
+                          ->createMessageReactionUpdateModel()
+                          ->createInvitedUserUpdateModel();
+
+            return $model;
+
+        } catch (Exception $e) {
+            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
-
-
-
-        if (array_key_exists("edited_message", $this->data)) {
-            if (
-                array_key_exists("forward_from_chat", $this->data["edited_message"]) ||
-                array_key_exists("forward_origin", $this->data["edited_message"])
-            ) {
-                return new ForwardMessageModel($this->data);
-            }
-            if (!array_key_exists("text", $this->data["edited_message"])) {
-                return new MessageModel($this->data);
-            } else return new TextMessageModel($this->data);
-        }
-
-
-        if (array_key_exists("chat_member", $this->data)) {
-            if (
-                $this->data["chat_member"]["new_chat_member"]["status"] !==
-                "member"
-            ) {
-                return new StatusUpdateModel($this->data);
-            } elseif (
-                $this->data["chat_member"]["from"]["id"] !==
-                $this->data["chat_member"]["new_chat_member"]["user"]["id"]
-            ) {
-                return new InvitedUserUpdateModel($this->data);
-            } else {
-
-                return new NewMemberJoinUpdateModel($this->data);
-            }
-        }
-
-
-        if (array_key_exists("message_reaction", $this->data)) {
-            return new MessageReactionModel($this->data);
-        }
-
-
-        if (array_key_exists("message_reaction_count", $this->data)) {
-            return new MessageReactionCountModel($this->data);
-        }
-        $this->propertyErrorHandler(CONSTANTS::UNKNOWN_OBJECT_TYPE);
     }
 
-
-
-    public function getType(): string
-    {
-        if (empty($this->messageType)) {
-
-            $this->propertyErrorHandler();
-        }
-        return $this->messageType;
-    }
 
     /**
      * Summary of propertyErrorHandler
@@ -125,28 +77,154 @@ class BaseTelegramRequestModel extends Model
      * @throws \App\Exceptions\TelegramModelException
      * @return never
      */
-    protected function propertyErrorHandler(string $message = "")
+    protected function propertyErrorHandler(string $message = "", $line, $method)
     {
-        throw new TelegramModelException(
-            $message !== "" ? $message : CONSTANTS::EMPTY_PROPERTY .
-                "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
-                "FROM_ADMIN PROPERTY: " . $this->fromAdmin . PHP_EOL .
-                "FROM_ID PROPERTY: " . $this->fromId . PHP_EOL .
-                "FROM_USER_NAME PROPERTY: " . $this->fromUserName . PHP_EOL .
-                "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL,
-            $this->getJsonData(),
-            __METHOD__
-        );
+        $text =  CONSTANTS::EMPTY_PROPERTY . "DEFAULT EXCEPTION REASON: " . $message  . " LINE: " . $line . PHP_EOL . $method . PHP_EOL .
+            "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
+            "FROM_ADMIN PROPERTY: " . $this->fromAdmin . PHP_EOL .
+            "FROM_ID PROPERTY: " . $this->fromId . PHP_EOL .
+            "FROM_USER_NAME PROPERTY: " . $this->fromUserName . PHP_EOL .
+            "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL;
+        // dd($text);
+
+        throw new TelegramModelException($text,__METHOD__);
     }
 
 
 
+    private function createMessageReactionUpdateModel()
+    {
+        if ($this->messageType === "message_reaction") {
+            return new MessageReactionModel($this->data);
+        }
+        return $this;
+    }
 
 
+    private function createForwardMessageModel()
+    {
+        $type = "";
+        if ($this->messageType === "message") {
+            $type = "message";
+        }
+
+        if ($this->messageType === "edited_message") {
+            $type = "edited_message";
+        }
+
+        if (
+            array_key_exists($type, $this->data) &&
+            (array_key_exists("forward_from_chat", $this->data[$type]) ||
+                array_key_exists("forward_origin", $this->data[$type]))
+        ) {
+            return new ForwardMessageModel($this->data);
+        }
+        return $this;
+    }
+
+
+    private function createTextMessageModel()
+    {
+        $type = "";
+        if ($this->messageType === "message") {
+            $type = "message";
+        }
+
+        if ($this->messageType === "edited_message") {
+            $type = "edited_message";
+        }
+        if (
+            array_key_exists($type, $this->data) &&
+            array_key_exists("text", $this->data[$type]) &&
+            !array_key_exists("forward_from_chat", $this->data[$type]) &&
+            !array_key_exists("forward_origin", $this->data[$type])
+        ) {
+
+            return new TextMessageModel($this->data);
+        }
+        return $this;
+    }
+
+    private function createMessageModel()
+    {
+        $type = "";
+        if ($this->messageType === "message") {
+            $type = "message";
+        }
+
+        if ($this->messageType === "edited_message") {
+            $type = "edited_message";
+        }
+
+        if (
+            array_key_exists($type, $this->data) &&
+            !array_key_exists("text", $this->data[$type]) &&
+            !array_key_exists("forward_from_chat", $this->data[$type]) &&
+            !array_key_exists("forward_origin", $this->data[$type])
+        ) {
+
+            return new MessageModel($this->data);
+        }
+        return $this;
+    }
+
+
+
+    public function createStatusUpdateModel()
+    {
+        if ($this->messageType === "chat_member") {
+            if (
+                $this->data["chat_member"]["new_chat_member"]["status"] !==
+                "member" ||
+                ($this->fromAdmin &&
+                    $this->data["chat_member"]["old_chat_member"]["status"] === "restricted" &&
+                    $this->data["chat_member"]["new_chat_member"]["status"] === "member")
+            ) {
+                return new StatusUpdateModel($this->data);
+            }
+        }
+        return $this;
+    }
+
+
+    public function createNewMemberJoinUpdateModel()
+    {
+        if ($this->messageType === "chat_member") {
+            if (
+                !$this->fromAdmin &&
+                $this->data["chat_member"]["from"]["id"] ===
+                $this->data["chat_member"]["new_chat_member"]["user"]["id"] &&
+                $this->data["chat_member"]["old_chat_member"]["status"] === "left" &&
+                $this->data["chat_member"]["new_chat_member"]["status"] === "member"
+            ) {
+                return new NewMemberJoinUpdateModel($this->data);
+            }
+        }
+        return $this;
+    }
+
+
+    public function createInvitedUserUpdateModel()
+    {
+        if ($this->messageType === "chat_member") {
+            if (
+                $this->data["chat_member"]["from"]["id"] !==
+                $this->data["chat_member"]["new_chat_member"]["user"]["id"] &&
+                $this->data["chat_member"]["new_chat_member"]["status"] === "member" &&
+                $this->data["chat_member"]["old_chat_member"]["status"] !== "restricted"
+
+            ) {
+
+                return new InvitedUserUpdateModel($this->data);
+            }
+        }
+        return $this;
+    }
 
 
     protected function setFromId()
     {
+        try {
         // log::info(json_encode($this->data));
         $type = "";
         if (array_key_exists("from", $this->data[$this->messageType])) {
@@ -161,11 +239,12 @@ class BaseTelegramRequestModel extends Model
             $type = "actor_chat";
         }
 
-
-        try {
+        if(array_key_exists($type, $this->data[$this->messageType])) {
             $this->fromId = $this->data[$this->messageType][$type]["id"];
-        } catch (Exception) {
-            $this->propertyErrorHandler();
+        }
+        } catch (Exception $e) {
+            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
+            
         }
 
         return $this;
@@ -182,8 +261,8 @@ class BaseTelegramRequestModel extends Model
                 $this->fromAdmin = true;
                 return $this;
             }
-        } catch (Exception) {
-            $this->propertyErrorHandler();
+        } catch (Exception $e) {
+            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
 
         return $this;
@@ -205,7 +284,7 @@ class BaseTelegramRequestModel extends Model
         } elseif (array_key_exists("message_reaction_count", $this->data)) {
             $this->messageType = "message_reaction_count";
         } else {
-            $this->propertyErrorHandler();
+            $this->propertyErrorHandler("messageType", __LINE__, __METHOD__);
         }
 
 
@@ -220,8 +299,7 @@ class BaseTelegramRequestModel extends Model
 
             $this->chatId = $this->data[$this->messageType]["chat"]["id"];
         } catch (Exception $e) {
-
-            $this->propertyErrorHandler();
+            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
         return $this;
     }
@@ -230,26 +308,24 @@ class BaseTelegramRequestModel extends Model
 
     protected function setFromUserName()
     {
-        $type = "";
-        if (array_key_exists("from", $this->data[$this->messageType])) {
-            $type = "from";
-        }
-
-        if (array_key_exists("user", $this->data[$this->messageType])) {
-            $type = "user";
-        }
-
-        if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
-            $type = "actor_chat";
-        }
-
         try {
+            $type = "";
+            if (array_key_exists("from", $this->data[$this->messageType])) {
+                $type = "from";
+            }
 
-            $this->fromUserName =
-                $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
-        } catch (Exception) {
+            if (array_key_exists("user", $this->data[$this->messageType])) {
+                $type = "user";
+            }
 
-            $this->propertyErrorHandler();
+            if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
+                $type = "actor_chat";
+            }
+
+
+                $this->fromUserName = $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
+        } catch (Exception $e) {
+            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
 
         return $this;
@@ -258,20 +334,18 @@ class BaseTelegramRequestModel extends Model
 
     public function getFromId(): int
     {
-        if (empty($this->fromId)) {
-
-            $this->propertyErrorHandler();
-        }
         return $this->fromId;
     }
 
 
+    public function getType(): string
+    {
+        return $this->messageType;
+    }
+
 
     public function getFromUserName(): string
     {
-        if (empty($this->fromUserName)) {
-            $this->propertyErrorHandler();
-        }
         return $this->fromUserName;
     }
 
@@ -284,25 +358,18 @@ class BaseTelegramRequestModel extends Model
 
     public function getChatId(): int
     {
-        if (empty($this->chatId)) {
-            $this->propertyErrorHandler();
-        }
         return $this->chatId;
     }
 
 
     public function getData(): array
     {
-        if (empty($this->data)) {
-            $this->propertyErrorHandler();
-        }
         return $this->data;
     }
 
 
     public function getJsonData(): string
     {
-
         return json_encode($this->data);
     }
 }

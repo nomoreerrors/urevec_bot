@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Exceptions\BanUserFailedException;
+use App\Exceptions\RestrictMemberFailedException;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
@@ -27,15 +29,13 @@ class TelegramBotService
 
     public function __construct(private BaseTelegramRequestModel $message)
     {
-        // dd("here");
         $this->message = $message;
     }
 
 
 
     /**
-     * Запись входящего объекта в файл 
-     * @param array $data
+     * Summary of prettyRequestLog
      * @return void
      */
     public function prettyRequestLog()
@@ -50,7 +50,6 @@ class TelegramBotService
             "MESSAGE TYPE" => $this->message->getType(),
         ];
 
-        // dd($this->message->hasTextLink());
 
         if ($this->message instanceof MessageModel) {
 
@@ -94,31 +93,14 @@ class TelegramBotService
     }
 
 
-    // public function saveRawRequestData()
-    // {
-    //     $requestLog = Storage::json("rawrequest.json");
-
-    //     if (!$requestLog) {
-    //         Storage::put("rawrequest.json", json_encode($this->message->getData()));
-    //     } else {
-    //         $requestLog[] = $this->message->getData();
-    //         Storage::put("rawrequest.json", json_encode($requestLog));
-    //     }
-    // }
-
-
-
-
     /**
-     * Лишить пользователя прав
-     * По умолчанию: user id объекта request
+     * Restrict member
+     * @param int $id 
      * @return array
      */
     public function restrictChatMember(int $time = 86400, int $id = 0): bool
     {
         $until_date = time() + $time;
-
-        // dd($this->message->getFromId());
 
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
@@ -136,10 +118,8 @@ class TelegramBotService
         )->json();
 
         if ($response["ok"]) {
-
             return true;
         }
-
 
         if (
             $response["ok"] === false &&
@@ -147,18 +127,15 @@ class TelegramBotService
             'Bad Request: PARTICIPANT_ID_INVALID' ||
             "Bad Request: invalid user_id specified"
         ) {
-            $error = "ERROR: ВХОДЯЩИЙ ЗАПРОС С НЕИЗВЕСТНОГО CHAT_ID ИЛИ СПИСОК РАЗРЕШЕННЫХ ЧАТОВ В ФАЙЛЕ ENV НЕ УСТАНОВЛЕН."
-                . PHP_EOL . "CHAT_ID: " . $this->message->getChatId()
-                . PHP_EOL . __CLASS__;;
-
-            log::info($error);
-            BotErrorNotificationService::send($error);
-            response(Response::$statusTexts[403], Response::HTTP_FORBIDDEN);
             return false;
         }
     }
 
 
+    /**
+     * Summary of deleteMessage
+     * @return bool
+     */
     public function deleteMessage(): bool
     {
         if ($this->message instanceof MessageModel) {
@@ -178,7 +155,11 @@ class TelegramBotService
     }
 
 
-
+    /**
+     * Summary of sendMessage
+     * @param string $text_message
+     * @return array $response
+     */
     public function sendMessage(string $text_message): array
     {
         $response = Http::post(
@@ -192,25 +173,24 @@ class TelegramBotService
     }
 
 
-
+    /**
+     * Summary of banUser
+     * @param int $time 24 hours by default
+     * @throws \App\Exceptions\BanUserFailedException
+     * @return bool
+     */
     public function banUser(int $time = 86400): bool
     {
         log::info("inside banNewUser");
-        try {
-            $this->restrictChatMember($time);
 
+        $result = $this->restrictChatMember($time);
+        if($result) {
             $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
-
             return true;
-        } catch (Exception $e) {
-            $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "UPDATE_ID: " . $this->message->getData()["udpate_id"]
-                . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
-
-            log::info($error . PHP_EOL . PHP_EOL . $e->getTraceAsString());
-            BotErrorNotificationService::send($error);
         }
-        return false;
+
+        throw new BanUserFailedException(CONSTANTS::BAN_USER_FAILED, __METHOD__);
     }
 
 
@@ -218,56 +198,55 @@ class TelegramBotService
 
 
     /**
-     * Временная блокировка новых подписчиков, включая приглашенных
-     * @throws \Exception
+     * Summary of blockNewVisitor
+     * Restrict new member for 24 hours
+     * @throws \App\Exceptions\RestrictMemberFailedException
      * @return bool
      */
     public function blockNewVisitor(): bool
     {
-        if (!$this->message->getFromAdmin()) {
-            if ($this->message instanceof NewMemberJoinUpdateModel) {
+            if(!($this->message instanceof InvitedUserUpdateModel) &&
+                !($this->message instanceof NewMemberJoinUpdateModel)) {
 
-                try {
+                return false;
+            }
+
+            if ($this->message instanceof NewMemberJoinUpdateModel) {
 
                     $result = $this->restrictChatMember();
 
                     if ($result) {
-                        log::info("User blocked. " . "user_id: " . $this->message->getFromId());
+                        log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->message->getFromId());
                         return true;
                     }
-                } catch (Exception $e) {
-
-                    $error = "НЕ УДАЛОСЬ ЗАБАНИТЬ ПОДПИСЧИКА." . $e->getMessage() . "message data: " . json_encode($this->message->getData())
-                        . "FROM ID: " . $this->message->getFromId() . PHP_EOL . __METHOD__ . PHP_EOL . __CLASS__;
-
-                    log::info($error . PHP_EOL . $e->getTraceAsString());
-                    BotErrorNotificationService::send($error);
-                }
             }
 
 
             if ($this->message instanceof InvitedUserUpdateModel) {
+
                 $invitedUsers = $this->message->getInvitedUsersIdArray();
 
-
                 if ($invitedUsers !== []) {
+
                     foreach ($invitedUsers as $user_id) {
 
                         $result = $this->restrictChatMember(id: $user_id);
-
                         if ($result) {
-                            log::info("Invited user blocked. USER_ID: " . $user_id);
+                            log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
                         }
                     }
                     return true;
                 }
             }
-        }
-
-        return false;
+        throw new RestrictMemberFailedException(CONSTANTS::RESTRICT_NEW_USER_FAILED, __METHOD__);
     }
 
 
+    /**
+     * Summary of blockUserIfMessageIsForward
+     * Forward message from another group or chat
+     * @return bool
+     */
     public function blockUserIfMessageIsForward(): bool
     {
         if (
@@ -283,7 +262,7 @@ class TelegramBotService
     }
 
 
-    public function blockUserIfMessageHasLink(): bool
+    public function ifMessageHasLinkBlockUser(): bool
     {
         if ($this->message->getFromAdmin()) {
             return false;
@@ -310,6 +289,11 @@ class TelegramBotService
     }
 
 
+    /**
+     * Summary of deleteMessageIfContainsBlackListWords
+     * Words are stored at Storage/app/badWord.json & badPhrases.json
+     * @return bool
+     */
     public function deleteMessageIfContainsBlackListWords(): bool
     {
         if (

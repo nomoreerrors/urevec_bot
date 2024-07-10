@@ -20,6 +20,7 @@ class TelegramModelException extends ErrorException
         parent::__construct($message);
         $this->message = PHP_EOL . $message;
         $this->data = print_r(request()->all(), true);
+        
 
         $this->setInfo()
             ->sender();
@@ -36,8 +37,10 @@ class TelegramModelException extends ErrorException
 
     protected function setInfo()
     {
+        
         $this->info = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
             "LINE: " . $this->getLine() . PHP_EOL . "FROM METHOD: " . $this->method . PHP_EOL;
+            
 
         return $this;
     }

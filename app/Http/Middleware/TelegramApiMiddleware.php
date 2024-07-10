@@ -49,48 +49,49 @@ class TelegramApiMiddleware
     {
         $data = $request->all();
         try {
-            if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
-                //не приходит уведомление через exception sendler, т.к. он использует файл .env
-                throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
-            }
+                if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
+                    //не приходит уведомление через exception sendler, т.к. он использует файл .env
+                    throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
+                }
 
-            $this->saveRawRequestData($data);
-            $expectedTypes = ["message", "edited_message", "chat_member", "message_reaction"];
-
-            foreach ($expectedTypes as $key) {
-                if (array_key_exists($key, $data)) {
-                    $this->typeIsExpected = true;
-                };
-            }
-
-            if (!$this->typeIsExpected) {
-                throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
-            }
+                $this->saveRawRequestData($data);
+                $expectedTypes = ["message", "edited_message", "chat_member", "message_reaction"];
 
 
+                foreach ($expectedTypes as $key) {
+                    if (array_key_exists($key, $data)) {
+                        $this->typeIsExpected = true;
+                    };
+                }
+                
+
+                if (!$this->typeIsExpected) {
+                    throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
+                }
 
 
-            $message = (new BaseTelegramRequestModel($data))->create();
-            $chatId = $message->getChatId();
-            $allowedIps = explode(",", env("ALLOWED_IP_ADRESSES"));
-            $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
+                $message = (new BaseTelegramRequestModel($data))->create();
+                $chatId = $message->getChatId();
+                $allowedIps = explode(",", env("ALLOWED_IP_ADRESSES"));
+                $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
 
 
-            if (!in_array($chatId, $allowedChats)) {
+                if (!in_array($chatId, $allowedChats)) {
 
-                throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
-            }
+                    throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
+                }
 
 
+                if (!in_array($request->ip(), $allowedIps)) {
 
-            if (!in_array($request->ip(), $allowedIps)) {
+                    throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
+                }
 
-                throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
-            }
+
         } catch (TelegramModelException $e) {
-
             Log::error($e->getInfo() . $e->getData());
             return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+
         } catch (UnknownChatException | UnknownIpAddressException $e) {
 
             Log::error($e->getInfo() . $e->getData());

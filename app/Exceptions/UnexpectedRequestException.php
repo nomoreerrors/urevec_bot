@@ -8,4 +8,5 @@ use ErrorException;
 
 class UnexpectedRequestException extends TelegramModelException
 {
+  
 }
