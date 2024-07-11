@@ -29,13 +29,15 @@ class TelegramApiMiddleware
 
     public function saveRawRequestData(array $data)
     {
+        date_default_timezone_set('Europe/Moscow');
         $requestLog = Storage::json("rawrequest.json");
-
+        $info = $data;
+        $info["Moscow_time"] = date("F j, Y, g:i a");
         if (!$requestLog) {
-            Storage::put("rawrequest.json", json_encode($data));
+            Storage::put("rawrequest.json", json_encode($info, JSON_UNESCAPED_UNICODE));
         } else {
-            $requestLog[] = $data;
-            Storage::put("rawrequest.json", json_encode($requestLog));
+            $requestLog[] = $info;
+            Storage::put("rawrequest.json", json_encode($requestLog, JSON_UNESCAPED_UNICODE));
         }
     }
 
@@ -77,15 +79,13 @@ class TelegramApiMiddleware
 
 
                 if (!in_array($chatId, $allowedChats)) {
-
                     throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
                 }
 
 
-                if (!in_array($request->ip(), $allowedIps)) {
-
-                    throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
-                }
+                // if (!in_array($request->ip(), $allowedIps)) {
+                //     throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
+                // }
 
 
         } catch (TelegramModelException $e) {
@@ -95,7 +95,8 @@ class TelegramApiMiddleware
         } catch (UnknownChatException | UnknownIpAddressException $e) {
 
             Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[403], Response::HTTP_FORBIDDEN);
+            //ЧТО ДЕЛАТЬ С НЕОБРАБОТАННЫМ ОБЪЕКТОМ, КОТОРЫЙ БОЛЬШЕ НЕ ПРИДЕТ?
+            return response(Response::$statusTexts[200], Response::HTTP_OK);
         }
 
 

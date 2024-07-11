@@ -84,11 +84,11 @@ class TelegramBotService
 
 
         if (!$requestLog) {
-            Storage::put("pretty_request_log.json", json_encode($data));
+            Storage::put("pretty_request_log.json", json_encode($data, JSON_UNESCAPED_UNICODE));
         } else {
             $requestLog[] = $data;
 
-            Storage::put("pretty_request_log.json", json_encode($requestLog));
+            Storage::put("pretty_request_log.json", json_encode($requestLog, JSON_UNESCAPED_UNICODE));
         }
     }
 

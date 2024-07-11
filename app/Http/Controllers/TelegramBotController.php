@@ -41,10 +41,8 @@ class TelegramBotController extends Controller
         $message = (new BaseTelegramRequestModel($data))->create();
         $service = new TelegramBotService($message);
 
+        // dd(get_class_vars($message));
         $service->prettyRequestLog();
-
-
-
 
 
         try {
@@ -65,19 +63,11 @@ class TelegramBotController extends Controller
             }
 
 
-        } catch (TelegramModelException $e) {
-             Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-
-        } catch (RestrictMemberFailedException $e) {
-             Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-
-        } catch (BanUserFailedException $e) {
+        } catch (TelegramModelException | RestrictMemberFailedException | BanUserFailedException $e) {
             Log::error($e->getInfo() . $e->getData());
             return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
+      
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
     }

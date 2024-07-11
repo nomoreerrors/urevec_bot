@@ -68,7 +68,7 @@ class BlockNewVisitorTest extends TestCase
      * Make sure is new member and not left user
      * @return void
      */
-    public function test_new_chat_member_status_not_equals_member_throws_exception(): void
+    public function test_new_chat_member_status_not_equals_member_return_false(): void
     {
         foreach ($this->testObjects as $object) {
 
