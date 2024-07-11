@@ -88,16 +88,20 @@ class TelegramApiMiddleware
                 // }
 
 
-        } catch (TelegramModelException $e) {
-            Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-
+      
         } catch (UnknownChatException | UnknownIpAddressException $e) {
 
             Log::error($e->getInfo() . $e->getData());
             //ЧТО ДЕЛАТЬ С НЕОБРАБОТАННЫМ ОБЪЕКТОМ, КОТОРЫЙ БОЛЬШЕ НЕ ПРИДЕТ?
             return response(Response::$statusTexts[200], Response::HTTP_OK);
+            
+        } catch (TelegramModelException $e) {
+
+            Log::error($e->getInfo() . $e->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
+
 
 
         return $next($request);
