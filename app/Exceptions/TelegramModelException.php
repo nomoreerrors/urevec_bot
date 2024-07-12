@@ -18,7 +18,6 @@ class TelegramModelException extends ErrorException
         protected string $method,
     ) {
         parent::__construct($message);
-        $this->message = PHP_EOL . $message;
         $this->data = print_r(request()->all(), true);
         
 

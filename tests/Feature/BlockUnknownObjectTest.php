@@ -13,16 +13,6 @@ class BlockUnknownObjectTest extends TestCase
      * A basic feature test example.
      */
 
-    private array $unknownObject = [
-        "update_id" => 11122233,
-        "unknown_type" =>
-        ["chat" =>
-        [
-            "id" => -1002222230714,
-            "title" => "Testylvania",
-            "type" => "supergroup"
-        ]]
-    ];
 
     public function test_unknown_object_exit_code_response_status_500(): void
     {

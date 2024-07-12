@@ -7,6 +7,7 @@ use App\Services\ManageChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
 use App\Models\TelegramMessageModel;
+use App\Models\BaseTelegramRequestModel;
 use App\Services\CONSTANTS;
 
 
@@ -21,6 +22,18 @@ abstract class TestCase extends BaseTestCase
     protected $chatPermissions;
 
     protected $filter;
+
+
+    public array $unknownObject = [
+        "update_id" => 11122233,
+        "unknown_type" =>
+        ["chat" =>
+        [
+            "id" => -1002222230714,
+            "title" => "Testylvania",
+            "type" => "supergroup"
+        ]]
+    ];
 
 
 

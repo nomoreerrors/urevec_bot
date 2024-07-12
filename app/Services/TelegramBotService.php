@@ -105,7 +105,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
-                "chat_id" => env("TELEGRAM_CHAT_ID"),
+                "chat_id" => $this->message->getChatId(),
                 "user_id" => $id > 0 ? $id : $this->message->getFromId(),
                 "can_send_messages" => false,
                 "can_send_documents" => false,
@@ -142,7 +142,7 @@ class TelegramBotService
             $response = Http::post(
                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
                 [
-                    "chat_id" => env("TELEGRAM_CHAT_ID"),
+                    "chat_id" => $this->message->getChatId(),
                     "message_id" => $this->message->getMessageId()
                 ]
             )->json();
@@ -165,7 +165,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             [
-                "chat_id" => env("TELEGRAM_CHAT_ID"),
+                "chat_id" => $this->message->getChatId(),
                 "text" => $text_message
             ]
         )->json();

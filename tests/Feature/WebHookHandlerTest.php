@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Exceptions\TelegramModelException;
+use App\Models\BaseMediaModel;
+use App\Models\PhotoMediaModel;
 use App\Models\TelegramMessageModel;
+use App\Models\VideoMediaModel;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -28,25 +31,39 @@ class WebHookHandlerTest extends TestCase
         foreach ($this->testObjects as $object) {
             $message = (new BaseTelegramRequestModel($object))->create();
 
+            if (!$message->getFromAdmin()) {
 
-            if ($message instanceof TextMessageModel && !$message->getFromAdmin()) {
+                    if ($message instanceof TextMessageModel) {
 
-                if ($message->getHasLink() || $message->hasTextLink()) {
+                        if ($message->hasTextLink()) {
+                            $response = $this->post("api/webhook", $object);
+                            $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
+                        }
 
-                    $response = $this->post("api/webhook", $object);
-                    // dd($response);
+                        if ($message->getHasLink()) {
+                            $response = $this->post("api/webhook", $object);
+                            $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
+                        }
 
-                    try {
-                        // dd($response);
-                        log::info($response->getOriginalContent());
-                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
-                    } catch (Exception $e) {
-                        dd($object);
                     }
-                }
+
+
+                    if ($message instanceof BaseMediaModel) {
+
+                        if ($message->hasTextLink()) {
+                            $response = $this->post("api/webhook", $object);
+                            $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
+                        }
+
+                        if ($message->getHasLink()) {
+                            $response = $this->post("api/webhook", $object);
+                            $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
+                        }
+                    }
             }
         }
     }
+          
 
     public function test_if_is_forward_message_from_another_group_ban_user(): void
     {
@@ -55,19 +72,18 @@ class WebHookHandlerTest extends TestCase
 
             if ($message instanceof ForwardMessageModel) {
 
-                // try {
-                if (!$message->getFromAdmin()) {
+                    if (!$message->getFromAdmin()) {
 
-                    $response = $this->post("api/webhook", $object);
-                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
-                }
+                        $response = $this->post("api/webhook", $object);
+                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::MEMBER_BLOCKED);
+                    }
 
 
-                if ($message->getFromAdmin()) {
+                    if ($message->getFromAdmin()) {
 
-                    $response = $this->post("api/webhook", $object);
-                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::DEFAULT_RESPONSE);
-                }
+                        $response = $this->post("api/webhook", $object);
+                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::DEFAULT_RESPONSE);
+                    }
             }
         }
     }
@@ -90,25 +106,23 @@ class WebHookHandlerTest extends TestCase
 
 
             if ($message instanceof NewMemberJoinUpdateModel) {
-                // dd("here");
-                $response = $this->post("api/webhook", $object);
+                
+                    $response = $this->post("api/webhook", $object);
 
-                if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
-
-                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
+                    if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
+                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
+                    }
                 }
-            }
 
 
-            if ($message instanceof InvitedUserUpdateModel) {
+                if ($message instanceof InvitedUserUpdateModel) {
 
-                $response = $this->post("api/webhook", $object);
+                    $response = $this->post("api/webhook", $object);
 
-                // dd($response);
-                if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
-                    $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
+                    if ($response->getOriginalContent() !== CONSTANTS::DEFAULT_RESPONSE) {
+                        $this->assertTrue($response->getOriginalContent() === CONSTANTS::NEW_MEMBER_RESTRICTED);
+                    }
                 }
-            }
         }
     }
 }

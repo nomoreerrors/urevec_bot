@@ -35,7 +35,8 @@ class MessageModel extends BaseTelegramRequestModel
     protected function setHasEntities(): static
     {
 
-        if (array_key_exists("entities", $this->data[$this->messageType])) {
+        if (array_key_exists("entities", $this->data[$this->messageType]) ||
+            array_key_exists("caption_entities", $this->data[$this->messageType])) {
             // dd("here");
             $this->hasEntities = true;
             $this->setHasTextLink();
@@ -63,7 +64,6 @@ class MessageModel extends BaseTelegramRequestModel
 
 
 
-
     public function getMessageId(): int
     {
         if (empty($this->messageId)) {
@@ -78,9 +78,14 @@ class MessageModel extends BaseTelegramRequestModel
     {
         if ($this->hasEntities) {
 
-            $entitiesToString = json_encode($this->data[$this->messageType]["entities"]);
+            if(array_key_exists("entities", $this->data[$this->messageType])) {
+                $entitiesToString = json_encode($this->data[$this->messageType]["entities"]);
+            }
 
-            // dd($entitiesToString);
+            if(array_key_exists("caption_entities", $this->data[$this->messageType])) {
+                $entitiesToString = json_encode($this->data[$this->messageType]["caption_entities"]);
+            }
+            
 
             if (str_contains($entitiesToString, "text_link") || str_contains($entitiesToString, "url")) {
                 $this->hasTextLink = true;
@@ -88,13 +93,10 @@ class MessageModel extends BaseTelegramRequestModel
                 return $this;
             }
         }
+        if($this->data["update_id"] === 117305689){
+            dd($this->data);
+        }
         return $this;
-    }
-
-
-    public function getText(): string
-    {
-        return $this->text;
     }
 
 

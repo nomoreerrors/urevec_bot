@@ -45,6 +45,14 @@ class BaseTelegramRequestModel extends Model
                 ->setFromUserName();
     }
 
+
+    public function __get($key)
+    {
+        throw new Exception("Свойство: " . (string)$key . ". " . "Попытка обратиться к свойству напрямую без get,
+         к несуществующему или приватному свойству.");
+    }
+  
+
     /**
      * Summary of create
      * @throws TelegramModelException
@@ -53,15 +61,15 @@ class BaseTelegramRequestModel extends Model
     public function create()
     {
         try {
-            
+
             $model = $this->createMessageModel()
-                          ->createTextMessageModel()
-                          ->createForwardMessageModel()
-                          ->createStatusUpdateModel()
-                          ->createNewMemberJoinUpdateModel()
-                          ->createNewMemberJoinUpdateModel()
-                          ->createMessageReactionUpdateModel()
-                          ->createInvitedUserUpdateModel();
+                ->createTextMessageModel()
+                ->createForwardMessageModel()
+                ->createStatusUpdateModel()
+                ->createNewMemberJoinUpdateModel()
+                ->createInvitedUserUpdateModel()
+                ->createMessageReactionUpdateModel()
+                ->createMediaModel();
 
             return $model;
 
@@ -159,6 +167,9 @@ class BaseTelegramRequestModel extends Model
         if (
             array_key_exists($type, $this->data) &&
             !array_key_exists("text", $this->data[$type]) &&
+            !array_key_exists("video", $this->data[$type]) &&
+            !array_key_exists("photo", $this->data[$type]) &&
+            !array_key_exists("voice", $this->data[$type]) &&
             !array_key_exists("forward_from_chat", $this->data[$type]) &&
             !array_key_exists("forward_origin", $this->data[$type])
         ) {
@@ -170,7 +181,7 @@ class BaseTelegramRequestModel extends Model
 
 
 
-    public function createStatusUpdateModel()
+    private function createStatusUpdateModel()
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -187,7 +198,7 @@ class BaseTelegramRequestModel extends Model
     }
 
 
-    public function createNewMemberJoinUpdateModel()
+    private function createNewMemberJoinUpdateModel()
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -204,7 +215,7 @@ class BaseTelegramRequestModel extends Model
     }
 
 
-    public function createInvitedUserUpdateModel()
+    private function createInvitedUserUpdateModel(): static
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -219,6 +230,38 @@ class BaseTelegramRequestModel extends Model
             }
         }
         return $this;
+    }
+
+
+    private function createMediaModel(): self
+    {
+        $type = $this->messageType; 
+
+
+        if(!array_key_exists("forward_from_chat", $this->data[$type])) {
+
+
+            if (array_key_exists("video", $this->data[$type]) &&
+               !array_key_exists("photo", $this->data[$type])) {
+                return new VideoMediaModel($this->data);
+            }
+
+            if (array_key_exists("photo", $this->data[$type]) &&
+               !array_key_exists("video", $this->data[$type])) {
+                return new PhotoMediaModel($this->data);
+            }
+
+            if (array_key_exists("photo", $this->data[$type]) &&
+               array_key_exists("video", $this->data[$type])) {
+                return new MultiMediaModel($this->data);
+            }
+
+             if (array_key_exists("voice", $this->data[$type])) { 
+                return new VoiceMediaModel($this->data);
+            }
+
+        }
+            return $this;
     }
 
 
@@ -284,9 +327,9 @@ class BaseTelegramRequestModel extends Model
         } elseif (array_key_exists("message_reaction_count", $this->data)) {
             $this->messageType = "message_reaction_count";
         } else {
+            $this->messageType = "unknown_type";
             $this->propertyErrorHandler("messageType", __LINE__, __METHOD__);
         }
-
 
         return $this;
     }

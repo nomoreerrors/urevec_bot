@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Storage;
 
-class FilterService extends BaseService
+class FilterService 
 {
 
 
