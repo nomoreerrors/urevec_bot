@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\BanUserFailedException;
 use App\Exceptions\RestrictMemberFailedException;
+use App\Models\BaseMediaModel;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
@@ -29,9 +30,7 @@ class TelegramBotService
 
     public function __construct(private BaseTelegramRequestModel $message)
     {
-        $this->message = $message;
     }
-
 
 
     /**
@@ -56,9 +55,9 @@ class TelegramBotService
             $data["0"]["FROM ADMIN"] = $this->message->getFromAdmin();
             $data["0"]["FROM USER ID"] = $this->message->getFromId();
             $data["0"]["MESSAGE_ID"] = $this->message->getFromId();
-            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->hasTextLink();
+            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->getHasTextLink();
             if ($this->message instanceof TextMessageModel) {
-                $data["0"]["MESSAGE HAS LINK"] =  $this->message->getHasLink();
+                $data["0"]["MESSAGE HAS LINK"] = $this->message->getHasLink();
                 $data["0"]["TEXT"] = $this->message->getText();
             }
         }
@@ -127,6 +126,8 @@ class TelegramBotService
             'Bad Request: PARTICIPANT_ID_INVALID' ||
             "Bad Request: invalid user_id specified"
         ) {
+            // dd($this->message->getChatId(), $response);
+            // dd($response);
             return false;
         }
     }
@@ -184,7 +185,7 @@ class TelegramBotService
         log::info("inside banNewUser");
 
         $result = $this->restrictChatMember($time);
-        if($result) {
+        if ($result) {
             $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
             return true;
@@ -205,39 +206,41 @@ class TelegramBotService
      */
     public function blockNewVisitor(): bool
     {
-            if(!($this->message instanceof InvitedUserUpdateModel) &&
-                !($this->message instanceof NewMemberJoinUpdateModel)) {
+        if (
+            !($this->message instanceof InvitedUserUpdateModel) &&
+            !($this->message instanceof NewMemberJoinUpdateModel)
+        ) {
 
-                return false;
+            return false;
+        }
+
+        if ($this->message instanceof NewMemberJoinUpdateModel) {
+
+            $result = $this->restrictChatMember();
+
+            if ($result) {
+                log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->message->getFromId());
+                return true;
             }
+        }
 
-            if ($this->message instanceof NewMemberJoinUpdateModel) {
 
-                    $result = $this->restrictChatMember();
+        if ($this->message instanceof InvitedUserUpdateModel) {
 
+            $invitedUsers = $this->message->getInvitedUsersIdArray();
+
+            if ($invitedUsers !== []) {
+
+                foreach ($invitedUsers as $user_id) {
+
+                    $result = $this->restrictChatMember(id: $user_id);
                     if ($result) {
-                        log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->message->getFromId());
-                        return true;
+                        log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
                     }
-            }
-
-
-            if ($this->message instanceof InvitedUserUpdateModel) {
-
-                $invitedUsers = $this->message->getInvitedUsersIdArray();
-
-                if ($invitedUsers !== []) {
-
-                    foreach ($invitedUsers as $user_id) {
-
-                        $result = $this->restrictChatMember(id: $user_id);
-                        if ($result) {
-                            log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
-                        }
-                    }
-                    return true;
                 }
+                return true;
             }
+        }
         throw new RestrictMemberFailedException(CONSTANTS::RESTRICT_NEW_USER_FAILED, __METHOD__);
     }
 
@@ -253,7 +256,8 @@ class TelegramBotService
             $this->message instanceof ForwardMessageModel &&
             !$this->message->getFromAdmin()
         ) {
-            if ($this->banUser());
+            if ($this->banUser())
+                ;
 
             return true;
         }
@@ -268,21 +272,30 @@ class TelegramBotService
             return false;
         }
 
+        if ($this->message->getFromAdmin()) {
+            return false;
+        }
+
         if ($this->message instanceof MessageModel) {
-            if ($this->message->hasTextLink()) {
+            if ($this->message->getHasTextLink()) {
 
                 if ($this->banUser()) {
                     return true;
-                };
+                }
+                ;
             }
         }
 
-        if ($this->message instanceof TextMessageModel) {
+        if (
+            $this->message instanceof TextMessageModel ||
+            $this->message instanceof BaseMediaModel
+        ) {
             if ($this->message->getHasLink()) {
 
                 if ($this->banUser()) {
                     return true;
-                };
+                }
+                ;
             }
         }
         return false;

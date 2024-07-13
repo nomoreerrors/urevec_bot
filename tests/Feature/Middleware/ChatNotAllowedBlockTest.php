@@ -14,15 +14,16 @@ use Symfony\Component\HttpFoundation\Response;
 class ChatNotAllowedBlockTest extends TestCase
 {
     /**
-     * A basic feature test example.
+     * Test that a chat ID not allowed request stops at the middleware and returns the correct response.
      */
-    public function test_if_chat_id_not_allowed_request_stopped_at_middleware(): void
+    public function test_chat_id_not_allowed_request_stops_at_middleware(): void
     {
-        $data= $this->testObjects[0]; 
-        $response = $this->post('api/webhook', $data);
+        $messageData = $this->getMessageModel()->getData();
+        $messageData['message']['chat']['id'] = 111115555;
+
+        $response = $this->post('api/webhook', $messageData);
 
         $response->assertStatus(200);
         $response->assertContent(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED);
-
     }
 }

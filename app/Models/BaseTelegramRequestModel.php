@@ -38,20 +38,20 @@ class BaseTelegramRequestModel extends Model
     public function __construct(array $data)
     {
         $this->data = $data;
-            $this->setMessageType()
-                ->setFromId()
-                ->setFromAdmin()
-                ->setChatId()
-                ->setFromUserName();
+        $this->setMessageType()
+            ->setFromId()
+            ->setFromAdmin()
+            ->setChatId()
+            ->setFromUserName();
     }
 
 
     public function __get($key)
     {
-        throw new Exception("Свойство: " . (string)$key . ". " . "Попытка обратиться к свойству напрямую без get,
+        throw new Exception("Свойство: " . (string) $key . ". " . "Попытка обратиться к свойству напрямую без get,
          к несуществующему или приватному свойству.");
     }
-  
+
 
     /**
      * Summary of create
@@ -87,7 +87,7 @@ class BaseTelegramRequestModel extends Model
      */
     protected function propertyErrorHandler(string $message = "", $line, $method)
     {
-        $text =  CONSTANTS::EMPTY_PROPERTY . "DEFAULT EXCEPTION REASON: " . $message  . " LINE: " . $line . PHP_EOL . $method . PHP_EOL .
+        $text = CONSTANTS::EMPTY_PROPERTY . "DEFAULT EXCEPTION REASON: " . $message . " LINE: " . $line . PHP_EOL . $method . PHP_EOL .
             "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
             "FROM_ADMIN PROPERTY: " . $this->fromAdmin . PHP_EOL .
             "FROM_ID PROPERTY: " . $this->fromId . PHP_EOL .
@@ -95,7 +95,7 @@ class BaseTelegramRequestModel extends Model
             "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL;
         // dd($text);
 
-        throw new TelegramModelException($text,__METHOD__);
+        throw new TelegramModelException($text, __METHOD__);
     }
 
 
@@ -235,59 +235,65 @@ class BaseTelegramRequestModel extends Model
 
     private function createMediaModel(): self
     {
-        $type = $this->messageType; 
+        $type = $this->messageType;
 
 
-        if(!array_key_exists("forward_from_chat", $this->data[$type])) {
+        if (!array_key_exists("forward_from_chat", $this->data[$type])) {
 
 
-            if (array_key_exists("video", $this->data[$type]) &&
-               !array_key_exists("photo", $this->data[$type])) {
+            if (
+                array_key_exists("video", $this->data[$type]) &&
+                !array_key_exists("photo", $this->data[$type])
+            ) {
                 return new VideoMediaModel($this->data);
             }
 
-            if (array_key_exists("photo", $this->data[$type]) &&
-               !array_key_exists("video", $this->data[$type])) {
+            if (
+                array_key_exists("photo", $this->data[$type]) &&
+                !array_key_exists("video", $this->data[$type])
+            ) {
                 return new PhotoMediaModel($this->data);
             }
 
-            if (array_key_exists("photo", $this->data[$type]) &&
-               array_key_exists("video", $this->data[$type])) {
+            if (
+                array_key_exists("photo", $this->data[$type]) &&
+                array_key_exists("video", $this->data[$type])
+            ) {
                 return new MultiMediaModel($this->data);
             }
 
-             if (array_key_exists("voice", $this->data[$type])) { 
+            if (array_key_exists("voice", $this->data[$type])) {
                 return new VoiceMediaModel($this->data);
             }
 
         }
-            return $this;
+        return $this;
     }
 
 
     protected function setFromId()
     {
         try {
-        // log::info(json_encode($this->data));
-        $type = "";
-        if (array_key_exists("from", $this->data[$this->messageType])) {
-            $type = "from";
-        }
+            // log::info(json_encode($this->data));
+            $type = "";
+            if (array_key_exists("from", $this->data[$this->messageType])) {
+                $type = "from";
+            }
 
-        if (array_key_exists("user", $this->data[$this->messageType])) {
-            $type = "user";
-        }
+            if (array_key_exists("user", $this->data[$this->messageType])) {
+                $type = "user";
+            }
 
-        if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
-            $type = "actor_chat";
-        }
+            if (array_key_exists("actor_chat", $this->data[$this->messageType])) {
+                $type = "actor_chat";
+            }
 
-        if(array_key_exists($type, $this->data[$this->messageType])) {
-            $this->fromId = $this->data[$this->messageType][$type]["id"];
-        }
+            if (array_key_exists($type, $this->data[$this->messageType])) {
+                $this->fromId = $this->data[$this->messageType][$type]["id"];
+            }
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
-            
+
         }
 
         return $this;
@@ -366,7 +372,7 @@ class BaseTelegramRequestModel extends Model
             }
 
 
-                $this->fromUserName = $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
+            $this->fromUserName = $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }

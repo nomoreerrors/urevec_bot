@@ -10,17 +10,15 @@ use Tests\TestCase;
 
 class SendMessageTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_send_message_return_status_true(): void
+
+    public function testSendMessageReturnStatusTrue(): void
     {
-        $message = (new BaseTelegramRequestModel($this->testObjects[0]));
-        $service = new TelegramBotService($message);
+        $messageModel = $this->getMessageModel();
+        $service = new TelegramBotService($messageModel);
 
         $testMessage = "His name is Robert Paulsen";
         $response = $service->sendMessage($testMessage);
 
-        $this->assertTrue($response["ok"] === true);
+        $this->assertTrue($response["ok"]);
     }
 }

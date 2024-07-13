@@ -14,15 +14,14 @@ class MessageTypeNotExpectedTest extends TestCase
 {
 
     /**
-     * A basic feature test example.
+     * Test that the middleware stops the request if the object type is not expected.
      */
-    public function test_not_expected_request_object_type_stopped_at_middleware_and_response_ok(): void
+    public function test_middleware_stops_request_for_unknown_object_type(): void
     {
-        $data = $this->unknownObject;
+        $unknownObject = $this->getUnknownObject();
+        $response = $this->postJson('/api/webhook', $unknownObject);
 
-        $response = $this->post('api/webhook', $data);
-        
-        $response->assertStatus(200);
-        $response->assertContent(CONSTANTS::UNKNOWN_OBJECT_TYPE);
+        $response->assertOk();
+        $response->assertSee(CONSTANTS::UNKNOWN_OBJECT_TYPE);
     }
 }

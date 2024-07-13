@@ -16,9 +16,7 @@ use App\Services\TelegramBotService;
 
 class CreateMediaModelTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
+
     public function test_create_correct_media_model(): void
     {
         foreach ($this->testObjects as $object) {
@@ -33,25 +31,25 @@ class CreateMediaModelTest extends TestCase
                     array_key_exists("video", $object[$type]) &&
                     !array_key_exists("photo", $object[$type])
                 ) {
-                    $this->assertTrue($message instanceof VideoMediaModel);
+                    $this->assertInstanceOf(VideoMediaModel::class, $message);
                 }
 
                 if (
                     array_key_exists("photo", $object[$type]) &&
                     !array_key_exists("video", $object[$type])
                 ) {
-                    $this->assertTrue($message instanceof PhotoMediaModel);
+                    $this->assertInstanceOf(PhotoMediaModel::class, $message);
                 }
 
                 if (
                     array_key_exists("photo", $object[$type]) &&
                     array_key_exists("video", $object[$type])
                 ) {
-                    $this->assertTrue($message instanceof MultiMediaModel);
+                    $this->assertInstanceOf(MultiMediaModel::class, $message);
                 }
 
                 if (array_key_exists("voice", $object[$type])) {
-                    $this->assertTrue($message instanceof VoiceMediaModel);
+                    $this->assertInstanceOf(VoiceMediaModel::class, $message);
                 }
             }
 
@@ -69,14 +67,16 @@ class CreateMediaModelTest extends TestCase
 
             if (
                 array_key_exists("forward_from_chat", $object[$type]) &&
-                    (array_key_exists("video", $object[$type]) ||
+                (
+                    array_key_exists("video", $object[$type]) ||
                     array_key_exists("voice", $object[$type]) ||
-                    array_key_exists("photo", $object[$type]))
+                    array_key_exists("photo", $object[$type])
+                )
             ) {
 
-                $this->assertTrue($message instanceof ForwardMessageModel);
+                $this->assertInstanceOf(ForwardMessageModel::class, $message);
             }
         }
-        
+
     }
 }

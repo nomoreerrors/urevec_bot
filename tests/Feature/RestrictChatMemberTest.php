@@ -14,27 +14,32 @@ use App\Models\TelegramMessageModel;
 
 class RestrictChatMemberTest extends TestCase
 {
+
     /**
-     * $this->testObjects["4"] - содержит id 100% существующего бота в группе
+     * Test that restricting a user by ID returns true.
+     *
      * @return void
      */
-    public function test_restrict_user_by_id_return_true(): void
+    public function testRestrictUserByIdReturnsTrue()
     {
-
-
-        $message = (new BaseTelegramRequestModel($this->testObjects["4"]))->create();
-
-        $service = new TelegramBotService($message);
-
+        $requestData = $this->getMessageModel()->getData();
+        $requestModel = new BaseTelegramRequestModel($requestData);
+        $requestModel->create();
+        $service = new TelegramBotService($requestModel);
 
         $this->assertTrue($service->restrictChatMember());
     }
 
 
-    public function test_restrict_user_by_id_user_not_found_return_false(): void
+    public function testRestrictingNonExistentUserReturnsFalse(): void
     {
-        $message = (new BaseTelegramRequestModel($this->testObjects["19"]))->create();
-        $service = new TelegramBotService($message);
+        $requestData = $this->getMessageModel()->getData();
+        $requestData['message']['from']['id'] = 9999999;
+
+        $requestModel = new BaseTelegramRequestModel($requestData);
+        $requestModel->create();
+
+        $service = new TelegramBotService($requestModel);
 
         $this->assertFalse($service->restrictChatMember());
     }

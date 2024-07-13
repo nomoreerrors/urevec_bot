@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\BaseTelegramRequestModel;
+use App\Models\MessageModel;
 use App\Models\TextMessageModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -13,27 +14,21 @@ use App\Services\TelegramBotService;
 class DeleteMessageTest extends TestCase
 {
     /**
-     * Базовые методы в классе TestCase.
-     */
-
-
-    /**
-     * Несуществующее сообщение. Если ответ сервера "message to delete not found",
-     * то запрос правильный и при верном message_id успешно удалит сообщение
+     * Test that a message deletion request with a non-existent message ID returns false.
      * @return void
      */
-    public function test_messsage_id_not_found_return_description_key_value_equals_message_not_found(): void
+    public function test_deleting_nonexistent_message_returns_false(): void
     {
-        foreach ($this->testObjects as $object) {
-            $message = (new BaseTelegramRequestModel($object))->create();
-            $service = new TelegramBotService($message);
+        $data = $this->getMessageModel()->getData();
+        $data['message']['message_id'] = 9999999;
 
-            if ($message instanceof TextMessageModel) {
+        $model = new BaseTelegramRequestModel($data);
+        $model->create();
 
-                $response = $service->deleteMessage();
+        $botService = new TelegramBotService($model);
+        $this->assertFalse($botService->deleteMessage());
 
-                $this->assertFalse($response);
-            }
-        }
     }
+
+
 }

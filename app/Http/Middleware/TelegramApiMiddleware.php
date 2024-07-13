@@ -5,8 +5,10 @@ namespace App\Http\Middleware;
 use App\Exceptions\EnvironmentVariablesException;
 use App\Exceptions\TelegramModelException;
 use App\Exceptions\UnexpectedRequestException;
+use App\Services\BotErrorNotificationService;
 use App\Services\TelegramMiddlewareService;
 use Closure;
+use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
@@ -37,7 +39,7 @@ class TelegramApiMiddleware
 
 
 
-// 
+    // 
     /**
      * Handle an incoming request.
      *
@@ -45,35 +47,41 @@ class TelegramApiMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-            $data = $request->all();
+        $data = $request->all();
 
 
         try {
-                if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
-                    throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
-                }
+            if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
+                throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
+            }
 
-                $this->saveRawRequestData($data);
-                $middlewareService = new TelegramMiddlewareService($data);
-                $middlewareService->checkIfObjectTypeExpected();
+            $this->saveRawRequestData($data);
+            $middlewareService = new TelegramMiddlewareService($data);
+            $middlewareService->checkIfObjectTypeExpected();
 
 
-                $message = (new BaseTelegramRequestModel($data))->create();
-                
-                $middlewareService->checkIfChatIdAllowed($message->getChatId());
-                $middlewareService->checIfIpAllowed($request->ip());
-                
-               
+            $message = (new BaseTelegramRequestModel($data))->create();
 
-      
+            $middlewareService->checkIfChatIdAllowed($message->getChatId());
+            $middlewareService->checIfIpAllowed($request->ip());
+
+
+
+
         } catch (UnknownChatException | UnknownIpAddressException | UnexpectedRequestException $e) {
 
             Log::error($e->getInfo() . $e->getData());
             return response($e->getMessage(), Response::HTTP_OK);
-            
+
         } catch (TelegramModelException $e) {
 
             Log::error($e->getInfo() . $e->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+        } catch (Exception $e) {
+
+            Log::error($e);
+            BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine());
             return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 

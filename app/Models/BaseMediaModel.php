@@ -18,19 +18,25 @@ class BaseMediaModel extends MessageModel
     }
 
 
-    public function setCaption(): static
+    private function setCaption(): static
     {
-        if(array_key_exists("caption", $this->data[$this->messageType])) {
+        if (array_key_exists("caption", $this->data[$this->messageType])) {
             $this->caption = $this->data[$this->messageType]["caption"];
         }
         return $this;
     }
 
 
-       protected function setHasLink()
+    public function getCaption()
+    {
+        return $this->caption;
+    }
+
+
+    protected function setHasLink()
     {
         $links = ["http", ".рф", ".ру", ".ком", ".com", ".ru"];
-        if(!empty($this->caption)) {
+        if (!empty($this->caption)) {
 
             foreach ($links as $link)
                 if (str_contains($this->caption, $link)) {

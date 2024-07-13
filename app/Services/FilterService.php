@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\BaseMediaModel;
+use App\Models\TextMessageModel;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\TelegramMessageModel;
@@ -11,92 +13,119 @@ use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Storage;
 
-class FilterService 
+class FilterService
 {
-
-
-    private BaseTelegramRequestModel $message;
-
-
-    public function __construct(BaseTelegramRequestModel $message)
+    public function __construct(private BaseTelegramRequestModel $message)
     {
-        $this->message = $message;
     }
 
     /**
-     * Фильтр слов для удаления мата и рекламы
-     * @throws \Exception
+     * Filter words for removal of profanity and advertising
      * @return bool
      */
     public function wordsFilter(): bool
     {
-        if (empty($this->message->getText())) {
+        if ($this->message->getFromAdmin()) {
             return false;
         }
-        $badWords = json_decode(Storage::get('badwords.json'), true);
-        $phrases = json_decode(Storage::get('badPhrases.json'), true);
+
+        if (!$this->isMessageValid()) {
+            return false;
+        }
+
+        $badWords = $this->getBadWords();
+        $phrases = $this->getPhrases();
 
         if (empty($badWords) || empty($phrases)) {
-            response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-
-
-            throw new Exception("Отстутствует файл фильтра сообщений storage/app/badwords.json или badPhrases.json");
+            throw new Exception("Missing filter messages file storage/app/badwords.json or badPhrases.json");
         }
 
-        if (empty($this->message->getText())) {
-            return false;
+        $text = $this->getText();
+
+        $cleanedText = $this->cleanText($text);
+
+        if ($this->containsPhrases($cleanedText, $phrases)) {
+            $this->storeDeletedWord($text, $cleanedText);
+            return true;
         }
 
+        $words = $this->getWordsFromText($cleanedText);
 
-
-        $string = str_replace(
-            [
-                '.', ',', '!', '?', '&',
-                '/', '"', '(', ')', ';'
-            ],
-            " ",
-            $this->message->getText()
-        );
-
-        $string = mb_strtolower($string);
-
-        foreach ($phrases as $phrase) {
-            if (str_contains($string, $phrase)) {
-                Storage::append(
-                    "words_deleted_by_filter.txt",
-                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
-                        "WORD: " . $phrase . PHP_EOL . "FROM TEXT: " .
-                        $this->message->getText() . PHP_EOL
-                );
+        foreach ($words as $word) {
+            if (in_array($word, $badWords)) {
+                $this->storeDeletedWord($text, $word);
                 return true;
             }
         }
-
-
-        $arrayFromString = explode(" ", $string);
-
-        foreach ($arrayFromString as $key => $value) {
-
-            if (strlen($value) <= 6) { //Unicode занимает больше битов
-                unset($arrayFromString[$key]);
-            }
-        }
-
-        foreach ($arrayFromString as $key => $value) {
-
-            if (in_array($value, $badWords)) {
-                Storage::append(
-                    "words_deleted_by_filter.txt",
-                    PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
-                        "WORD: " . $value . PHP_EOL . "FROM TEXT: " .
-                        $this->message->getText() . PHP_EOL
-                );
-                return true;
-            }
-        }
-
-
 
         return false;
+    }
+
+    private function isMessageValid(): bool
+    {
+        return ($this->message instanceof TextMessageModel) || ($this->message instanceof BaseMediaModel);
+    }
+
+    private function getBadWords(): array
+    {
+        return json_decode(Storage::get('badwords.json'), true);
+    }
+
+    private function getPhrases(): array
+    {
+        return json_decode(Storage::get('badPhrases.json'), true);
+    }
+
+    private function getText(): string
+    {
+        return method_exists($this->message, 'getText') ? $this->message->getText() : $this->message->getCaption();
+    }
+
+    private function cleanText(string $text): string
+    {
+        $text = str_replace(
+            [
+                '.',
+                ',',
+                '!',
+                '?',
+                '&',
+                '/',
+                '"',
+                '(',
+                ')',
+                ';'
+            ],
+            ' ',
+            $text
+        );
+
+        return mb_strtolower($text);
+    }
+
+    private function containsPhrases(string $cleanedText, array $phrases): bool
+    {
+        foreach ($phrases as $phrase) {
+            if (str_contains($cleanedText, $phrase)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function storeDeletedWord(string $text, $deleted): void
+    {
+        Storage::append(
+            'words_deleted_by_filter.txt',
+            PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
+            "WORD: " . $deleted
+        );
+    }
+
+
+    public function getWordsFromText($cleanedText): array
+    {
+        return explode(' ', $this->getText());
     }
 }

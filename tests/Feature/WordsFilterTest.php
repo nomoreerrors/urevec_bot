@@ -18,19 +18,59 @@ class WordsFilterTest extends TestCase
     /**
      * A basic feature test example.
      */
-    public function test_filter_array_contains_word_return_true(): void
+    public function test_text_message_model_contains_black_list_word_return_true(): void
     {
-        // $badWords = json_decode(Storage::get('badwords.json'), true);
+        $data = $this->getTextMessageModel()->getData();
+        $data["message"]["text"] = "модераторы";
+        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $filter = new FilterService($textMessageModel);
+
+        $this->assertTrue($filter->wordsFilter());
+    }
 
 
-        $message = (new BaseTelegramRequestModel($this->testObjects["15"]))->create();
-        $filter = new FilterService($message);
+    public function test_media_model_caption_contains_black_list_word_return_true()
+    {
+        $data = $this->getMultiMediaModel()->getData();
+        $data["message"]["caption"] = "бессмысленный текст и запретное слово: администраторы";
+        $mediaMessageModel = (new BaseTelegramRequestModel($data))->create();
+
+        $filter = new FilterService($mediaMessageModel);
+        $this->assertTrue($filter->wordsFilter());
+
+    }
 
 
-        if ($message instanceof TextMessageModel) {
 
-            $result = $filter->wordsFilter();
-            $this->assertTrue($result);
-        }
+    public function test_text_message_model_contains_black_list_phrases_return_true(): void
+    {
+        $data = $this->getTextMessageModel()->getData();
+        $data["message"]["text"] = "в соседнюю группу";
+        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $filter = new FilterService($textMessageModel);
+
+        $this->assertTrue($filter->wordsFilter());
+    }
+
+
+
+    public function test_media_model_caption_contains_black_list_phrase_return_true()
+    {
+        $data = $this->getMultiMediaModel()->getData();
+        $data["message"]["caption"] = "бессмысленный текст и запретная фраза: сдается в аренду";
+        $mediaMessageModel = (new BaseTelegramRequestModel($data))->create();
+
+        $filter = new FilterService($mediaMessageModel);
+        $this->assertTrue($filter->wordsFilter());
+
+    }
+
+    public function test_not_able_to_delete_administrator_message()
+    {
+        $data = $this->getMultiMediaModel()->getData();
+        $data["message"]["from"]["id"] = $this->getAdminId();
+        $messageModel = (new BaseTelegramRequestModel($data))->create();
+        $filter = new FilterService($messageModel);
+        $this->assertFalse($filter->wordsFilter());
     }
 }

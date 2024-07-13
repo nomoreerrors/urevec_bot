@@ -14,28 +14,31 @@ use App\Services\CONSTANTS;
 use Illuminate\Support\Facades\Storage;
 
 
-class TelegramMiddlewareService 
+class TelegramMiddlewareService
 {
 
     private bool $typeIsExpected = false;
 
-    public function __construct(private array $data) {}
+    public function __construct(private array $data)
+    {
+    }
 
 
     public function checkIfObjectTypeExpected()
     {
-            $expectedTypes = ["message", "edited_message", "chat_member", "message_reaction"];
+        $expectedTypes = ["message", "edited_message", "chat_member", "message_reaction"];
 
-            foreach ($expectedTypes as $key) {
-                if (array_key_exists($key, $this->data)) {
+        foreach ($expectedTypes as $key) {
+            if (array_key_exists($key, $this->data)) {
                 $this->typeIsExpected = true;
-                };
             }
-            
-            if(!$this->typeIsExpected)  {
-                
-                throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
-            } else
+            ;
+        }
+
+        if (!$this->typeIsExpected) {
+
+            throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
+        } else
             return;
     }
 
@@ -43,10 +46,9 @@ class TelegramMiddlewareService
     public function checkIfChatIdAllowed(int $chatId)
     {
         $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
-
-         if (!in_array($chatId, $allowedChats)) {
-            // dd($chatId);
-                    throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
+        // dd($chatId);
+        if (!in_array($chatId, $allowedChats)) {
+            throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
         } else {
             return;
         }
@@ -56,9 +58,9 @@ class TelegramMiddlewareService
 
     public function checIfIpAllowed(string $ip)
     {
-          $allowedIps = explode(",", env("ALLOWED_IP_ADRESSES"));
-          if (!in_array($ip, $allowedIps)) {
-                    throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
+        $allowedIps = explode(",", env("ALLOWED_IP_ADRESSES"));
+        if (!in_array($ip, $allowedIps)) {
+            throw new UnknownIpAddressException(CONSTANTS::REQUEST_IP_NOT_ALLOWED, __METHOD__);
         } else
             return;
     }

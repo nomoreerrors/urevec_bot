@@ -13,31 +13,32 @@ use Tests\TestCase;
 class SetPermissionsDayNightModeTest extends TestCase
 {
 
-    public function test_set_night_mode_permissions_return_true(): void
+    public function testSettingNightModePermissionsReturnsTrue(): void
     {
-        $result = $this->chatPermissions->setPermissionsToNightMode();
-        $this->assertTrue($result);
+        $this->assertTrue($this->chatPermissions->setPermissionsToNightMode());
     }
 
 
-    public function test_set_light_mode_permissions_return_true(): void
+    public function test_set_light_mode_permissions_returns_true(): void
     {
-        $result = $this->chatPermissions->setPermissionsToLightMode();
-        $this->assertTrue($result);
+        $this->assertTrue($this->chatPermissions->setPermissionsToLightMode());
     }
 
 
-    public function testSwitchPermissionsNightLightModeReturn(): void
+    public function testSwitchingPermissionsBetweenNightAndLightModeWorks(): void
     {
-
-        $response = $this->post("/setChatPermissions", [
-            "token" => env("CRON_TOKEN"),
-            "mode" => "night_mode"
+        $nightModeResponse = $this->post('/setChatPermissions', [
+            'token' => env('CRON_TOKEN'),
+            'mode' => 'night_mode',
         ]);
-        // dd($response);
-        $this->assertEquals("night_mode", $response->headers->get("mode"));
 
-        $response = $this->post("/setChatPermissions", ["token" => env("CRON_TOKEN"), "mode" => "light_mode"]);
-        $this->assertEquals("light_mode", $response->headers->get("mode"));
+        $this->assertEquals('night_mode', $nightModeResponse->headers->get('mode'));
+
+        $lightModeResponse = $this->post('/setChatPermissions', [
+            'token' => env('CRON_TOKEN'),
+            'mode' => 'light_mode',
+        ]);
+
+        $this->assertEquals('light_mode', $lightModeResponse->headers->get('mode'));
     }
 }

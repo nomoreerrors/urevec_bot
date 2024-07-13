@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use App\Services\CONSTANTS;
 use Tests\TestCase;
 use Illuminate\Http\Request;
 
@@ -14,13 +15,13 @@ class BlockUnknownObjectTest extends TestCase
      */
 
 
-    public function test_unknown_object_exit_code_response_status_500(): void
+    public function testUnknownObjectResponseStatusCodeIsOk(): void
     {
+        $unknownObject = $this->getUnknownObject();
+        $response = $this->postJson('/api/webhook', $unknownObject);
 
-
-        $response = $this->post('/api/webhook', $this->unknownObject);
-
-
-        $response->assertStatus(500);
+        $response->assertOk();
+        $response->assertSee(CONSTANTS::UNKNOWN_OBJECT_TYPE);
     }
+
 }

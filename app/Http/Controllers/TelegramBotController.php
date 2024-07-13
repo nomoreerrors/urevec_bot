@@ -67,7 +67,7 @@ class TelegramBotController extends Controller
             Log::error($e->getInfo() . $e->getData());
             return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-      
+
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
     }
@@ -131,7 +131,7 @@ class TelegramBotController extends Controller
 
                 if ($result) {
                     log::info("Set to light mode time . " . time());
-                    return response('ok', Response::HTTP_OK,  ['mode' => 'light_mode']);
+                    return response('ok', Response::HTTP_OK, ['mode' => 'light_mode']);
                 }
             }
         }
