@@ -52,7 +52,7 @@ class FilterService
         $words = $this->getWordsFromText($cleanedText);
 
         foreach ($words as $word) {
-            if (in_array($word, $badWords)) {
+            if (in_array(mb_strtolower($word), $badWords)) {
                 $this->storeDeletedWord($text, $word);
                 return true;
             }

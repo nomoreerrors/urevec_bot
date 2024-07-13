@@ -73,4 +73,27 @@ class WordsFilterTest extends TestCase
         $filter = new FilterService($messageModel);
         $this->assertFalse($filter->wordsFilter());
     }
+
+    public function testTextContainsUpperCaseBlackListWordsFilterReturnsTrue()
+    {
+        $data = [
+            "update_id" => 267308067,
+            "message" => [
+                "message_id" => 18608,
+                "from" => [
+                    "id" => 1074023376,
+                    "first_name" => "Устин Акимыч"
+                ],
+                "chat" => [
+                    "id" => -2222444424,
+                ],
+                "text" => "Админ чата кто?",
+            ],
+        ];
+
+        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $filterService = new FilterService($textMessageModel);
+        $this->assertTrue($filterService->wordsFilter());
+    }
+
 }

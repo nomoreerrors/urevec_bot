@@ -49,6 +49,20 @@ class WebHookHandlerTest extends TestCase
         $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
     }
 
+
+
+    public function test_if_message_contains_upper_case_characters_link_ban_user(): void
+    {
+        $data = $this->getTextMessageModel()->getData();
+        $data["message"]["text"] = "some text here and hTTps://gOOgle.com";
+        $textModel = (new BaseTelegramRequestModel($data))->create();
+
+        $this->assertTrue($textModel->getHasLink());
+        $response = $this->post("api/webhook", $textModel->getData());
+        $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
+    }
+
+
     public function test_message_has_link_but_not_able_to_delete_administrator_message()
     {
         $data = $this->getMessageModel()->getData();

@@ -35,7 +35,7 @@ class TextMessageModel extends MessageModel
     {
         $links = ["http", ".рф", ".ру", ".ком", ".com", ".ru"];
         foreach ($links as $link)
-            if (str_contains($this->text, $link)) {
+            if (str_contains(mb_strtolower($this->text), $link)) {
                 $this->hasLink = true;
             }
         if ($this->hasTextLink) {
