@@ -22,7 +22,7 @@ class FailedRequestJobTest extends TestCase
             ->post('api/webhook', $requestData)
             ->assertStatus(200);
 
-        $result = DB::table('test_jobs')
+        $result = DB::table('jobs')
             ->where('payload', 'like', '%' . $updateId . '%')
             ->first();
 
@@ -38,7 +38,7 @@ class FailedRequestJobTest extends TestCase
         $this->post('api/webhook', $requestData)
             ->assertStatus(200);
 
-        $result = DB::table('test_jobs')
+        $result = DB::table('jobs')
             ->where('payload', 'like', '%' . $updateId . '%')
             ->first();
 

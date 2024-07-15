@@ -29,7 +29,7 @@
         <env name="DB_HOST" value="localhost"/>
         <env name="DB_USERNAME" value="admin"/>
         <env name="DB_PASSWORD" value=""/>
-        <env name="DB_QUEUE_TABLE" value="test_jobs"/>
+        <env name="DB_QUEUE_TABLE" value="jobs"/>
         <env name="DB_PORT" value="3306"/> -->
 
         <env name="MAIL_MAILER" value="array"/>
