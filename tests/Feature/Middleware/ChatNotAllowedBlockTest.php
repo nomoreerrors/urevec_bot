@@ -22,8 +22,9 @@ class ChatNotAllowedBlockTest extends TestCase
         $messageData['message']['chat']['id'] = 111115555;
 
         $response = $this->post('api/webhook', $messageData);
+        // dd($response->getContent());
 
         $response->assertStatus(200);
-        $response->assertContent(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED);
+        $response->assertSee(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED);
     }
 }

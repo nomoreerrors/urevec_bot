@@ -20,6 +20,10 @@ class BaseTelegramRequestModel extends Model
     use HasFactory;
 
 
+    protected $fillable = [
+        "serialized_request"
+    ];
+
 
     protected string $messageType = "";
 
@@ -58,7 +62,7 @@ class BaseTelegramRequestModel extends Model
      * @throws TelegramModelException
      * @return \App\Models\BaseTelegramRequestModel
      */
-    public function create()
+    public function getModel()
     {
         try {
 

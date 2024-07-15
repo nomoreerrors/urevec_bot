@@ -5,16 +5,11 @@ namespace App\Http\Controllers;
 use App\Exceptions\BanUserFailedException;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\TelegramModelException;
+use App\Jobs\FailedRequestJob;
 use App\Models\BaseTelegramRequestModel;
-use App\Models\ForwardMessageModel;
-use App\Models\NewMemberJoinUpdateModel;
-use App\Models\UnknownObjectModel;
-use App\Services\BotErrorNotificationService;
-use App\Models\InvitedUserUpdateModel;
-use App\Exceptions\TelegramModelError;
+use App\Models\FailedRequestModel;
 use Exception;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\MessageModel;
 use App\Services\CONSTANTS;
 use App\Services\ManageChatSettingsService;
 use Illuminate\Http\Request;
@@ -36,12 +31,9 @@ class TelegramBotController extends Controller
     public function webhookHandler(Request $request)
     {
         // dd(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2));
-
         $data = $request->all();
-        $message = (new BaseTelegramRequestModel($data))->create();
-        $service = new TelegramBotService($message);
-
-        // dd(get_class_vars($message));
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $service = new TelegramBotService($model);
         $service->prettyRequestLog();
 
 
@@ -64,8 +56,12 @@ class TelegramBotController extends Controller
 
 
         } catch (TelegramModelException | RestrictMemberFailedException | BanUserFailedException $e) {
-            Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+            Log::error($e->getMessage() . $e->getData());
+            FailedRequestJob::dispatch($data);
+            return response($e->getMessage(), Response::HTTP_OK);
+        } catch (Exception $e) {
+            FailedRequestJob::dispatch($data);
+            return response($e->getMessage(), Response::HTTP_OK);
         }
 
 
@@ -104,6 +100,7 @@ class TelegramBotController extends Controller
     {
         $data = $request->all();
 
+        $data[] = array_merge($data, ['Moscow_time' => date("F j, Y, g:i a")]);
         Storage::append("cron_requests.txt", json_encode($data));
 
         $chatPermissions = new ManageChatSettingsService();
@@ -140,8 +137,4 @@ class TelegramBotController extends Controller
 
 
 
-    public function testBot(Request $request, TelegramBotService $service): void
-    {
-        $service->sendMessage("scream 2");
-    }
 }

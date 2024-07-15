@@ -33,7 +33,7 @@ class BlockNewVisitorTest extends TestCase
         $service = new TelegramBotService($newMemberUpdate);
         $this->assertTrue($service->blockNewVisitor());
 
-        $result = (new BaseTelegramRequestModel($newMemberUpdate->getData()))->create();
+        $result = (new BaseTelegramRequestModel($newMemberUpdate->getData()))->getModel();
         $this->assertInstanceOf(NewMemberJoinUpdateModel::class, $result);
     }
 
@@ -58,7 +58,7 @@ class BlockNewVisitorTest extends TestCase
         $newMemberUpdateModel = $this->getNewMemberUpdateModel();
         $data = $newMemberUpdateModel->getData();
         $data['chat_member']['new_chat_member']['status'] = 'left';
-        $statusUpdateModel = (new BaseTelegramRequestModel($data))->create();
+        $statusUpdateModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $service = new TelegramBotService($statusUpdateModel);
         $this->assertFalse($service->blockNewVisitor());
@@ -97,7 +97,7 @@ class BlockNewVisitorTest extends TestCase
         $data['chat_member']['old_chat_member']['status'] = 'restricted';
         $data['chat_member']['new_chat_member']['status'] = 'member';
 
-        $message = (new BaseTelegramRequestModel($data))->create();
+        $message = (new BaseTelegramRequestModel($data))->getModel();
         $service = new TelegramBotService($message);
 
         $this->assertFalse($service->blockNewVisitor());
@@ -114,14 +114,14 @@ class BlockNewVisitorTest extends TestCase
         $data["chat_member"]["old_chat_member"]["status"] = "member";
         $data["chat_member"]["new_chat_member"]["status"] = "restricted";
 
-        $message = (new BaseTelegramRequestModel($data))->create();
+        $message = (new BaseTelegramRequestModel($data))->getModel();
         $service = new TelegramBotService($message);
 
         $this->assertFalse($service->blockNewVisitor());
 
 
         $data["chat_member"]["new_chat_member"]["status"] = "kicked";
-        $message = (new BaseTelegramRequestModel($data))->create();
+        $message = (new BaseTelegramRequestModel($data))->getModel();
         $service = new TelegramBotService($message);
         $this->assertFalse($service->blockNewVisitor());
         $this->assertFalse($message instanceof InvitedUserUpdateModel);

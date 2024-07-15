@@ -36,27 +36,26 @@ class TelegramMiddlewareService
         }
 
         if (!$this->typeIsExpected) {
-
             throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
         } else
             return;
     }
 
 
-    public function checkIfChatIdAllowed(int $chatId)
+    public function checkIfChatIdAllowed(int $chatId): bool
     {
         $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
         // dd($chatId);
         if (!in_array($chatId, $allowedChats)) {
             throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
         } else {
-            return;
+            return true;
         }
 
     }
 
 
-    public function checIfIpAllowed(string $ip)
+    public function checkIfIpAllowed(string $ip)
     {
         $allowedIps = explode(",", env("ALLOWED_IP_ADRESSES"));
         if (!in_array($ip, $allowedIps)) {

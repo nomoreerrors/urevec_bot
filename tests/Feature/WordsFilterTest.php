@@ -18,22 +18,22 @@ class WordsFilterTest extends TestCase
     /**
      * A basic feature test example.
      */
-    public function test_text_message_model_contains_black_list_word_return_true(): void
+    public function testTextMessageModelContainsBlackListWordsWithUpperCaseLettersReturnsTrue(): void
     {
         $data = $this->getTextMessageModel()->getData();
-        $data["message"]["text"] = "модераторы";
-        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $data["message"]["text"] = "модерАторы";
+        $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $filter = new FilterService($textMessageModel);
 
         $this->assertTrue($filter->wordsFilter());
     }
 
 
-    public function test_media_model_caption_contains_black_list_word_return_true()
+    public function testMediaModelCaptionlContainsBlackListWordsWithUpperCaseLettersReturnsTrue()
     {
         $data = $this->getMultiMediaModel()->getData();
-        $data["message"]["caption"] = "бессмысленный текст и запретное слово: администраторы";
-        $mediaMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $data["message"]["caption"] = "бессмысленный текст и запретное слово: админИСТРаторы";
+        $mediaMessageModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $filter = new FilterService($mediaMessageModel);
         $this->assertTrue($filter->wordsFilter());
@@ -42,11 +42,11 @@ class WordsFilterTest extends TestCase
 
 
 
-    public function test_text_message_model_contains_black_list_phrases_return_true(): void
+    public function testTextMessageModelContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue(): void
     {
         $data = $this->getTextMessageModel()->getData();
-        $data["message"]["text"] = "в соседнюю группу";
-        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $data["message"]["text"] = "в сосЕднюю Группу";
+        $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $filter = new FilterService($textMessageModel);
 
         $this->assertTrue($filter->wordsFilter());
@@ -54,25 +54,27 @@ class WordsFilterTest extends TestCase
 
 
 
-    public function test_media_model_caption_contains_black_list_phrase_return_true()
+    public function testMediaModelCaptionlContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue()
     {
         $data = $this->getMultiMediaModel()->getData();
-        $data["message"]["caption"] = "бессмысленный текст и запретная фраза: сдается в аренду";
-        $mediaMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $data["message"]["caption"] = "бессмысленный текст и запретная фраза: сдАЕтся в Аренду";
+        $mediaMessageModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $filter = new FilterService($mediaMessageModel);
         $this->assertTrue($filter->wordsFilter());
 
     }
 
-    public function test_not_able_to_delete_administrator_message()
+    public function testCannotDeleteAdministratorMessage()
     {
         $data = $this->getMultiMediaModel()->getData();
         $data["message"]["from"]["id"] = $this->getAdminId();
-        $messageModel = (new BaseTelegramRequestModel($data))->create();
+        $messageModel = (new BaseTelegramRequestModel($data))->getModel();
+
         $filter = new FilterService($messageModel);
         $this->assertFalse($filter->wordsFilter());
     }
+
 
     public function testTextContainsUpperCaseBlackListWordsFilterReturnsTrue()
     {
@@ -91,7 +93,7 @@ class WordsFilterTest extends TestCase
             ],
         ];
 
-        $textMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $filterService = new FilterService($textMessageModel);
         $this->assertTrue($filterService->wordsFilter());
     }

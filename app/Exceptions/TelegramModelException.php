@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Log;
 class TelegramModelException extends ErrorException
 {
 
-    protected string $info = "";
 
     protected string $data = "";
 
@@ -19,27 +18,24 @@ class TelegramModelException extends ErrorException
     ) {
         parent::__construct($message);
         $this->data = print_r(request()->all(), true);
-        
 
-        $this->setInfo()
+
+        $this->setMessage()
             ->sender();
     }
 
 
     protected function sender(): static
     {
-        // dd($this->data);
-        BotErrorNotificationService::send($this->info . PHP_EOL . $this->data);
+        BotErrorNotificationService::send($this->message . PHP_EOL . $this->data);
         return $this;
     }
 
 
-    protected function setInfo()
+    protected function setMessage()
     {
-        
-        $this->info = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
+        $this->message = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
             "LINE: " . $this->getLine() . PHP_EOL . "FROM METHOD: " . $this->method . PHP_EOL;
-            
 
         return $this;
     }
@@ -51,8 +47,5 @@ class TelegramModelException extends ErrorException
     }
 
 
-    public function getInfo(): string
-    {
-        return $this->info;
-    }
+
 }

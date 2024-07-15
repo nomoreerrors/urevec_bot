@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Exceptions\EnvironmentVariablesException;
 use App\Exceptions\TelegramModelException;
 use App\Exceptions\UnexpectedRequestException;
+use App\Jobs\FailedRequestJob;
 use App\Services\BotErrorNotificationService;
 use App\Services\TelegramMiddlewareService;
 use Closure;
@@ -21,25 +22,8 @@ use App\Services\CONSTANTS;
 
 class TelegramApiMiddleware
 {
+    private bool $chatIdAllowed = false;
 
-
-    public function saveRawRequestData(array $data)
-    {
-        date_default_timezone_set('Europe/Moscow');
-        $requestLog = Storage::json("rawrequest.json");
-        $info = $data;
-        $info["Moscow_time"] = date("F j, Y, g:i a");
-        if (!$requestLog) {
-            Storage::put("rawrequest.json", json_encode($info, JSON_UNESCAPED_UNICODE));
-        } else {
-            $requestLog[] = $info;
-            Storage::put("rawrequest.json", json_encode($requestLog, JSON_UNESCAPED_UNICODE));
-        }
-    }
-
-
-
-    // 
     /**
      * Handle an incoming request.
      *
@@ -49,43 +33,61 @@ class TelegramApiMiddleware
     {
         $data = $request->all();
 
-
         try {
-            if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
-                throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
-            }
 
+            $this->validateEnvironmentVariables($data);
             $this->saveRawRequestData($data);
-            $middlewareService = new TelegramMiddlewareService($data);
-            $middlewareService->checkIfObjectTypeExpected();
+            $this->validateRequest($data);
 
-
-            $message = (new BaseTelegramRequestModel($data))->create();
-
-            $middlewareService->checkIfChatIdAllowed($message->getChatId());
-            $middlewareService->checIfIpAllowed($request->ip());
-
-
-
-
-        } catch (UnknownChatException | UnknownIpAddressException | UnexpectedRequestException $e) {
-
-            Log::error($e->getInfo() . $e->getData());
-            return response($e->getMessage(), Response::HTTP_OK);
-
+        } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
+            return $this->handleException($data, $e);
+        } catch (UnknownChatException | UnknownIpAddressException $e) {
+            return $this->handleException($data, $e);
         } catch (TelegramModelException $e) {
-
-            Log::error($e->getInfo() . $e->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
-
+            return $this->handleException($data, $e);
         } catch (Exception $e) {
-
-            Log::error($e);
             BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine());
-            return response(Response::$statusTexts[500], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->handleException($data, $e);
         }
 
 
         return $next($request);
+    }
+
+
+    private function handleException(array $requestData, Exception $e): Response
+    {
+        Log::error($e->getmessage() . " Line: " . $e->getLine());
+
+        if (!($e instanceof UnknownChatException)) {
+            FailedRequestJob::dispatch($requestData);
+        }
+        return response(env("APP_DEBUG") ? $e->getMessage() : Response::$statusTexts[500], Response::HTTP_OK);
+    }
+
+
+
+    private function validateEnvironmentVariables(array $requestData): void
+    {
+        if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
+            throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
+        }
+    }
+
+    private function saveRawRequestData(array $requestData): void
+    {
+        date_default_timezone_set('Europe/Moscow');
+        $requestLogData = Storage::json("rawrequest.json") ?? [];
+        $requestLogData[] = array_merge($requestData, ['Moscow_time' => date("F j, Y, g:i a")]);
+        Storage::put("rawrequest.json", json_encode($requestLogData, JSON_UNESCAPED_UNICODE));
+    }
+
+    private function validateRequest(array $requestData): void
+    {
+        $middlewareService = new TelegramMiddlewareService($requestData);
+        $middlewareService->checkIfObjectTypeExpected();
+        $requestModel = (new BaseTelegramRequestModel($requestData))->getModel();
+        $this->chatIdAllowed = $middlewareService->checkIfChatIdAllowed($requestModel->getChatId());
+        $middlewareService->checkIfIpAllowed(request()->ip());
     }
 }

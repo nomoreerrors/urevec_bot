@@ -15,6 +15,3 @@ Route::post('/webhook', [TelegramBotController::class, 'webhookHandler'])
     ->middleware(TelegramApiMiddleware::class);
 
 
-// Route::post('/webhook', [TelegramBotController::class, 'webhookHandler'])
-//     ->middleware(TelegramApiMiddleware::class)
-//     ->middleware('auth:sanctum');

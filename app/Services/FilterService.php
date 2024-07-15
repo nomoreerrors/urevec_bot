@@ -43,6 +43,7 @@ class FilterService
         $text = $this->getText();
 
         $cleanedText = $this->cleanText($text);
+        // dd($cleanedText);
 
         if ($this->containsPhrases($cleanedText, $phrases)) {
             $this->storeDeletedWord($text, $cleanedText);

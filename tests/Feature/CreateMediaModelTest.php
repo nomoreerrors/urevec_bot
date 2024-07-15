@@ -21,7 +21,7 @@ class CreateMediaModelTest extends TestCase
     {
         foreach ($this->testObjects as $object) {
 
-            $message = (new BaseTelegramRequestModel($object))->create();
+            $message = (new BaseTelegramRequestModel($object))->getModel();
 
             $type = $message->getType();
 
@@ -61,7 +61,7 @@ class CreateMediaModelTest extends TestCase
     {
         foreach ($this->testObjects as $object) {
 
-            $message = (new BaseTelegramRequestModel($object))->create();
+            $message = (new BaseTelegramRequestModel($object))->getModel();
 
             $type = $message->getType();
 

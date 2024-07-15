@@ -12,7 +12,6 @@ use App\Services\ManageChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
 use App\Models\NewMemberJoinUpdateModel;
-use App\Models\TelegramMessageModel;
 use App\Models\BaseTelegramRequestModel;
 use App\Services\CONSTANTS;
 
@@ -34,6 +33,8 @@ abstract class TestCase extends BaseTestCase
     private int $testUserId;
 
     private int $secondTestUserId;
+
+    private int $unknownChatId = 1234567890;
 
 
     private array $unknownObject = [
@@ -80,6 +81,12 @@ abstract class TestCase extends BaseTestCase
     public function getSecondTestUserId()
     {
         return $this->secondTestUserId;
+    }
+
+
+    public function getUnknownChatId(): int
+    {
+        return $this->unknownChatId;
     }
 
 

@@ -19,9 +19,9 @@ class UnknownIpAddressException extends TelegramModelException
     }
 
 
-    protected function setInfo()
+    protected function setMessage()
     {
-        $this->info = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
+        $this->message = "EXCEPTION CLASS: " . get_called_class() . PHP_EOL . $this->getMessage() . PHP_EOL .
             "IP: " . $this->ip . PHP_EOL .
             "LINE: " . $this->getLine() . PHP_EOL . "FROM METHOD: " . $this->method . PHP_EOL;
 
@@ -31,7 +31,7 @@ class UnknownIpAddressException extends TelegramModelException
 
     protected function sender(): static
     {
-        BotErrorNotificationService::send($this->info);
+        BotErrorNotificationService::send($this->message);
         return $this;
     }
 }

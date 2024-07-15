@@ -23,7 +23,7 @@ class DeleteMessageTest extends TestCase
         $data['message']['message_id'] = 9999999;
 
         $model = new BaseTelegramRequestModel($data);
-        $model->create();
+        $model->getModel();
 
         $botService = new TelegramBotService($model);
         $this->assertFalse($botService->deleteMessage());

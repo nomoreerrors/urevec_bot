@@ -31,7 +31,7 @@ class WebHookHandlerTest extends TestCase
     {
         $data = $this->getTextMessageModel()->getData();
         $data["message"]["text"] = "https://google.com";
-        $textModel = (new BaseTelegramRequestModel($data))->create();
+        $textModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $this->assertTrue($textModel->getHasLink());
         $response = $this->post("api/webhook", $textModel->getData());
@@ -43,7 +43,7 @@ class WebHookHandlerTest extends TestCase
         unset($data["message"]["text"]);
         $data["message"]["entities"]["url"] = "google.com";
         $this->assertTrue($textModel->getHasLink());
-        $textModel = (new BaseTelegramRequestModel($data))->create();
+        $textModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $response = $this->post("api/webhook", $textModel->getData());
         $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
@@ -55,7 +55,7 @@ class WebHookHandlerTest extends TestCase
     {
         $data = $this->getTextMessageModel()->getData();
         $data["message"]["text"] = "some text here and hTTps://gOOgle.com";
-        $textModel = (new BaseTelegramRequestModel($data))->create();
+        $textModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $this->assertTrue($textModel->getHasLink());
         $response = $this->post("api/webhook", $textModel->getData());
@@ -63,11 +63,14 @@ class WebHookHandlerTest extends TestCase
     }
 
 
+
+
+
     public function test_message_has_link_but_not_able_to_delete_administrator_message()
     {
         $data = $this->getMessageModel()->getData();
         $data["message"]["from"]["id"] = $this->getAdminId();
-        $messageModel = (new BaseTelegramRequestModel($data))->create();
+        $messageModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $botService = new TelegramBotService($messageModel);
         $this->assertFalse($botService->ifMessageHasLinkBlockUser());
@@ -77,12 +80,12 @@ class WebHookHandlerTest extends TestCase
     public function test_if_media_message_model_contains_link_ban_user(): void
     {
         $data = $this->getMultiMediaModel()->getData();
-        $multiMediaModel = (new BaseTelegramRequestModel($data))->create();
+        $multiMediaModel = (new BaseTelegramRequestModel($data))->getModel();
         $this->assertFalse($multiMediaModel->getHasLink());
 
 
         $data["message"]["caption"] = "some text and https://google.com";
-        $multiMediaModel = (new BaseTelegramRequestModel($data))->create();
+        $multiMediaModel = (new BaseTelegramRequestModel($data))->getModel();
         $this->assertTrue($multiMediaModel->getHasLink());
         $response = $this->post("api/webhook", $multiMediaModel->getData());
         $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
@@ -91,7 +94,7 @@ class WebHookHandlerTest extends TestCase
 
         $data["message"]["caption"] = "text without link";
         $data["message"]["caption_entities"]["type"] = "url";
-        $multiMediaModel = (new BaseTelegramRequestModel($data))->create();
+        $multiMediaModel = (new BaseTelegramRequestModel($data))->getModel();
         $response = $this->post("api/webhook", $multiMediaModel->getData());
         $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
     }
@@ -121,7 +124,7 @@ class WebHookHandlerTest extends TestCase
 
 
         $data["message"]["from"]["id"] = $this->getAdminId();
-        $forwardMessageModel = (new BaseTelegramRequestModel($data))->create();
+        $forwardMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $service = new TelegramBotService($forwardMessageModel);
         $this->assertFalse($service->blockUserIfMessageIsForward());
     }
@@ -162,7 +165,7 @@ class WebHookHandlerTest extends TestCase
 
         $invitedUserUpdateData["chat_member"]["from"]["id"] = $this->getAdminId();
         $invitedUserUpdateData["chat_member"]["old_chat_member"]["status"] = "restricted";
-        $statusUpdateModel = (new BaseTelegramRequestModel($invitedUserUpdateData))->create();
+        $statusUpdateModel = (new BaseTelegramRequestModel($invitedUserUpdateData))->getModel();
 
         $this->assertInstanceOf(StatusUpdateModel::class, $statusUpdateModel);
         $this->assertNotInstanceOf(InvitedUserUpdateModel::class, $statusUpdateModel);

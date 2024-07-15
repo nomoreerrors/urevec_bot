@@ -24,7 +24,7 @@ class RestrictChatMemberTest extends TestCase
     {
         $requestData = $this->getMessageModel()->getData();
         $requestModel = new BaseTelegramRequestModel($requestData);
-        $requestModel->create();
+        $requestModel->getModel();
         $service = new TelegramBotService($requestModel);
 
         $this->assertTrue($service->restrictChatMember());
@@ -37,7 +37,7 @@ class RestrictChatMemberTest extends TestCase
         $requestData['message']['from']['id'] = 9999999;
 
         $requestModel = new BaseTelegramRequestModel($requestData);
-        $requestModel->create();
+        $requestModel->getModel();
 
         $service = new TelegramBotService($requestModel);
 

@@ -9,7 +9,8 @@ use Exception;
 
 class PhotoMediaModel extends BaseMediaModel
 {
-    use PhotoMediaTrait; 
+    use PhotoMediaTrait;
+
 
     public function __construct(array $data)
     {

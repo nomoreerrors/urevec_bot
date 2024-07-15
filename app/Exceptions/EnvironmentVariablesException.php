@@ -18,7 +18,7 @@ class EnvironmentVariablesException extends TelegramModelException
 
     protected function sender(): static
     {
-        BotErrorNotificationService::send($this->info);
+        BotErrorNotificationService::send($this->message);
         return $this;
     }
 }
