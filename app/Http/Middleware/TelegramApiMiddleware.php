@@ -45,7 +45,7 @@ class TelegramApiMiddleware
             return $this->handleException($data, $e);
         } catch (TelegramModelException $e) {
             return $this->handleException($data, $e);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine());
             return $this->handleException($data, $e);
         }

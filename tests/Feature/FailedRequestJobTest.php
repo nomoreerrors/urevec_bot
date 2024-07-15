@@ -22,6 +22,7 @@ class FailedRequestJobTest extends TestCase
             ->post('api/webhook', $requestData)
             ->assertStatus(200);
 
+        //job table must be empty or object with current update_id must not exists before running test or test will fail
         $result = DB::table('jobs')
             ->where('payload', 'like', '%' . $updateId . '%')
             ->first();

@@ -8,6 +8,7 @@ use App\Exceptions\TelegramModelException;
 use App\Jobs\FailedRequestJob;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\FailedRequestModel;
+use App\Services\BotErrorNotificationService;
 use Exception;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\CONSTANTS;
@@ -59,8 +60,9 @@ class TelegramBotController extends Controller
             Log::error($e->getMessage() . $e->getData());
             FailedRequestJob::dispatch($data);
             return response($e->getMessage(), Response::HTTP_OK);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             FailedRequestJob::dispatch($data);
+            BotErrorNotificationService::send($e->getMessage());
             return response($e->getMessage(), Response::HTTP_OK);
         }
 
