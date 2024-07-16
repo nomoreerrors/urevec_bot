@@ -8,7 +8,7 @@ use App\Models\MessageModel;
 use App\Models\MultiMediaModel;
 use App\Models\TextMessageModel;
 use App\Services\FilterService;
-use App\Services\ManageChatSettingsService;
+use App\Services\ChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
 use App\Models\NewMemberJoinUpdateModel;
@@ -58,7 +58,7 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         $this->testObjects = json_decode(file_get_contents(__DIR__ . "/TestObjects.json"), true);
         $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-        $this->chatPermissions = new ManageChatSettingsService();
+        $this->chatPermissions = new ChatSettingsService();
         $this->adminId = 754429643;
         $this->testUserId = 850434834; //bot id
         $this->secondTestUserId = 1087968824; //bot id

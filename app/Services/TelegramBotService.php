@@ -9,88 +9,19 @@ use App\Models\BaseTelegramRequestModel;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
-use Symfony\Component\HttpFoundation\Response;
 use App\Models\NewMemberJoinUpdateModel;
-use App\Exceptions\TelegramModelError;
-use App\Exceptions\TelegramModelException;
 use App\Models\StatusUpdateModel;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use ErrorException;
-use Exception;
-use App\Models\TelegramMessageModel;
 use App\Models\TextMessageModel;
-use Illuminate\Support\Facades\Config;
 
 
 class TelegramBotService
 {
-
     public function __construct(private BaseTelegramRequestModel $message)
     {
     }
-
-
-    /**
-     * Summary of prettyRequestLog
-     * @return void
-     */
-    public function prettyRequestLog()
-    {
-        $requestLog = Storage::json("pretty_request_log.json");
-        $time = date("F j, Y, g:i a");
-
-
-        $data["0"] = [
-            "TIME" => $time,
-            "FROM USER NAME" => $this->message->getFromUserName(),
-            "MESSAGE TYPE" => $this->message->getType(),
-        ];
-
-
-        if ($this->message instanceof MessageModel) {
-
-            $data["0"]["FROM ADMIN"] = $this->message->getFromAdmin();
-            $data["0"]["FROM USER ID"] = $this->message->getFromId();
-            $data["0"]["MESSAGE_ID"] = $this->message->getFromId();
-            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->getHasTextLink();
-            if ($this->message instanceof TextMessageModel) {
-                $data["0"]["MESSAGE HAS LINK"] = $this->message->getHasLink();
-                $data["0"]["TEXT"] = $this->message->getText();
-            }
-        }
-
-        if ($this->message instanceof StatusUpdateModel) {
-            $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
-            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
-            $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
-
-            if ($this->message instanceof NewMemberJoinUpdateModel) {
-
-                $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
-            }
-
-            if ($this->message instanceof InvitedUserUpdateModel) {
-
-                $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
-                $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
-            }
-        }
-
-
-        if (!$requestLog) {
-            Storage::put("pretty_request_log.json", json_encode($data, JSON_UNESCAPED_UNICODE));
-        } else {
-            $requestLog[] = $data;
-
-            Storage::put("pretty_request_log.json", json_encode($requestLog, JSON_UNESCAPED_UNICODE));
-        }
-    }
-
 
     /**
      * Restrict member
@@ -132,7 +63,6 @@ class TelegramBotService
         }
     }
 
-
     /**
      * Summary of deleteMessage
      * @return bool
@@ -155,7 +85,6 @@ class TelegramBotService
         return false;
     }
 
-
     /**
      * Summary of sendMessage
      * @param string $text_message
@@ -173,7 +102,6 @@ class TelegramBotService
         return $response;
     }
 
-
     /**
      * Summary of banUser
      * @param int $time 24 hours by default
@@ -190,134 +118,58 @@ class TelegramBotService
             $this->deleteMessage();
             return true;
         }
-
         throw new BanUserFailedException(CONSTANTS::BAN_USER_FAILED, __METHOD__);
     }
 
-
-
-
-
     /**
-     * Summary of blockNewVisitor
-     * Restrict new member for 24 hours
-     * @throws \App\Exceptions\RestrictMemberFailedException
-     * @return bool
+     * Summary of prettyRequestLog
+     * @return void
      */
-    public function blockNewVisitor(): bool
+    public function prettyRequestLog()
     {
-        if (
-            !($this->message instanceof InvitedUserUpdateModel) &&
-            !($this->message instanceof NewMemberJoinUpdateModel)
-        ) {
+        $requestLog = Storage::json("pretty_request_log.json");
+        $time = date("F j, Y, g:i a");
 
-            return false;
-        }
-
-        if ($this->message instanceof NewMemberJoinUpdateModel) {
-
-            $result = $this->restrictChatMember();
-
-            if ($result) {
-                log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->message->getFromId());
-                return true;
-            }
-        }
-
-
-        if ($this->message instanceof InvitedUserUpdateModel) {
-
-            $invitedUsers = $this->message->getInvitedUsersIdArray();
-
-            if ($invitedUsers !== []) {
-
-                foreach ($invitedUsers as $user_id) {
-
-                    $result = $this->restrictChatMember(id: $user_id);
-                    if ($result) {
-                        log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
-                    }
-                }
-                return true;
-            }
-        }
-        throw new RestrictMemberFailedException(CONSTANTS::RESTRICT_NEW_USER_FAILED, __METHOD__);
-    }
-
-
-    /**
-     * Summary of blockUserIfMessageIsForward
-     * Forward message from another group or chat
-     * @return bool
-     */
-    public function blockUserIfMessageIsForward(): bool
-    {
-        if (
-            $this->message instanceof ForwardMessageModel &&
-            !$this->message->getFromAdmin()
-        ) {
-            if ($this->banUser())
-                ;
-
-            return true;
-        }
-
-        return false;
-    }
-
-
-    public function ifMessageHasLinkBlockUser(): bool
-    {
-        if ($this->message->getFromAdmin()) {
-            return false;
-        }
-
-        if ($this->message->getFromAdmin()) {
-            return false;
-        }
+        $data["0"] = [
+            "TIME" => $time,
+            "FROM USER NAME" => $this->message->getFromUserName(),
+            "MESSAGE TYPE" => $this->message->getType(),
+        ];
 
         if ($this->message instanceof MessageModel) {
-            if ($this->message->getHasTextLink()) {
-
-                if ($this->banUser()) {
-                    return true;
-                }
-                ;
+            $data["0"]["FROM ADMIN"] = $this->message->getFromAdmin();
+            $data["0"]["FROM USER ID"] = $this->message->getFromId();
+            $data["0"]["MESSAGE_ID"] = $this->message->getFromId();
+            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->getHasTextLink();
+            if ($this->message instanceof TextMessageModel) {
+                $data["0"]["MESSAGE HAS LINK"] = $this->message->getHasLink();
+                $data["0"]["TEXT"] = $this->message->getText();
             }
         }
 
-        if (
-            $this->message instanceof TextMessageModel ||
-            $this->message instanceof BaseMediaModel
-        ) {
-            if ($this->message->getHasLink()) {
+        if ($this->message instanceof StatusUpdateModel) {
+            $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
+            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
+            $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
 
-                if ($this->banUser()) {
-                    return true;
-                }
-                ;
+            if ($this->message instanceof NewMemberJoinUpdateModel) {
+                $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
+            }
+
+            if ($this->message instanceof InvitedUserUpdateModel) {
+                $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
+                $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
             }
         }
-        return false;
+
+        if (!$requestLog) {
+            Storage::put("pretty_request_log.json", json_encode($data, JSON_UNESCAPED_UNICODE));
+        } else {
+            $requestLog[] = $data;
+            Storage::put("pretty_request_log.json", json_encode($requestLog, JSON_UNESCAPED_UNICODE));
+        }
     }
 
-
-    /**
-     * Summary of deleteMessageIfContainsBlackListWords
-     * Words are stored at Storage/app/badWord.json & badPhrases.json
-     * @return bool
-     */
-    public function deleteMessageIfContainsBlackListWords(): bool
-    {
-        if (
-            $this->message instanceof TextMessageModel &&
-            !$this->message->getFromAdmin()
-        ) {
-            $filter = new FilterService($this->message);
-            if ($filter->wordsFilter()) {
-                $this->deleteMessage();
-            }
-        }
-        return false;
-    }
 }

@@ -34,7 +34,6 @@ class TelegramApiMiddleware
         $data = $request->all();
 
         try {
-
             $this->validateEnvironmentVariables($data);
             $this->saveRawRequestData($data);
             $this->validateRequest($data);

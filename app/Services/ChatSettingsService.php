@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Psr7\Response;
+use App\Exceptions\TelegramModelException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Exception;
 
-class ManageChatSettingsService
+class ChatSettingsService
 {
-
-    public function setPermissionsToNightMode(): bool
+    public static function setPermissionsToNightMode(): bool
     {
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setChatPermissions",
@@ -44,7 +45,7 @@ class ManageChatSettingsService
 
 
 
-    public function setPermissionsToLightMode(): bool
+    public static function setPermissionsToLightMode(): bool
     {
 
         $response = Http::post(
@@ -74,5 +75,39 @@ class ManageChatSettingsService
             return true;
         } else
             return false;
+    }
+
+
+    public static function setNightLightMode(array $requestData): \Illuminate\Http\Response
+    {
+        $data = array_merge($requestData, ['Moscow_time' => date("F j, Y, g:i a")]);
+        Storage::append("cron_requests.txt", json_encode($data));
+        $cronToken = array_key_exists("token", $data) ? $data["token"] : null;
+
+        if ($cronToken !== env("CRON_TOKEN")) {
+            response("Неверный токен запроса", 400);
+        }
+
+        if (array_key_exists("mode", $data)) {
+
+            if ($data["mode"] === "night_mode") {
+                $result = self::setPermissionsToNightMode();
+                if ($result) {
+                    log::info("Set to night mode time :" . time());
+                    return response("OK", Response::HTTP_OK, ['mode' => 'night_mode']);
+                }
+            }
+
+            if ($data["mode"] === "light_mode") {
+                $result = self::setPermissionsToLightMode();
+                if ($result) {
+                    log::info("Set to light mode time . " . time());
+                    return response('ok', Response::HTTP_OK, ['mode' => 'light_mode']);
+                }
+            }
+        }
+        log::error("Failed to switch night/light permissions mode");
+        response("Failed switch to night/light permissions mode", Response::HTTP_INTERNAL_SERVER_ERROR);
+        throw new TelegramModelException("Failed switch to night/light permissions mode", __METHOD__);
     }
 }

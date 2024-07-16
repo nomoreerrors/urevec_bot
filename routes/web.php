@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatSettingsController;
 use App\Http\Controllers\TelegramBotController;
 use Illuminate\Support\Facades\Route;
 use \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -18,5 +19,5 @@ Route::withoutMiddleware(env("APP_DEBUG") ? [ValidateCsrfToken::class] : [])->gr
     Route::post('/testbot', [TelegramBotController::class, 'testBot']);
 });
 
-Route::post('setChatPermissions', [TelegramBotController::class, 'switchPermissionsNightLightMode'])
+Route::post('setChatPermissions', [ChatSettingsController::class, 'switchPermissionsNightLightMode'])
     ->withoutMiddleware(ValidateCsrfToken::class);

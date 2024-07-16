@@ -24,13 +24,11 @@ class TelegramModelException extends ErrorException
             ->sender();
     }
 
-
     protected function sender(): static
     {
         BotErrorNotificationService::send($this->message . PHP_EOL . $this->data);
         return $this;
     }
-
 
     protected function setMessage()
     {
@@ -39,7 +37,6 @@ class TelegramModelException extends ErrorException
 
         return $this;
     }
-
 
     public function getData(): string
     {

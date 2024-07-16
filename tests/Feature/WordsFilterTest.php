@@ -2,16 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\TextMessageModel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\FilterService;
-use Illuminate\Support\Facades\Storage;
-use App\Services\TelegramBotService;
 use App\Models\BaseTelegramRequestModel;
-use Exception;
-use App\Services\Filter;
 
 class WordsFilterTest extends TestCase
 {
