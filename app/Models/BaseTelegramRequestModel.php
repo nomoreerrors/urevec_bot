@@ -3,43 +3,26 @@
 namespace App\Models;
 
 use App\Exceptions\TelegramModelException;
-use App\Services\BotErrorNotificationService;
-use DeepCopy\Exception\PropertyException;
-use Error;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\CONSTANTS;
-use PHPUnit\Event\Test\NoticeTriggeredSubscriber;
-use Symfony\Component\HttpFoundation\Response;
 use Exception;
-use GuzzleHttp\Psr7\Message;
-use Illuminate\Support\Facades\Log;
 
 class BaseTelegramRequestModel extends Model
 {
     use HasFactory;
 
-
-    protected $fillable = [
-        "serialized_request"
-    ];
-
-
     protected string $messageType = "";
 
     protected bool $fromAdmin = false;
 
-    protected array $data;
-
     protected int $chatId = 0;
 
     protected string $fromUserName = "";
-    /** Sender id */
+    /** Message sender id */
     protected int $fromId = 0;
 
-
-
-    public function __construct(array $data)
+    public function __construct(protected array $data)
     {
         $this->data = $data;
         $this->setMessageType()
@@ -49,23 +32,20 @@ class BaseTelegramRequestModel extends Model
             ->setFromUserName();
     }
 
-
     public function __get($key)
     {
         throw new Exception("Свойство: " . (string) $key . ". " . "Попытка обратиться к свойству напрямую без get,
          к несуществующему или приватному свойству.");
     }
 
-
     /**
      * Summary of create
      * @throws TelegramModelException
      * @return \App\Models\BaseTelegramRequestModel
      */
-    public function getModel()
+    public function getModel(): BaseTelegramRequestModel
     {
         try {
-
             $model = $this->createMessageModel()
                 ->createTextMessageModel()
                 ->createForwardMessageModel()
@@ -80,8 +60,8 @@ class BaseTelegramRequestModel extends Model
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
+        return $model;
     }
-
 
     /**
      * Summary of propertyErrorHandler
@@ -89,7 +69,7 @@ class BaseTelegramRequestModel extends Model
      * @throws \App\Exceptions\TelegramModelException
      * @return never
      */
-    protected function propertyErrorHandler(string $message = "", $line, $method)
+    protected function propertyErrorHandler(string $message = "", $line, $method): void
     {
         $text = CONSTANTS::EMPTY_PROPERTY . "DEFAULT EXCEPTION REASON: " . $message . " LINE: " . $line . PHP_EOL . $method . PHP_EOL .
             "MESSAGE_TYPE PROPERTY: " . $this->messageType . PHP_EOL .
@@ -102,9 +82,11 @@ class BaseTelegramRequestModel extends Model
         throw new TelegramModelException($text, __METHOD__);
     }
 
-
-
-    private function createMessageReactionUpdateModel()
+    /**
+     * Summary of createMessageReactionUpdateModel
+     * @return BaseTelegramRequestModel|MessageReactionModel
+     */
+    private function createMessageReactionUpdateModel(): BaseTelegramRequestModel
     {
         if ($this->messageType === "message_reaction") {
             return new MessageReactionModel($this->data);
@@ -112,8 +94,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-    private function createForwardMessageModel()
+    /**
+     * Summary of createForwardMessageModel
+     * @return BaseTelegramRequestModel|ForwardMessageModel
+     */
+    private function createForwardMessageModel(): BaseTelegramRequestModel
     {
         $type = "";
         if ($this->messageType === "message") {
@@ -134,8 +119,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-    private function createTextMessageModel()
+    /**
+     * Summary of createTextMessageModel
+     * @return BaseTelegramRequestModel|TextMessageModel
+     */
+    private function createTextMessageModel(): BaseTelegramRequestModel
     {
         $type = "";
         if ($this->messageType === "message") {
@@ -157,7 +145,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-    private function createMessageModel()
+    /**
+     * Summary of createMessageModel
+     * @return \App\Models\MessageModel|BaseTelegramRequestModel
+     */
+    private function createMessageModel(): BaseTelegramRequestModel
     {
         $type = "";
         if ($this->messageType === "message") {
@@ -184,8 +176,11 @@ class BaseTelegramRequestModel extends Model
     }
 
 
-
-    private function createStatusUpdateModel()
+    /**
+     * Summary of createStatusUpdateModel
+     * @return BaseTelegramRequestModel|StatusUpdateModel
+     */
+    private function createStatusUpdateModel(): BaseTelegramRequestModel
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -201,8 +196,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-    private function createNewMemberJoinUpdateModel()
+    /**
+     * Summary of createNewMemberJoinUpdateModel
+     * @return \App\Models\BaseTelegramRequestModel
+     */
+    private function createNewMemberJoinUpdateModel(): BaseTelegramRequestModel
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -218,8 +216,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-    private function createInvitedUserUpdateModel(): static
+    /**
+     * Summary of createInvitedUserUpdateModel
+     * @return BaseTelegramRequestModel|InvitedUserUpdateModel
+     */
+    private function createInvitedUserUpdateModel(): BaseTelegramRequestModel
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -236,8 +237,11 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-    private function createMediaModel(): self
+    /**
+     * Summary of createMediaModel
+     * @return \App\Models\BaseTelegramRequestModel
+     */
+    private function createMediaModel(): BaseTelegramRequestModel
     {
         $type = $this->messageType;
 
@@ -274,7 +278,6 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
     protected function setFromId()
     {
         try {
@@ -297,12 +300,9 @@ class BaseTelegramRequestModel extends Model
             }
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
-
         }
-
         return $this;
     }
-
 
     protected function setFromAdmin()
     {
@@ -320,7 +320,6 @@ class BaseTelegramRequestModel extends Model
 
         return $this;
     }
-
 
     protected function setMessageType()
     {
@@ -344,8 +343,6 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-
-
     protected function setChatId(): static
     {
         try {
@@ -356,8 +353,6 @@ class BaseTelegramRequestModel extends Model
         }
         return $this;
     }
-
-
 
     protected function setFromUserName()
     {
@@ -375,51 +370,42 @@ class BaseTelegramRequestModel extends Model
                 $type = "actor_chat";
             }
 
-
             $this->fromUserName = $this->data[$this->messageType][$type][$type == "actor_chat" ? "title" : "first_name"];
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
         }
-
         return $this;
     }
-
 
     public function getFromId(): int
     {
         return $this->fromId;
     }
 
-
     public function getType(): string
     {
         return $this->messageType;
     }
-
 
     public function getFromUserName(): string
     {
         return $this->fromUserName;
     }
 
-
     public function getFromAdmin(): bool
     {
         return $this->fromAdmin;
     }
-
 
     public function getChatId(): int
     {
         return $this->chatId;
     }
 
-
     public function getData(): array
     {
         return $this->data;
     }
-
 
     public function getJsonData(): string
     {

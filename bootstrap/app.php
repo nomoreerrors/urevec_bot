@@ -1,5 +1,7 @@
 <?php
 
+use App\Exceptions\TelegramModelException;
+use App\Services\BotErrorNotificationService;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,5 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->report(function (\Throwable $e) {
+
+            if (!($e instanceof TelegramModelException)) {
+                BotErrorNotificationService::send(get_class($e) . PHP_EOL . $e->getMessage() . PHP_EOL . "Class: " . $e->getFile());
+            }
+        });
     })->create();

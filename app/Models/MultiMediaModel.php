@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Exception;
 
-class MultiMediaModel extends  BaseMediaModel
+class MultiMediaModel extends BaseMediaModel
 {
-    use PhotoMediaTrait, VideoMediaTrait; 
+    use PhotoMediaTrait,
+        VideoMediaTrait;
 
 
     public function __construct(array $data)
