@@ -29,6 +29,12 @@ class FilterService
             return false;
         }
 
+        $text = $this->getText();
+
+        if ($this->checkIfStringContainsUnusualChars($text)) {
+            return true;
+        }
+
         if (!$this->isMessageValid()) {
             return false;
         }
@@ -38,13 +44,6 @@ class FilterService
 
         if (empty($badWords) || empty($phrases)) {
             throw new Exception("Missing filter messages file storage/app/badwords.json or badPhrases.json");
-        }
-
-        $text = $this->getText();
-
-        // "赚.钱, ナ, وف العر" //STRING FOR TESTS (CHINESE, JAPANESE AND ARABIC)
-        if ($this->checkIfStringContainsUnusualChars($text)) {
-            return true;
         }
 
         $cleanedText = $this->cleanText($text);
