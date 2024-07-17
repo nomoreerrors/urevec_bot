@@ -19,7 +19,7 @@ use App\Models\TextMessageModel;
 
 class TelegramBotService
 {
-    public function __construct(private BaseTelegramRequestModel $message)
+    public function __construct(private BaseTelegramRequestModel $model)
     {
     }
 
@@ -35,8 +35,8 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
-                "chat_id" => $this->message->getChatId(),
-                "user_id" => $id > 0 ? $id : $this->message->getFromId(),
+                "chat_id" => $this->model->getChatId(),
+                "user_id" => $id > 0 ? $id : $this->model->getFromId(),
                 "can_send_messages" => false,
                 "can_send_documents" => false,
                 "can_send_photos" => false,
@@ -57,7 +57,7 @@ class TelegramBotService
             'Bad Request: PARTICIPANT_ID_INVALID' ||
             "Bad Request: invalid user_id specified"
         ) {
-            // dd($this->message->getChatId(), $response);
+            // dd($this->model->getChatId(), $response);
             // dd($response);
             return false;
         }
@@ -69,12 +69,12 @@ class TelegramBotService
      */
     public function deleteMessage(): bool
     {
-        if ($this->message instanceof MessageModel) {
+        if ($this->model instanceof MessageModel) {
             $response = Http::post(
                 env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
                 [
-                    "chat_id" => $this->message->getChatId(),
-                    "message_id" => $this->message->getMessageId()
+                    "chat_id" => $this->model->getChatId(),
+                    "message_id" => $this->model->getMessageId()
                 ]
             )->json();
 
@@ -95,7 +95,7 @@ class TelegramBotService
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             [
-                "chat_id" => $this->message->getChatId(),
+                "chat_id" => $this->model->getChatId(),
                 "text" => $text_message
             ]
         )->json();
@@ -114,7 +114,7 @@ class TelegramBotService
 
         $result = $this->restrictChatMember($time);
         if ($result) {
-            $this->sendMessage("Пользователь " . $this->message->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
+            $this->sendMessage("Пользователь " . $this->model->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
             $this->deleteMessage();
             return true;
         }
@@ -132,35 +132,35 @@ class TelegramBotService
 
         $data["0"] = [
             "TIME" => $time,
-            "FROM USER NAME" => $this->message->getFromUserName(),
-            "MESSAGE TYPE" => $this->message->getType(),
+            "FROM USER NAME" => $this->model->getFromUserName(),
+            "MESSAGE TYPE" => $this->model->getType(),
         ];
 
-        if ($this->message instanceof MessageModel) {
-            $data["0"]["FROM ADMIN"] = $this->message->getFromAdmin();
-            $data["0"]["FROM USER ID"] = $this->message->getFromId();
-            $data["0"]["MESSAGE_ID"] = $this->message->getFromId();
-            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->message->getHasTextLink();
-            if ($this->message instanceof TextMessageModel) {
-                $data["0"]["MESSAGE HAS LINK"] = $this->message->getHasLink();
-                $data["0"]["TEXT"] = $this->message->getText();
+        if ($this->model instanceof MessageModel) {
+            $data["0"]["FROM ADMIN"] = $this->model->getFromAdmin();
+            $data["0"]["FROM USER ID"] = $this->model->getFromId();
+            $data["0"]["MESSAGE_ID"] = $this->model->getFromId();
+            $data["0"]["MESSAGE HAS TEXT_LINK"] = $this->model->getHasTextLink();
+            if ($this->model instanceof TextMessageModel) {
+                $data["0"]["MESSAGE HAS LINK"] = $this->model->getHasLink();
+                $data["0"]["TEXT"] = $this->model->getText();
             }
         }
 
-        if ($this->message instanceof StatusUpdateModel) {
+        if ($this->model instanceof StatusUpdateModel) {
             $data["0"]["MESSAGE IS STATUS UPDATE(CHAT_MEMBER)"] = true;
-            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
+            $data["0"]["NEW CHAT MEMBER STATUS"] = $this->model->getData()["chat_member"]["new_chat_member"]["status"];
             $data["0"]["NEW MEMBER JOIN UPDATE"] = false;
 
-            if ($this->message instanceof NewMemberJoinUpdateModel) {
+            if ($this->model instanceof NewMemberJoinUpdateModel) {
                 $data["0"]["NEW MEMBER JOIN UPDATE"] = true;
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->model->getData()["chat_member"]["new_chat_member"]["status"];
             }
 
-            if ($this->message instanceof InvitedUserUpdateModel) {
+            if ($this->model instanceof InvitedUserUpdateModel) {
                 $data["0"]["MESSAGE IS INVITE USER UPDATE"] = true;
-                $data["0"]["INVITED USERS ARRAY"] = $this->message->getInvitedUsersIdArray();
-                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->message->getData()["chat_member"]["new_chat_member"]["status"];
+                $data["0"]["INVITED USERS ARRAY"] = $this->model->getInvitedUsersIdArray();
+                $data["0"]["NEW CHAT MEMBER STATUS"] = $this->model->getData()["chat_member"]["new_chat_member"]["status"];
             }
         }
 

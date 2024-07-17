@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 class FilterService
 {
-    public function __construct(private BaseTelegramRequestModel $message)
+    public function __construct(private BaseTelegramRequestModel $model)
     {
     }
 
@@ -25,7 +25,7 @@ class FilterService
      */
     public function wordsFilter(): bool
     {
-        if ($this->message->getFromAdmin()) {
+        if ($this->model->getFromAdmin()) {
             return false;
         }
 
@@ -42,8 +42,13 @@ class FilterService
 
         $text = $this->getText();
 
+        // "赚.钱, ナ, وف العر" //STRING FOR TESTS (CHINESE, JAPANESE AND ARABIC)
+        if ($this->checkIfStringContainsUnusualChars($text)) {
+            return true;
+        }
+
         $cleanedText = $this->cleanText($text);
-        // dd($cleanedText);
+
 
         if ($this->containsPhrases($cleanedText, $phrases)) {
             $this->storeDeletedWord($text, $cleanedText);
@@ -62,9 +67,28 @@ class FilterService
         return false;
     }
 
+    /**
+     * Check if string contains Chinese, Japanese etc characters
+     * @param string $text
+     * @return bool
+     */
+    private function checkIfStringContainsUnusualChars(string $text): bool
+    {
+        $patterns = ["/\p{Han}+/u", "/\p{Katakana}+/u", "/\p{Arabic}+/u"];
+        $matches = array_map(function ($pattern) use ($text) {
+            return preg_match($pattern, $text);
+        }, $patterns);
+        // dd($matches);
+
+        if (array_filter($matches)) {
+            return true;
+        }
+        return false;
+    }
+
     private function isMessageValid(): bool
     {
-        return ($this->message instanceof TextMessageModel) || ($this->message instanceof BaseMediaModel);
+        return ($this->model instanceof TextMessageModel) || ($this->model instanceof BaseMediaModel);
     }
 
     private function getBadWords(): array
@@ -79,7 +103,7 @@ class FilterService
 
     private function getText(): string
     {
-        return method_exists($this->message, 'getText') ? $this->message->getText() : $this->message->getCaption();
+        return method_exists($this->model, 'getText') ? $this->model->getText() : $this->model->getCaption();
     }
 
     private function cleanText(string $text): string
@@ -119,11 +143,10 @@ class FilterService
     {
         Storage::append(
             'words_deleted_by_filter.txt',
-            PHP_EOL . "FROM ID: " . $this->message->getFromId() . PHP_EOL .
+            PHP_EOL . "FROM ID: " . $this->model->getFromId() . PHP_EOL .
             "WORD: " . $deleted
         );
     }
-
 
     public function getWordsFromText($cleanedText): array
     {

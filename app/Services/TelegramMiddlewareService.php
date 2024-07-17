@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\Storage;
 
 class TelegramMiddlewareService
 {
-
     private bool $typeIsExpected = false;
 
     public function __construct(private array $data)
     {
     }
-
 
     public function checkIfObjectTypeExpected()
     {
@@ -32,7 +30,6 @@ class TelegramMiddlewareService
             if (array_key_exists($key, $this->data)) {
                 $this->typeIsExpected = true;
             }
-            ;
         }
 
         if (!$this->typeIsExpected) {
@@ -45,7 +42,6 @@ class TelegramMiddlewareService
     public function checkIfChatIdAllowed(int $chatId): bool
     {
         $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
-        // dd($chatId);
         if (!in_array($chatId, $allowedChats)) {
             throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
         } else {

@@ -16,9 +16,9 @@ class ChatRulesService
 {
     private TelegramBotService $telegramBotService;
 
-    public function __construct(private BaseTelegramRequestModel $message)
+    public function __construct(private BaseTelegramRequestModel $model)
     {
-        $this->telegramBotService = new TelegramBotService($this->message);
+        $this->telegramBotService = new TelegramBotService($this->model);
         $this->telegramBotService->prettyRequestLog();
     }
 
@@ -31,26 +31,26 @@ class ChatRulesService
     public function blockNewVisitor(): bool
     {
         if (
-            !($this->message instanceof InvitedUserUpdateModel) &&
-            !($this->message instanceof NewMemberJoinUpdateModel)
+            !($this->model instanceof InvitedUserUpdateModel) &&
+            !($this->model instanceof NewMemberJoinUpdateModel)
         ) {
 
             return false;
         }
 
-        if ($this->message instanceof NewMemberJoinUpdateModel) {
+        if ($this->model instanceof NewMemberJoinUpdateModel) {
 
             $result = $this->telegramBotService->restrictChatMember();
 
             if ($result) {
-                log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->message->getFromId());
+                log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->model->getFromId());
                 return true;
             }
         }
 
-        if ($this->message instanceof InvitedUserUpdateModel) {
+        if ($this->model instanceof InvitedUserUpdateModel) {
 
-            $invitedUsers = $this->message->getInvitedUsersIdArray();
+            $invitedUsers = $this->model->getInvitedUsersIdArray();
 
             if ($invitedUsers !== []) {
 
@@ -75,10 +75,10 @@ class ChatRulesService
     public function deleteMessageIfContainsBlackListWords(): bool
     {
         if (
-            $this->message instanceof TextMessageModel &&
-            !$this->message->getFromAdmin()
+            $this->model instanceof TextMessageModel &&
+            !$this->model->getFromAdmin()
         ) {
-            $filter = new FilterService($this->message);
+            $filter = new FilterService($this->model);
             if ($filter->wordsFilter()) {
                 $this->telegramBotService->deleteMessage();
             }
@@ -94,8 +94,8 @@ class ChatRulesService
     public function blockUserIfMessageIsForward(): bool
     {
         if (
-            $this->message instanceof ForwardMessageModel &&
-            !$this->message->getFromAdmin()
+            $this->model instanceof ForwardMessageModel &&
+            !$this->model->getFromAdmin()
         ) {
             if ($this->telegramBotService->banUser())
                 ;
@@ -108,16 +108,16 @@ class ChatRulesService
 
     public function ifMessageHasLinkBlockUser(): bool
     {
-        if ($this->message->getFromAdmin()) {
+        if ($this->model->getFromAdmin()) {
             return false;
         }
 
-        if ($this->message->getFromAdmin()) {
+        if ($this->model->getFromAdmin()) {
             return false;
         }
 
-        if ($this->message instanceof MessageModel) {
-            if ($this->message->getHasTextLink()) {
+        if ($this->model instanceof MessageModel) {
+            if ($this->model->getHasTextLink()) {
 
                 if ($this->telegramBotService->banUser()) {
                     return true;
@@ -126,10 +126,10 @@ class ChatRulesService
         }
 
         if (
-            $this->message instanceof TextMessageModel ||
-            $this->message instanceof BaseMediaModel
+            $this->model instanceof TextMessageModel ||
+            $this->model instanceof BaseMediaModel
         ) {
-            if ($this->message->getHasLink()) {
+            if ($this->model->getHasLink()) {
 
                 if ($this->telegramBotService->banUser()) {
                     return true;

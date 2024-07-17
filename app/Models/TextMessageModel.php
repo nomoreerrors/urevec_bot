@@ -30,7 +30,6 @@ class TextMessageModel extends MessageModel
         return $this;
     }
 
-
     protected function setHasLink()
     {
         $links = ["http", ".рф", ".ру", ".ком", ".com", ".ru"];
@@ -44,8 +43,6 @@ class TextMessageModel extends MessageModel
         return $this;
     }
 
-
-
     public function getText(): string
     {
         if (empty($this->text)) {
@@ -53,7 +50,6 @@ class TextMessageModel extends MessageModel
         }
         return $this->text;
     }
-
 
     public function getHasLink(): bool
     {

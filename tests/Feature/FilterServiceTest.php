@@ -6,7 +6,7 @@ use Tests\TestCase;
 use App\Services\FilterService;
 use App\Models\BaseTelegramRequestModel;
 
-class WordsFilterTest extends TestCase
+class FilterServiceTest extends TestCase
 {
     /**
      * A basic feature test example.
@@ -21,7 +21,6 @@ class WordsFilterTest extends TestCase
         $this->assertTrue($filter->wordsFilter());
     }
 
-
     public function testMediaModelCaptionlContainsBlackListWordsWithUpperCaseLettersReturnsTrue()
     {
         $data = $this->getMultiMediaModel()->getData();
@@ -33,8 +32,6 @@ class WordsFilterTest extends TestCase
 
     }
 
-
-
     public function testTextMessageModelContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue(): void
     {
         $data = $this->getTextMessageModel()->getData();
@@ -45,8 +42,6 @@ class WordsFilterTest extends TestCase
         $this->assertTrue($filter->wordsFilter());
     }
 
-
-
     public function testMediaModelCaptionlContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue()
     {
         $data = $this->getMultiMediaModel()->getData();
@@ -55,7 +50,6 @@ class WordsFilterTest extends TestCase
 
         $filter = new FilterService($mediaMessageModel);
         $this->assertTrue($filter->wordsFilter());
-
     }
 
     public function testCannotDeleteAdministratorMessage()
@@ -67,7 +61,6 @@ class WordsFilterTest extends TestCase
         $filter = new FilterService($messageModel);
         $this->assertFalse($filter->wordsFilter());
     }
-
 
     public function testTextContainsUpperCaseBlackListWordsFilterReturnsTrue()
     {
@@ -91,4 +84,38 @@ class WordsFilterTest extends TestCase
         $this->assertTrue($filterService->wordsFilter());
     }
 
+    /**
+     * Avoiding spam Chinese, Japanese and Arabic messages
+     * @return void
+     */
+    public function testIfStringContainsUnusualCharsReturnsTrue(): void
+    {
+        //Text without any bad word, link or unusual char
+        $model = $this->getTextMessageModel();
+        $filterService = new FilterService($model);
+
+        $this->assertFalse($filterService->wordsFilter());
+
+        $data = $model->getData();
+
+        // Test case where the text contains Chinese characters
+        $data["message"]["text"] = "赚.钱";
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $filterService = new FilterService($model);
+        $this->assertTrue($filterService->wordsFilter());
+
+
+        // Test case where the text contains Japanese characters
+        $data["message"]["text"] = "ナ";
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $filterService = new FilterService($model);
+        $this->assertTrue($filterService->wordsFilter());
+
+
+        // Test case where the text contains Arabic characters
+        $data["message"]["text"] = "وف العر";
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $filterService = new FilterService($model);
+        $this->assertTrue($filterService->wordsFilter());
+    }
 }

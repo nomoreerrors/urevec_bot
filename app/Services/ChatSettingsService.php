@@ -77,7 +77,12 @@ class ChatSettingsService
             return false;
     }
 
-
+    /**
+     * Switch night light mode
+     * @param array $requestData
+     * @throws \App\Exceptions\TelegramModelException
+     * @return \Illuminate\Http\Response
+     */
     public static function setNightLightMode(array $requestData): \Illuminate\Http\Response
     {
         $data = array_merge($requestData, ['Moscow_time' => date("F j, Y, g:i a")]);

@@ -43,7 +43,7 @@ class BaseTelegramRequestModel extends Model
      * @throws TelegramModelException
      * @return \App\Models\BaseTelegramRequestModel
      */
-    public function getModel(): BaseTelegramRequestModel
+    function getModel(): BaseTelegramRequestModel
     {
         try {
             $model = $this->createMessageModel()
