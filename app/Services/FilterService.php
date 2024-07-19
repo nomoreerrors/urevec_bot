@@ -107,6 +107,7 @@ class FilterService
 
     private function cleanText(string $text): string
     {
+        $text = str_replace("\n", " ", $text);
         /**
          * Remove all special characters including emojis
          *  [^...] is a negated character class, meaning it will match any character that is not in the specified set of characters.
@@ -115,7 +116,7 @@ class FilterService
          *  \p{P} matches any punctuation character.
          *  \s matches any whitespace character.
          */
-        $text = preg_replace('/[^\p{L}\p{N}\s]+/u', '', $text);
+        $text = preg_replace('/[^\p{L}\p{N}\s]+/u', " ", $text);
 
         // Convert to lowercase including Russian letters
         return mb_strtolower($text);
