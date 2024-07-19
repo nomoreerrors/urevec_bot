@@ -90,7 +90,7 @@ abstract class TestCase extends BaseTestCase
     }
 
 
-    public function getNewMemberUpdateModel(): NewMemberJoinUpdateModel
+    public function getNewMemberJoinUpdateModel(): NewMemberJoinUpdateModel
     {
         return new NewMemberJoinUpdateModel([
             "chat_member" => [

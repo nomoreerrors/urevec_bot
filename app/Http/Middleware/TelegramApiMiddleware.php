@@ -24,6 +24,8 @@ class TelegramApiMiddleware
 {
     private bool $chatIdAllowed = false;
 
+    private BaseTelegramRequestModel $requestModel;
+
     /**
      * Handle an incoming request.
      *
@@ -49,7 +51,7 @@ class TelegramApiMiddleware
             return $this->handleException($data, $e);
         }
 
-
+        app()->instance('requestModel', $this->requestModel);
         return $next($request);
     }
 
@@ -85,8 +87,8 @@ class TelegramApiMiddleware
     {
         $middlewareService = new TelegramMiddlewareService($requestData);
         $middlewareService->checkIfObjectTypeExpected();
-        $requestModel = (new BaseTelegramRequestModel($requestData))->getModel();
-        $this->chatIdAllowed = $middlewareService->checkIfChatIdAllowed($requestModel->getChatId());
+        $this->requestModel = (new BaseTelegramRequestModel($requestData))->getModel();
+        $this->chatIdAllowed = $middlewareService->checkIfChatIdAllowed($this->requestModel->getChatId());
         $middlewareService->checkIfIpAllowed(request()->ip());
     }
 }

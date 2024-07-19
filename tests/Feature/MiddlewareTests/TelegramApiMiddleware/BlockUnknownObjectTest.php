@@ -13,8 +13,6 @@ class BlockUnknownObjectTest extends TestCase
     /**
      * A basic feature test example.
      */
-
-
     public function testUnknownObjectResponseStatusCodeIsOk(): void
     {
         $unknownObject = $this->getUnknownObject();

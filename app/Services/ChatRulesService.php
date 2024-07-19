@@ -72,15 +72,19 @@ class ChatRulesService
      * Words are stored at Storage/app/badWord.json & badPhrases.json
      * @return bool
      */
-    public function deleteMessageIfContainsBlackListWords(): bool
+    public function ifMessageContainsBlackListWordsBanUser(): bool
     {
         if (
-            $this->model instanceof TextMessageModel &&
+            (
+                $this->model instanceof TextMessageModel ||
+                $this->model instanceof BaseMediaModel
+            ) &&
             !$this->model->getFromAdmin()
         ) {
             $filter = new FilterService($this->model);
             if ($filter->wordsFilter()) {
-                $this->telegramBotService->deleteMessage();
+                $this->telegramBotService->banUser();
+                return true;
             }
         }
         return false;

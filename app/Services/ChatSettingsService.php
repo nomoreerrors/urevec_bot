@@ -35,7 +35,7 @@ class ChatSettingsService
                     "can_manage_topics" => false,
                 ]
             ]
-        )->json(); //обязательно json
+        )->json();
 
         if ($response["ok"] === true) {
             return true;
@@ -69,7 +69,7 @@ class ChatSettingsService
                     "can_manage_topics" => false,
                 ]
             ]
-        )->json(); //обязательно json
+        )->json();
 
         if ($response["ok"] === true) {
             return true;

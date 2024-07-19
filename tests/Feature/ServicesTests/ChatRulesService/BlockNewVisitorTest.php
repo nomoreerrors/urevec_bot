@@ -11,13 +11,9 @@ use Tests\TestCase;
 
 class BlockNewVisitorTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_block_new_user_returned_true(): void
+    public function test_if_is_a_new_member_join_update_model_method_returns_true(): void
     {
-        $newMemberUpdate = $this->getNewMemberUpdateModel();
-
+        $newMemberUpdate = $this->getNewMemberJoinUpdateModel();
         $service = new ChatRulesService($newMemberUpdate);
         $this->assertTrue($service->blockNewVisitor());
 
@@ -25,30 +21,29 @@ class BlockNewVisitorTest extends TestCase
         $this->assertInstanceOf(NewMemberJoinUpdateModel::class, $result);
     }
 
-    public function test_if_not_a_new_member_and_not_invited_user_instance_block_failed_and_returns_false(): void
+    public function test_if_not_a_new_member_join_update_model_and_not_invited_user_model_block_failed_and_returns_false(): void
     {
         $message = $this->getMessageModel();
         $service = new ChatRulesService($message);
-
         $this->assertFalse($service->blockNewVisitor());
     }
 
     /**
-     * Make sure is new member and not left user
-     *
+     * Test BlockNewVisitor method
      * @return void
      */
-    public function test_new_chat_member_status_not_equals_member_returns_false(): void
+    public function test_if_new_chat_member_status_not_equals_member_returned_model_is_status_update_model_and_block_new_user_function_returns_false(): void
     {
-        $newMemberUpdateModel = $this->getNewMemberUpdateModel();
+        $newMemberUpdateModel = $this->getNewMemberJoinUpdateModel();
         $data = $newMemberUpdateModel->getData();
         $data['chat_member']['new_chat_member']['status'] = 'left';
+
         $statusUpdateModel = (new BaseTelegramRequestModel($data))->getModel();
+        $this->assertInstanceOf(StatusUpdateModel::class, $statusUpdateModel);
 
         $service = new ChatRulesService($statusUpdateModel);
         $this->assertFalse($service->blockNewVisitor());
         $this->assertFalse($statusUpdateModel instanceof NewMemberJoinUpdateModel);
-        $this->assertInstanceOf(StatusUpdateModel::class, $statusUpdateModel);
     }
 
     //TODO
@@ -66,6 +61,11 @@ class BlockNewVisitorTest extends TestCase
         $this->assertTrue($service->blockNewVisitor());
     }
 
+    /**
+     * Testcase where administrator of chat unrestricts user and returned model type is not InvitedUserModel
+     * but is StatusUpdateModel and BlockNewUser method returns false
+     * @return void
+     */
     public function testIfUserUnrestrictedByAdminModelTypeIsNotInvitedUserModelAndReturnsFalse(): void
     {
         $invitedUserUpdateModel = $this->getInvitedUserUpdateModel();
@@ -83,7 +83,14 @@ class BlockNewVisitorTest extends TestCase
         $this->assertInstanceOf(StatusUpdateModel::class, $message);
     }
 
-    public function test_user_restricted_by_admin_generated_model_is_status_update_model_and_block_new_user_function_returns_false(): void
+    /**
+     * Testcase where user restricted or kicked by administrator and returned model type is not an InvitedUserModel
+     * but is StatusUpdateModel and BlockNewUser method returns false. Because generating InvitedUserModel is based on
+     * the fact that "["from"]["user"]["id"] key and "["new_chat_member"]["user"]["id"] key are not equal". So we make sure
+     * that if user is administrator will not lead to an error and  that creating model is pure StatusUpdateModel 
+     * @return void
+     */
+    public function test_user_restricted_by_admin_returned_model_type_is_status_update_model_and_block_new_user_function_returns_false(): void
     {
         $data = ($this->getInvitedUserUpdateModel())->getData();
 
@@ -93,7 +100,6 @@ class BlockNewVisitorTest extends TestCase
 
         $message = (new BaseTelegramRequestModel($data))->getModel();
         $service = new ChatRulesService($message);
-
         $this->assertFalse($service->blockNewVisitor());
 
 

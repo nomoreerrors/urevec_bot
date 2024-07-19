@@ -21,6 +21,7 @@ class CONSTANTS
     public const REQUEST_CHAT_ID_NOT_ALLOWED = "ERROR: ВХОДЯЩИЙ ЗАПРОС С НЕИЗВЕСТНОГО CHAT_ID ИЛИ СПИСОК РАЗРЕШЕННЫХ ЧАТОВ НЕ УСТАНОВЛЕН." . PHP_EOL;
     public const RESTRICT_NEW_USER_FAILED = "ERROR: НЕ УДАЛОСЬ ОГРАНИЧИТЬ ПРАВА НОВОГО ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
     public const BAN_USER_FAILED = "ERROR: НЕ УДАЛОСЬ ЗАБЛОКИРОВАТЬ ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
+    public const UNKNOWN_CMD = "ERROR: КОМАНДА НЕ РАСПОЗНАНА " . PHP_EOL;
 
     /**
      * SUCCSESS MESSAGES

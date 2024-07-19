@@ -34,7 +34,8 @@ class WebhookService
                 ]
             ]
         )->json(); //обязательно json
-        dd($http);
+        // dd($http);
+        // dd(get_called_class());
     }
 
     /**

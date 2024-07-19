@@ -13,20 +13,23 @@ use App\Models\BaseTelegramRequestModel;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\CONSTANTS;
 use Illuminate\Support\Facades\Log;
-use App\Services\TelegramBotService;
 
 
 class ChatRulesMiddleware
 {
     /**
      * Handle an incoming request.
-     *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $data = $request->all();
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = app("requestModel");
+        $data = $model->getData();
+
+        if ($model->getFromAdmin()) {
+            return $next($request);
+        }
+
         $ruleService = new ChatRulesService($model);
 
         try {
@@ -42,7 +45,7 @@ class ChatRulesMiddleware
                 return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
             }
 
-            if ($ruleService->deleteMessageIfContainsBlackListWords()) {
+            if ($ruleService->ifMessageContainsBlackListWordsBanUser()) {
                 return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
             }
 

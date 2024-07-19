@@ -14,14 +14,15 @@ class TextMessageModel extends MessageModel
 
     protected string $text = "";
 
+    protected bool $isCommand = false;
 
     public function __construct(array $data)
     {
         parent::__construct($data);
         $this->setText()
-            ->setHasLink();
+            ->setHasLink()
+            ->setIsCommand();
     }
-
 
     protected function setText()
     {
@@ -41,6 +42,19 @@ class TextMessageModel extends MessageModel
             $this->hasLink = true;
         }
         return $this;
+    }
+
+    protected function setIsCommand(): static
+    {
+        if (str_starts_with($this->text, "/")) {
+            $this->isCommand = true;
+        }
+        return $this;
+    }
+
+    public function getIsCommand(): bool
+    {
+        return $this->isCommand;
     }
 
     public function getText(): string
