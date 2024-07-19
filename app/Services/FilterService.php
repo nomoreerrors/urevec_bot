@@ -118,7 +118,8 @@ class FilterService
                 '"',
                 '(',
                 ')',
-                ';'
+                ';',
+                '\n'
             ],
             ' ',
             $text

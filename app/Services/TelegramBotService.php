@@ -6,6 +6,7 @@ use App\Exceptions\BanUserFailedException;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Models\BaseMediaModel;
 use App\Models\BaseTelegramRequestModel;
+use Illuminate\Support\Facades\Cache;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
@@ -28,8 +29,11 @@ class TelegramBotService
      * @param int $id 
      * @return array
      */
-    public function restrictChatMember(int $time = 86400, int $id = 0): bool
+    public function restrictChatMember(int $time = null, int $id = null): bool
     {
+        if (empty($time)) {
+            $time = Cache::get("new_users_restriction_time");
+        }
         $until_date = time() + $time;
 
         $response = Http::post(
@@ -90,14 +94,20 @@ class TelegramBotService
      * @param string $text_message
      * @return array $response
      */
-    public function sendMessage(string $text_message): array
+    public function sendMessage(string $text_message, $reply_markup = null): array
     {
+        $params = [
+            "chat_id" => $this->model->getChatId(),
+            "text" => $text_message
+        ];
+
+        if ($reply_markup) {
+            $params["reply_markup"] = $reply_markup;
+        }
+
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            [
-                "chat_id" => $this->model->getChatId(),
-                "text" => $text_message
-            ]
+            $params
         )->json();
         return $response;
     }

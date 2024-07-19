@@ -32,4 +32,27 @@ class CONSTANTS
     public const MEMBER_BLOCKED = "ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН НА СУТКИ " . PHP_EOL;
     public const DEFAULT_RESPONSE = "ОБРАБОТКА ЗАВЕРШЕНА " . PHP_EOL;
     public const DELETED_BY_FILTER = "СООБЩЕНИЕ УДАЛЕНО ФИЛЬТРОМ FILTER SERVICE" . PHP_EOL;
+
+
+    /**
+     *  BOT COMMANDS
+     */
+    public const UNKNOWN_COMMAND = "Команда не распознана";
+    public const MODERATION_SETTINGS_CMD = "/moderation_settings";
+    public const NEW_USERS_RESTRICT_SETTINGS_CMD = "/new_users_restrict_settings";
+    public const FILTER_SETTINGS_CMD = "/filter_settings";
+    public const BAN_SETTINGS_CMD = "/ban_settings";
+    public const RESTRICT_NEW_USERS_FOR_24H_CMD = "/24 часа";
+    public const RESTRICT_NEW_USERS_FOR_2H_CMD = "/2 часа";
+    public const RESTRICT_NEW_USERS_FOR_1W_CMD = "/Неделя";
+    public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "/Месяц";
+    public const STOP_RESTRICT_NEW_MEMBERS_CMD = "/Не ограничивать";
+
+    /**
+     * TIME 
+     */
+    public const DAY = 86400;
+    public const HOUR = 3600;
+    public const WEEK = 604800;
+    public const MONTH = 2592000;
 }

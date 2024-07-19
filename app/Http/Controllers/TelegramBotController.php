@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BaseTelegramRequestModel;
 use App\Models\TextMessageModel;
 use App\Services\BotCommandService;
+use Illuminate\Support\Facades\Cache;
 use App\Classes\ReplyKeyboardMarkup;
 use Illuminate\Support\Facades\Http;
 use App\Services\TelegramBotService;
@@ -24,10 +25,10 @@ class TelegramBotController extends Controller
     public function webhookHandler(Request $request)
     {
         $model = app("requestModel");
+        app()->instance("botService", new TelegramBotService($model));
 
-        // if ($this->checkIfIsCommand($model)) {
-        //     $this->commandHandler($model);
-        // }
+        $this->commandHandler($model);
+
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
     }
 
@@ -73,13 +74,13 @@ class TelegramBotController extends Controller
      * @param mixed $model
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
-    private function commandHandler($model)
+    private function commandHandler($model): void
     {
-        $botService = new TelegramBotService($model);
-        $command = $model->getText();
-        $chatId = $model->getFromId();
-        $commandService = new BotCommandService($command, $chatId);
-
+        if ($this->checkIfIsCommand($model)) {
+            $command = $model->getText();
+            $chatId = $model->getFromId();
+            $commandService = new BotCommandService($command, $chatId);
+        }
     }
 
     /**
