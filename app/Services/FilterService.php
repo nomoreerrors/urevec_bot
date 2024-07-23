@@ -48,17 +48,19 @@ class FilterService
 
         $cleanedText = $this->cleanText($text);
 
-
         if ($this->containsPhrases($cleanedText, $phrases)) {
-            $this->storeDeletedWord($text, $cleanedText);
+            $this->storeBadWord($cleanedText);
             return true;
         }
 
-        $words = $this->getWordsFromText($cleanedText);
+        $words = $this->getArrayOfWordsFromString($cleanedText);
+        $longWords = $this->deleteShortWordsFromArray($words);
+        // dd($longWords);
 
-        foreach ($words as $word) {
+
+        foreach ($longWords as $word) {
             if (in_array(mb_strtolower($word), $badWords)) {
-                $this->storeDeletedWord($text, $word);
+                $this->storeBadWord($word);
                 return true;
             }
         }
@@ -105,22 +107,25 @@ class FilterService
         return method_exists($this->model, 'getText') ? $this->model->getText() : $this->model->getCaption();
     }
 
+    /**
+     *  Replace any remaining non-letters, numbers, or whitespace characters including EMOJI with a single space
+     *  [^...] is a negated character class, meaning it will match any character that is not in the specified set of characters.
+     *  \p{L} matches any letter.
+     *  \p{N} matches any number.
+     *  \p{P} matches any punctuation character.
+     *  \s matches any whitespace character.
+     *  \s+ matches one or more whitespace characters. 
+     */
     private function cleanText(string $text): string
     {
         $text = str_replace("\n", " ", $text);
-        /**
-         * Remove all special characters including emojis
-         *  [^...] is a negated character class, meaning it will match any character that is not in the specified set of characters.
-         *  \p{L} matches any letter.
-         *  \p{N} matches any number.
-         *  \p{P} matches any punctuation character.
-         *  \s matches any whitespace character.
-         */
+
         $text = preg_replace('/[^\p{L}\p{N}\s]+/u', " ", $text);
 
         // Convert to lowercase including Russian letters
         return mb_strtolower($text);
     }
+
 
     private function containsPhrases(string $cleanedText, array $phrases): bool
     {
@@ -133,17 +138,45 @@ class FilterService
         return false;
     }
 
-    private function storeDeletedWord(string $text, $deleted): void
+    /**
+     * Store deleted word in file
+     * @param string $text
+     * @param mixed $word
+     *  @return void
+     */
+    private function storeBadWord(string $word): void
     {
         Storage::append(
             'words_deleted_by_filter.txt',
             PHP_EOL . "FROM ID: " . $this->model->getFromId() . PHP_EOL .
-            "WORD: " . $deleted
+            "WORD: " . $word
         );
     }
 
-    public function getWordsFromText($cleanedText): array
+    /**
+     * String to array of words
+     * @param mixed $cleanedText
+     * @return array
+     */
+    public function getArrayOfWordsFromString($cleanedText): array
     {
-        return explode(' ', $this->getText());
+        return explode(' ', $cleanedText);
+    }
+
+    /**
+     * Summary of deleteShortWordsFromArray
+     *  The compared number should be more than "2" if string  is a unicode format
+     * @param array $cleanedText
+     * @return array
+     */
+    private function deleteShortWordsFromArray(array $cleanedText): array
+    {
+        foreach ($cleanedText as $key => $value) {
+
+            if (strlen($value) <= 2) {
+                unset($cleanedText[$key]);
+            }
+        }
+        return $cleanedText;
     }
 }

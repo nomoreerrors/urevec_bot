@@ -28,9 +28,11 @@ abstract class TestCase extends BaseTestCase
 
     protected $filter;
 
-    private int $adminId;
+    private int $adminId = 7400599756;
 
     private int $testUserId;
+
+    protected int $invalidUserId = 9999999;
 
     private int $secondTestUserId;
 
@@ -57,7 +59,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         $this->testObjects = json_decode(file_get_contents(__DIR__ . "/TestObjects.json"), true);
-        $this->adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
+        $this->adminsIdArray = [5555, 6666, 7777]; //Just for tests
         $this->chatPermissions = new ChatSettingsService();
         $this->adminId = 754429643;
         $this->testUserId = 850434834; //bot id
@@ -90,9 +92,9 @@ abstract class TestCase extends BaseTestCase
     }
 
 
-    public function getNewMemberJoinUpdateModel(): NewMemberJoinUpdateModel
+    public function getNewMemberJoinUpdateModelData(): array
     {
-        return new NewMemberJoinUpdateModel([
+        return [
             "chat_member" => [
                 "chat" => [
                     "id" => -1002222230714
@@ -111,13 +113,13 @@ abstract class TestCase extends BaseTestCase
                     "status" => "member"
                 ]
             ]
-        ]);
+        ];
     }
 
 
-    public function getMessageModel(): MessageModel
+    public function getMessageModelData(): array
     {
-        return new MessageModel([
+        return [
             "update_id" => 24024902,
             "message" => [
                 "message_id" => 17770,
@@ -129,13 +131,13 @@ abstract class TestCase extends BaseTestCase
                     "first_name" => "Mai Abrikosov"
                 ],
             ]
-        ]);
+        ];
     }
 
 
-    public function getTextMessageModel(): MessageModel
+    public function getTextMessageModelData(): array
     {
-        return new TextMessageModel([
+        return [
             "update_id" => 24024902,
             "message" => [
                 "message_id" => 17770,
@@ -148,14 +150,14 @@ abstract class TestCase extends BaseTestCase
                 ],
                 "text" => "This is your life, and it's ending one minute at a time."
             ]
-        ]);
+        ];
     }
 
 
 
-    public function getMultiMediaModel(): MultiMediaModel
+    public function getMultiMediaModelData(): array
     {
-        return new MultiMediaModel([
+        return [
             "update_id" => 24024902,
             "message" => [
                 "message_id" => 17770,
@@ -173,14 +175,14 @@ abstract class TestCase extends BaseTestCase
                     "type" => "unknown",
                 ]
             ]
-        ]);
+        ];
 
 
     }
 
-    public function getForwardMessageModel(): ForwardMessageModel
+    public function getForwardMessageModelData(): array
     {
-        return new ForwardMessageModel([
+        return [
             "update_id" => 24024902,
             "message" => [
                 "message_id" => 17770,
@@ -194,18 +196,18 @@ abstract class TestCase extends BaseTestCase
                 "forward_origin" => [],
                 "forward_from_chat" => [],
             ]
-        ]);
+        ];
     }
 
 
 
     /**
      * User Id and invited user id are not equal
-     * @return \App\Models\InvitedUserUpdateModel
+     * @return array
      */
-    public function getInvitedUserUpdateModel(): InvitedUserUpdateModel
+    public function getInvitedUserUpdateModelData(): array
     {
-        return new InvitedUserUpdateModel([
+        return [
             "chat_member" => [
                 "chat" => [
                     "id" => -1002222230714
@@ -224,13 +226,18 @@ abstract class TestCase extends BaseTestCase
                     "status" => "member"
                 ]
             ]
-        ]);
+        ];
     }
 
 
     public function getUnknownObject(): array
     {
         return $this->unknownObject;
+    }
+
+    public function getInvalidUserId(): int
+    {
+        return $this->invalidUserId;
     }
 
 }

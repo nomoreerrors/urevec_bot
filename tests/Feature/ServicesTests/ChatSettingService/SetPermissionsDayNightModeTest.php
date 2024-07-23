@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
 use App\Services\ChatSettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -42,6 +42,6 @@ class SetPermissionsDayNightModeTest extends TestCase
         ]);
         $lightModeResponse->assertOk();
 
-        $this->assertThrows(fn() => ChatSettingsService::setNightLightMode([]), TelegramModelException::class);
+        $this->assertThrows(fn() => ChatSettingsService::setNightLightMode([]), BaseTelegramBotException::class);
     }
 }

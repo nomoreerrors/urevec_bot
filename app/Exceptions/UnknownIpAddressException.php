@@ -7,7 +7,7 @@ use App\Services\CONSTANTS;
 use Illuminate\Http\Request;
 use ErrorException;
 
-class UnknownIpAddressException extends TelegramModelException
+class UnknownIpAddressException extends BaseTelegramBotException
 {
 
     private string $ip;

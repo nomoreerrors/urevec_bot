@@ -13,18 +13,20 @@ class BlockNewVisitorTest extends TestCase
 {
     public function test_if_is_a_new_member_join_update_model_method_returns_true(): void
     {
-        $newMemberUpdate = $this->getNewMemberJoinUpdateModel();
-        $service = new ChatRulesService($newMemberUpdate);
+        $data = $this->getNewMemberJoinUpdateModelData();
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $service = new ChatRulesService($model);
         $this->assertTrue($service->blockNewVisitor());
 
-        $result = (new BaseTelegramRequestModel($newMemberUpdate->getData()))->getModel();
+        $result = (new BaseTelegramRequestModel($data))->getModel();
         $this->assertInstanceOf(NewMemberJoinUpdateModel::class, $result);
     }
 
     public function test_if_not_a_new_member_join_update_model_and_not_invited_user_model_block_failed_and_returns_false(): void
     {
-        $message = $this->getMessageModel();
-        $service = new ChatRulesService($message);
+        $data = $this->getMessageModelData();
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $service = new ChatRulesService($model);
         $this->assertFalse($service->blockNewVisitor());
     }
 
@@ -34,8 +36,7 @@ class BlockNewVisitorTest extends TestCase
      */
     public function test_if_new_chat_member_status_not_equals_member_returned_model_is_status_update_model_and_block_new_user_function_returns_false(): void
     {
-        $newMemberUpdateModel = $this->getNewMemberJoinUpdateModel();
-        $data = $newMemberUpdateModel->getData();
+        $data = $this->getNewMemberJoinUpdateModelData();
         $data['chat_member']['new_chat_member']['status'] = 'left';
 
         $statusUpdateModel = (new BaseTelegramRequestModel($data))->getModel();
@@ -56,8 +57,9 @@ class BlockNewVisitorTest extends TestCase
 
     public function testBlockingNewInvitedUserReturnsTrue(): void
     {
-        $invitedUserUpdateModel = $this->getInvitedUserUpdateModel();
-        $service = new ChatRulesService($invitedUserUpdateModel);
+        $data = $this->getInvitedUserUpdateModelData();
+        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $service = new ChatRulesService($model);
         $this->assertTrue($service->blockNewVisitor());
     }
 
@@ -68,8 +70,8 @@ class BlockNewVisitorTest extends TestCase
      */
     public function testIfUserUnrestrictedByAdminModelTypeIsNotInvitedUserModelAndReturnsFalse(): void
     {
-        $invitedUserUpdateModel = $this->getInvitedUserUpdateModel();
-        $data = $invitedUserUpdateModel->getData();
+        $data = $this->getInvitedUserUpdateModelData();
+        $model = (new BaseTelegramRequestModel($data))->getModel();
 
         $data['chat_member']['from']['id'] = $this->getAdminId();
         $data['chat_member']['old_chat_member']['status'] = 'restricted';
@@ -92,7 +94,7 @@ class BlockNewVisitorTest extends TestCase
      */
     public function test_user_restricted_by_admin_returned_model_type_is_status_update_model_and_block_new_user_function_returns_false(): void
     {
-        $data = ($this->getInvitedUserUpdateModel())->getData();
+        $data = ($this->getInvitedUserUpdateModelData());
 
         $data["chat_member"]["from"]["id"] = $this->getAdminId();
         $data["chat_member"]["old_chat_member"]["status"] = "member";

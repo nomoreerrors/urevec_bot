@@ -5,7 +5,7 @@ namespace App\Exceptions;
 use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 
-class BanUserFailedException extends TelegramModelException
+class BanUserFailedException extends BaseTelegramBotException
 {
-   
+
 }

@@ -7,7 +7,7 @@ use Closure;
 use Illuminate\Http\Request;
 use App\Exceptions\BanUserFailedException;
 use App\Exceptions\RestrictMemberFailedException;
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
 use App\Models\BaseTelegramRequestModel;
 use Symfony\Component\HttpFoundation\Response;
@@ -49,7 +49,7 @@ class ChatRulesMiddleware
                 return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
             }
 
-        } catch (TelegramModelException | RestrictMemberFailedException | BanUserFailedException $e) {
+        } catch (BaseTelegramBotException | RestrictMemberFailedException | BanUserFailedException $e) {
             Log::error($e->getMessage() . $e->getData());
             FailedRequestJob::dispatch($data);
             return response($e->getMessage(), Response::HTTP_OK);
@@ -59,4 +59,5 @@ class ChatRulesMiddleware
         }
         return $next($request);
     }
+
 }

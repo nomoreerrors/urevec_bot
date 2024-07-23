@@ -3,10 +3,14 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\EnvironmentVariablesException;
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnexpectedRequestException;
 use App\Jobs\FailedRequestJob;
 use App\Services\BotErrorNotificationService;
+use Illuminate\Http\Client\HttpClientException;
+use Illuminate\Support\Facades\Cache;
+use App\Classes\ReplyKeyboardMarkup;
+use App\Classes\Command;
 use App\Services\TelegramMiddlewareService;
 use Closure;
 use Exception;
@@ -26,6 +30,8 @@ class TelegramApiMiddleware
 
     private BaseTelegramRequestModel $requestModel;
 
+    private TelegramMiddlewareService $middlewareService;
+
     /**
      * Handle an incoming request.
      *
@@ -34,20 +40,21 @@ class TelegramApiMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $data = $request->all();
-
         try {
-            $this->validateEnvironmentVariables($data);
             $this->saveRawRequestData($data);
-            $this->validateRequest($data);
+            $this->middlewareService = new TelegramMiddlewareService($data);
+            $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
+            $this->middlewareService->checkIfIpAllowed(request()->ip());
+            $this->requestModel = (new BaseTelegramRequestModel($data))->getModel();
 
         } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
             return $this->handleException($data, $e);
         } catch (UnknownChatException | UnknownIpAddressException $e) {
             return $this->handleException($data, $e);
-        } catch (TelegramModelException $e) {
+        } catch (BaseTelegramBotException $e) {
             return $this->handleException($data, $e);
         } catch (\Throwable $e) {
-            BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine());
+            BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
             return $this->handleException($data, $e);
         }
 
@@ -56,24 +63,24 @@ class TelegramApiMiddleware
     }
 
 
-    private function handleException(array $requestData, Exception $e): Response
+    private function handleException(array $requestData, \Throwable $e): Response
     {
-        Log::error($e->getmessage() . " Line: " . $e->getLine());
+        Log::error($e->getmessage() . " Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
 
         if (!($e instanceof UnknownChatException)) {
             FailedRequestJob::dispatch($requestData);
         }
-        return response(env("APP_DEBUG") ? $e->getMessage() : Response::$statusTexts[500], Response::HTTP_OK);
-    }
 
-
-
-    private function validateEnvironmentVariables(array $requestData): void
-    {
-        if (empty(env("TELEGRAM_CHAT_ADMINS_ID"))) {
-            throw new EnvironmentVariablesException(CONSTANTS::EMPTY_ENVIRONMENT_VARIABLES, __METHOD__);
+        if (env("APP_DEBUG")) {
+            return response($e->getMessage(), Response::HTTP_OK);
         }
+        return response(Response::$statusTexts[500], Response::HTTP_OK);
     }
+
+
+
+
+
 
     private function saveRawRequestData(array $requestData): void
     {
@@ -83,12 +90,5 @@ class TelegramApiMiddleware
         Storage::put("rawrequest.json", json_encode($requestLogData, JSON_UNESCAPED_UNICODE));
     }
 
-    private function validateRequest(array $requestData): void
-    {
-        $middlewareService = new TelegramMiddlewareService($requestData);
-        $middlewareService->checkIfObjectTypeExpected();
-        $this->requestModel = (new BaseTelegramRequestModel($requestData))->getModel();
-        $this->chatIdAllowed = $middlewareService->checkIfChatIdAllowed($this->requestModel->getChatId());
-        $middlewareService->checkIfIpAllowed(request()->ip());
-    }
+
 }

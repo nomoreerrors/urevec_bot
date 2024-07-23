@@ -6,7 +6,7 @@ use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use ErrorException;
 
-class EnvironmentVariablesException extends TelegramModelException
+class EnvironmentVariablesException extends BaseTelegramBotException
 {
 
     public function __construct($message, $method)

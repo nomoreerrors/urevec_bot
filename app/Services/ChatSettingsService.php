@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Http;
@@ -80,7 +80,7 @@ class ChatSettingsService
     /**
      * Switch night light mode
      * @param array $requestData
-     * @throws \App\Exceptions\TelegramModelException
+     * @throws \App\Exceptions\BaseTelegramBotException
      * @return \Illuminate\Http\Response
      */
     public static function setNightLightMode(array $requestData): \Illuminate\Http\Response
@@ -113,6 +113,6 @@ class ChatSettingsService
         }
         log::error("Failed to switch night/light permissions mode");
         response("Failed switch to night/light permissions mode", Response::HTTP_INTERNAL_SERVER_ERROR);
-        throw new TelegramModelException("Failed switch to night/light permissions mode", __METHOD__);
+        throw new BaseTelegramBotException("Failed switch to night/light permissions mode", __METHOD__);
     }
 }

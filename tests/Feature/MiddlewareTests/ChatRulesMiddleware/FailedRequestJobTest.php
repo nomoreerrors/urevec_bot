@@ -9,12 +9,13 @@ use Tests\TestCase;
 
 class FailedRequestJobTest extends TestCase
 {
+    use RefreshDatabase;
     /**
      * Test that failed requests with an unknown chat ID are not dispatched to the queue.
      */
     public function testFailedRequestWithUnknownChatIdIsNotDispatchedToQueue(): void
     {
-        $requestData = $this->getMessageModel()->getData();
+        $requestData = $this->getMessageModelData();
         $requestData['message']['chat']['id'] = $this->getUnknownChatId();
         $updateId = $requestData['update_id'];
 
@@ -22,7 +23,7 @@ class FailedRequestJobTest extends TestCase
             ->post('api/webhook', $requestData)
             ->assertStatus(200);
 
-        //job table must be empty or object with current update_id must not exists before running test or test will fail
+        //jobs table must be empty or object with current update_id must not exists before running test or test will fail
         $result = DB::table('jobs')
             ->where('payload', 'like', '%' . $updateId . '%')
             ->first();

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Http;

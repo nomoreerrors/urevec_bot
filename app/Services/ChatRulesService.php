@@ -19,7 +19,6 @@ class ChatRulesService
     public function __construct(private BaseTelegramRequestModel $model)
     {
         $this->telegramBotService = new TelegramBotService($this->model);
-        $this->telegramBotService->prettyRequestLog();
     }
 
     /**
@@ -74,19 +73,25 @@ class ChatRulesService
      */
     public function ifMessageContainsBlackListWordsBanUser(): bool
     {
-        if (
-            (
-                $this->model instanceof TextMessageModel ||
-                $this->model instanceof BaseMediaModel
-            ) &&
-            !$this->model->getFromAdmin()
-        ) {
-            $filter = new FilterService($this->model);
-            if ($filter->wordsFilter()) {
-                $this->telegramBotService->banUser();
-                return true;
-            }
+        if ($this->model->getFromAdmin()) {
+            return false;
         }
+
+        if
+        (
+            !($this->model instanceof TextMessageModel) &&
+            !($this->model instanceof BaseMediaModel)
+        ) {
+            return false;
+        }
+
+        $filter = new FilterService($this->model);
+
+        if ($filter->wordsFilter()) {
+            $this->telegramBotService->banUser();
+            return true;
+        }
+
         return false;
     }
 
@@ -98,15 +103,15 @@ class ChatRulesService
     public function blockUserIfMessageIsForward(): bool
     {
         if (
-            $this->model instanceof ForwardMessageModel &&
-            !$this->model->getFromAdmin()
+            !$this->model instanceof ForwardMessageModel ||
+            $this->model->getFromAdmin()
         ) {
-            if ($this->telegramBotService->banUser())
-                ;
-
-            return true;
+            return false;
         }
 
+        if ($this->telegramBotService->banUser()) {
+            return true;
+        }
         return false;
     }
 
@@ -116,29 +121,21 @@ class ChatRulesService
             return false;
         }
 
-        if ($this->model->getFromAdmin()) {
+        if (!($this->model instanceof MessageModel)) {
             return false;
         }
-
-        if ($this->model instanceof MessageModel) {
-            if ($this->model->getHasTextLink()) {
-
-                if ($this->telegramBotService->banUser()) {
-                    return true;
-                }
-            }
+        // Text_link key value
+        if ($this->model->getHasTextLink()) {
+            $this->telegramBotService->banUser();
+            return true;
         }
-
         if (
             $this->model instanceof TextMessageModel ||
-            $this->model instanceof BaseMediaModel
+            $this->model instanceof BaseMediaModel &&
+            $this->model->getHasLink()
         ) {
-            if ($this->model->getHasLink()) {
-
-                if ($this->telegramBotService->banUser()) {
-                    return true;
-                }
-            }
+            $this->telegramBotService->banUser();
+            return true;
         }
         return false;
     }

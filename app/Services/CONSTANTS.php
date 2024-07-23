@@ -7,7 +7,6 @@ class CONSTANTS
 {
     public function __construct()
     {
-        // dd(get_called_class());
     }
     /**
      * ERRORS
@@ -22,6 +21,11 @@ class CONSTANTS
     public const RESTRICT_NEW_USER_FAILED = "ERROR: НЕ УДАЛОСЬ ОГРАНИЧИТЬ ПРАВА НОВОГО ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
     public const BAN_USER_FAILED = "ERROR: НЕ УДАЛОСЬ ЗАБЛОКИРОВАТЬ ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
     public const UNKNOWN_CMD = "ERROR: КОМАНДА НЕ РАСПОЗНАНА " . PHP_EOL;
+    public const SET_MY_COMMANDS_FAILED = "ERROR: НЕ УДАЛОСЬ УСТАНОВИТЬ КОМАНДЫ. " . PHP_EOL;
+    public const SEND_MESSAGE_FAILED = "ERROR: НЕ УДАЛОСЬ ОТПРАВИТЬ СООБЩЕНИЕ. " . PHP_EOL;
+    public const DELETE_MESSAGE_FAILED = "ERROR: НЕ УДАЛОСЬ УДАЛИТЬ СООБЩЕНИЕ. " . PHP_EOL;
+    public const WRONG_INSTANCE_TYPE = "ERROR:̆ НЕВЕРНЫЙ ТИП ОБЪЕКТА. " . PHP_EOL;
+    public const RESTRICT_MEMBER_FAILED = "ERROR: НЕ УДАЛОСЬ ОГРАНИЧИТЬ ПРАВА ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
 
     /**
      * SUCCSESS MESSAGES
@@ -55,4 +59,13 @@ class CONSTANTS
     public const HOUR = 3600;
     public const WEEK = 604800;
     public const MONTH = 2592000;
+
+
+    /**
+     * CACHE 
+     */
+    public const CACHE_CHAT_ADMINS_IDS = "chat_admins";
+    public const CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY = "bot_admins_group_chat_commands_status_";
+    public const CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY = "admins_private_chats_commands_visibility_";
+    public const CACHE_ADMINS_IDS_NOT_SET = "СПИСОК АДМИНИСТРАТОРОВ НЕ УСТАНОВЛЕН В КЭШЕ. " . PHP_EOL;
 }

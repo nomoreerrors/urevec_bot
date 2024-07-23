@@ -8,11 +8,11 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
-class IpNotAllowedBlockTest extends TestCase
+class RequestIpNotAllowedBlockTest extends TestCase
 {
     public function test_ip_not_allowed_request_is_blocked_by_middleware(): void
     {
-        $request = $this->getMessageModel()->getData();
+        $request = $this->getMessageModelData();
 
         $response = $this->withServerVariables(['REMOTE_ADDR' => '12.22.0.0'])
             ->post('api/webhook', $request);

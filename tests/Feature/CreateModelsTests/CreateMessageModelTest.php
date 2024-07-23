@@ -13,7 +13,7 @@ class CreateMessageModelTest extends TestCase
 {
     public function testCreateMessageModel(): void
     {
-        $data = $this->getMessageModel()->getData();
+        $data = $this->getMessageModelData();
         $messageModel = (new BaseTelegramRequestModel($data))->getModel();
         $this->assertTrue(get_class($messageModel) === MessageModel::class);
 

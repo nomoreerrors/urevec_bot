@@ -6,10 +6,8 @@ use App\Services\BotErrorNotificationService;
 use ErrorException;
 use Illuminate\Support\Facades\Log;
 
-class TelegramModelException extends ErrorException
+class BaseTelegramBotException extends ErrorException
 {
-
-
     protected string $data = "";
 
     public function __construct(
@@ -18,8 +16,6 @@ class TelegramModelException extends ErrorException
     ) {
         parent::__construct($message);
         $this->data = print_r(request()->all(), true);
-
-
         $this->setMessage()
             ->sender();
     }
@@ -42,7 +38,4 @@ class TelegramModelException extends ErrorException
     {
         return $this->data;
     }
-
-
-
 }

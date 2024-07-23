@@ -6,6 +6,6 @@ use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use ErrorException;
 
-class UnexpectedRequestException extends TelegramModelException
+class UnexpectedRequestException extends BaseTelegramBotException
 {
 }

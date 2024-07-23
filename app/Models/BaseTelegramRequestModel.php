@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
-use App\Exceptions\TelegramModelException;
+use App\Exceptions\BaseTelegramBotException;
+use App\Services\TelegramBotService;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\CONSTANTS;
@@ -18,17 +22,23 @@ class BaseTelegramRequestModel extends Model
 
     protected int $chatId = 0;
 
+    protected array $adminsIds = [];
+
     protected string $fromUserName = "";
     /** Message sender id */
     protected int $fromId = 0;
 
+    protected $http;
+
     public function __construct(protected array $data)
     {
         $this->data = $data;
+        $this->http = new Http();
         $this->setMessageType()
+            ->setChatId()
+            ->setAdminsIds()
             ->setFromId()
             ->setFromAdmin()
-            ->setChatId()
             ->setFromUserName();
     }
 
@@ -40,7 +50,7 @@ class BaseTelegramRequestModel extends Model
 
     /**
      * Summary of create
-     * @throws TelegramModelException
+     * @throws BaseTelegramBotException
      * @return \App\Models\BaseTelegramRequestModel
      */
     function getModel(): BaseTelegramRequestModel
@@ -66,7 +76,7 @@ class BaseTelegramRequestModel extends Model
     /**
      * Summary of propertyErrorHandler
      * @param string $message
-     * @throws \App\Exceptions\TelegramModelException
+     * @throws \App\Exceptions\BaseTelegramBotException
      * @return never
      */
     protected function propertyErrorHandler(string $message = "", $line, $method): void
@@ -79,7 +89,7 @@ class BaseTelegramRequestModel extends Model
             "CHAT_ID PROPERTY: " . $this->chatId . PHP_EOL;
         // dd($text);
 
-        throw new TelegramModelException($text, __METHOD__);
+        throw new BaseTelegramBotException($text, __METHOD__);
     }
 
     /**
@@ -306,16 +316,14 @@ class BaseTelegramRequestModel extends Model
 
     protected function setFromAdmin()
     {
-        $adminsIdArray = explode(",", env("TELEGRAM_CHAT_ADMINS_ID"));
-
         try {
-
-            if ((string) in_array($this->fromId, $adminsIdArray)) {
+            if ((string) in_array($this->fromId, $this->adminsIds)) {
                 $this->fromAdmin = true;
                 return $this;
             }
         } catch (Exception $e) {
-            $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
+            $this->propertyErrorHandler($e->getMessage() . "1. Возможно не установлено свойство chatId или 
+            не удалены объекты из тестовой базы", $e->getLine(), __METHOD__);
         }
 
         return $this;
@@ -346,7 +354,6 @@ class BaseTelegramRequestModel extends Model
     protected function setChatId(): static
     {
         try {
-
             $this->chatId = $this->data[$this->messageType]["chat"]["id"];
         } catch (Exception $e) {
             $this->propertyErrorHandler($e->getMessage(), $e->getLine(), __METHOD__);
@@ -377,9 +384,43 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
+    /**
+     * Summary of setAdminsIds
+     * @param \Illuminate\Support\Facades\Http $http
+     * @return BaseTelegramRequestModel
+     * @method  json($key = null, $default = null)
+     */
+    private function setAdminsIds(): static
+    {
+        $cacheKey = CONSTANTS::CACHE_CHAT_ADMINS_IDS . $this->chatId;
+
+        if (Cache::has($cacheKey)) {
+            $this->adminsIds = Cache::get($cacheKey);
+            return $this;
+        }
+
+        $response = $this->http::post(
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
+            ['chat_id' => $this->chatId]
+        )->json();
+
+        $this->adminsIds = array_map(function ($item) {
+            return $item['user']['id'];
+        }, $response['result']);
+
+        Cache::put($cacheKey, $this->adminsIds);
+
+        return $this;
+    }
+
     public function getFromId(): int
     {
         return $this->fromId;
+    }
+
+    public function getAdminsIds(): array
+    {
+        return $this->adminsIds;
     }
 
     public function getType(): string
@@ -411,4 +452,5 @@ class BaseTelegramRequestModel extends Model
     {
         return json_encode($this->data);
     }
+
 }

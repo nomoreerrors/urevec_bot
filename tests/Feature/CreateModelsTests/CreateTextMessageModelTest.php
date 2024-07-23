@@ -10,7 +10,7 @@ class CreateTextMessageModelTest extends TestCase
 {
     public function testCreateTextMessageModel(): void
     {
-        $data = $this->getTextMessageModel()->getData();
+        $data = $this->getTextMessageModelData();
         $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $this->assertInstanceOf(TextMessageModel::class, $textMessageModel);
     }

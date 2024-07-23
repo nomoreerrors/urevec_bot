@@ -15,7 +15,7 @@ class FilterServiceTest extends TestCase
      */
     public function testTextMessageModelContainsBlackListWordsWithUpperCaseLettersReturnsTrue(): void
     {
-        $data = $this->getTextMessageModel()->getData();
+        $data = $this->getTextMessageModelData();
         $data["message"]["text"] = "модерАторы";
         $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $filter = new FilterService($textMessageModel);
@@ -30,7 +30,7 @@ class FilterServiceTest extends TestCase
      */
     public function testTextMessageModelContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue(): void
     {
-        $data = $this->getTextMessageModel()->getData();
+        $data = $this->getTextMessageModelData();
         $data["message"]["text"] = "в сосЕднюю Группу";
         $textMessageModel = (new BaseTelegramRequestModel($data))->getModel();
         $filter = new FilterService($textMessageModel);
@@ -43,9 +43,9 @@ class FilterServiceTest extends TestCase
      * in case when the model instanceof  BaseMediaMessageModel and  has a caption key instead of text key
      * @return void
      */
-    public function testMediaModelCaptionlContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue()
+    public function testMediaModelCaptionContainsBlackListPhrasesWithUpperCaseLettersReturnsTrue()
     {
-        $data = $this->getMultiMediaModel()->getData();
+        $data = $this->getMultiMediaModelData();
         $data["message"]["caption"] = "бессмысленный текст и запретная фраза: сдАЕтся в Аренду";
         $mediaMessageModel = (new BaseTelegramRequestModel($data))->getModel();
 
@@ -58,10 +58,11 @@ class FilterServiceTest extends TestCase
      * in case when the model instanceof  BaseMediaMessageModel and  has a caption key instead of text key
      * @return void
      */
-    public function testMediaModelCaptionlContainsBlackListWordsWithUpperCaseLettersReturnsTrue()
+    public function testMediaModelCaptionContainsBlackListWordsWithUpperCaseLettersReturnsTrue()
     {
-        $data = $this->getMultiMediaModel()->getData();
-        $data["message"]["caption"] = "Продаю свойский чеснок,сорт Грибоаский,можно на еду,на хранение и на посадку.Цена за 1 кг 300 руб, от трех кг по 250р.Все вопросы в личку. ";
+        $data = $this->getMultiMediaModelData();
+        $data["message"]["caption"] = "Добрый вечер,продАЕтся козье молоко,очень вкусное 0‘5 60 р";
+        // dd($data);
         $mediaMessageModel = (new BaseTelegramRequestModel($data))->getModel();
 
         $filter = new FilterService($mediaMessageModel);
@@ -77,7 +78,7 @@ class FilterServiceTest extends TestCase
      */
     public function testWordsFilterDoesNotCheckingAdministratorsMessageAndReturnsFalse()
     {
-        $data = $this->getMultiMediaModel()->getData();
+        $data = $this->getMultiMediaModelData();
         $data["message"]["from"]["id"] = $this->getAdminId();
         $data["message"]["caption"] = "проДам bla-bla-bla https://t.me/telegram  Arabic: ب تاء , Chinese: 我你 , Japanese: すせ";
 
@@ -103,7 +104,7 @@ class FilterServiceTest extends TestCase
                     "first_name" => "Устин Акимыч"
                 ],
                 "chat" => [
-                    "id" => -2222444424,
+                    "id" => -1002222230714,
                 ],
                 "text" => "Админ чата кто?",
             ],
@@ -121,7 +122,8 @@ class FilterServiceTest extends TestCase
      */
     public function testIfStringContainsUnusualCharsWordsFilterReturnsTrue(): void
     {
-        $model = $this->getTextMessageModel();
+        $data = $this->getTextMessageModelData();
+        $model = (new BaseTelegramRequestModel($data))->getModel();
 
         //Test case where the text does not contains Chinese, Japanese or Arabic characters and banned words
         $filterService = new FilterService($model);
@@ -149,5 +151,26 @@ class FilterServiceTest extends TestCase
         $filterService = new FilterService($model);
         $this->assertTrue($filterService->wordsFilter());
     }
-
 }
+//   "3024": {
+//     "update_id": 267309185,
+//     "message": {
+//         "message_id": 18947,
+//         "from": {
+//             "id": 5583632952,
+//             "is_bot": false,
+//             "first_name": "Любовь Евгеньевна",
+//             "last_name": "Будылкина"
+//         },
+//         "chat": {
+//             "id": -1001522860812,
+//             "title": "Чат | Микрорайон Юрьевец",
+//             "type": "supergroup"
+//         },
+//         "date": 1721494457,
+//         "text": "Добрый вечер,продается козье молоко,очень вкусное 0‘5 60 р",
+//         "has_protected_content": true
+//     },
+//     "Moscow_time": "July 20, 2024, 7:54 pm"
+// },
+
