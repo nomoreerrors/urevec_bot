@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Classes\CommandBuilder;
+use App\Exceptions\SetCommandsFailedException;
 use App\Models\BaseTelegramRequestModel;
-use App\Models\MessageModel;
-use App\Models\TextMessageModel;
+use Illuminate\Support\Facades\DB;
+use App\Models\Eloquent\BotChat;
+use App\Models\MessageModels\MediaModels\MultiMediaModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Support\Facades\Http;
@@ -12,13 +15,15 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\CONSTANTS;
 use Illuminate\Support\Facades\Cache;
-use App\Models\TelegramMessageModel;
 use App\Services\TelegramBotService;
+use Illuminate\Support\Facades\App;
+use App\Classes\CommandsList;
 
 class SetMyCommandsTest extends TestCase
 {
     use RefreshDatabase;
     protected $data;
+    protected $chat;
     protected $chatId;
     protected $adminsIdsCacheKey;
     protected $adminsIdsArray;
@@ -31,142 +36,126 @@ class SetMyCommandsTest extends TestCase
 
         $this->data = $this->getMultiMediaModelData();
         $this->chatId = $this->data["message"]["chat"]["id"];
-        $this->adminsIdsCacheKey = CONSTANTS::CACHE_CHAT_ADMINS_IDS . $this->chatId;
-        $this->adminsIdsArray = [123, 456, 789];
-        //Put cache here so that it can be used in BaseTelegramRequestModel and setMyCommands method wont post to api
-        Cache::put($this->adminsIdsCacheKey, $this->adminsIdsArray);
-
+        // TelegramBotService needs commandsList instance to work
+        // It's created in a TelegramApiMiddleware in a general workflow
+        app()->instance("commandsList", new CommandsList());
+        //Setting up admins ids array when creating model
         $this->model = new BaseTelegramRequestModel($this->data);
         $this->botService = new TelegramBotService($this->model);
-    }
-
-    public function testMyCommandsAdminsArrayEmptyThrowsException(): void
-    {
-        Cache::delete($this->adminsIdsCacheKey);
-
-        $this->expectException(BaseTelegramBotException::class);
-        $this->expectExceptionMessage(CONSTANTS::SET_MY_COMMANDS_FAILED .
-            CONSTANTS::CACHE_ADMINS_IDS_NOT_SET);
-        $this->assertFalse(Cache::get("MyCommandsSet") == "true");
-        $this->botService->setMyCommands();
+        $this->chat = $this->botService->createChat();
     }
 
     /**
-     * Set group chat commands visibility for admins and cache the result in cache table
-     * if admins array is not empty
-     */
-    public function testAdminsArrayNotEmptyGroupChatVisibilityIsSet(): void
-    {
-        Cache::put($this->adminsIdsCacheKey, $this->adminsIdsArray);
-
-        $this->botService->setMyCommands();
-        $this->assertTrue(Cache::has($this->adminsIdsCacheKey));
-        $this->assertTrue(Cache::has(CONSTANTS::CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY . $this->chatId));
-    }
-
-    /**
-     * Set private chat commands visibility for admins and cache the result in cache table
-     */
-    public function testSetPrivateChatCommandsVisibilityForAdmins(): void
-    {
-        $privateChatVisibilityCacheKey = CONSTANTS::CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY . $this->chatId;
-
-        Cache::put($this->adminsIdsCacheKey, $this->adminsIdsArray);
-        $this->botService->setMyCommands();
-
-        $this->assertTrue(Cache::has($this->adminsIdsCacheKey));
-        $this->assertTrue(Cache::has($privateChatVisibilityCacheKey));
-
-        $cachedAdminsIds = Cache::get($privateChatVisibilityCacheKey);
-        //Asserting that the admins ids are cached
-        $this->assertNotNull($cachedAdminsIds);
-        //Asserting that all admins ids are in the array
-        $this->assertEmpty(array_diff($cachedAdminsIds, $this->adminsIdsArray));
-    }
-
-
-    public function testCommandsVisibilityNotSetWhenAdminsArrayNotEmptyAndVisibilityAlreadyCached(): void
-    {
-        // Set up the cache with the visibility already cached
-        Cache::put(CONSTANTS::CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY . $this->chatId, "enabled");
-
-        $this->botService->setMyCommands();
-
-        // Assert that the visibility was not set again
-        $this->assertEquals("enabled", Cache::get(CONSTANTS::CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY . $this->chatId));
-    }
-
-    /**
-     * Request to real Telegram Api to make sure everything is fine
+     * General testcase for setMyCommands function based on  a real request to API
      * @return void
      */
-    public function testCommandsVisibilitySetForGroupChatWhenAdminsArrayNotEmptyAndVisibilityNotCached(): void
+    public function testSetMyCommands(): void
     {
-        // Clear the cache
-        Cache::forget(CONSTANTS::CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY . $this->chatId);
-
-        Http::fake([
-            '*' => Http::response(
-                [
-                    "ok" => true,
-                    "result" => [
-                        "0" => [
-                            "user" => [
-                                "id" => $this->adminsIdArray[0]
-                            ],
-
-                            "1" => [
-                                "user" => [
-                                    "id" => $this->adminsIdArray[1]
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                200
-            ), // Replace '*' with the actual URL you are making the request to
-        ]);
+        // Make sure that RefreshDatabase trait works before test
         $this->botService->setMyCommands();
 
-        // Assert that the visibility was set
-        $this->assertTrue(Cache::has(CONSTANTS::CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY . $this->chatId));
+        $this->assertEquals([7400599756, 754429643], $this->chat->private_commands_access);
+        $this->assertEquals('admins', $this->chat->group_commands_access);
+        $this->assertEquals(1, $this->chat->my_commands_set);
     }
 
-    public function testCommandsVisibilitySetForPrivateChatWhenAdminsArrayNotEmptyAndVisibilityNotCached(): void
+    /**
+     *  Testcase where the setMyCommands function throws an exception if the response from the API fails.  
+     * @return void
+     */
+    public function testSetGroupChatCommandsForAdminsFailedThrowsException(): void
     {
-        // Clear the cache
-        Cache::forget(CONSTANTS::CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY . $this->chatId);
+        $this->fakeFailedResponse();
 
-        Http::fake([
-            '*' => Http::response(
-                [
-                    "ok" => true,
-                    "result" => [
-                        "0" => [
-                            "user" => [
-                                "id" => $this->adminsIdArray[0]
-                            ],
+        $this->expectException(BaseTelegramBotException::class);
+        $this->expectExceptionMessage(CONSTANTS::SET_GROUP_CHAT_COMMANDS_FAILED);
 
-                            "1" => [
-                                "user" => [
-                                    "id" => $this->adminsIdArray[1]
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                200
-            ), // Replace '*' with the actual URL you are making the request to
+        $this->botService->setGroupChatCommandsForAdmins();
+    }
+
+    /**
+     * Testcase where the setMyCommands function throws an exception if the response from the API fails.
+     * @return void
+     */
+    public function testSetPrivateChatCommandsForAdminsIfFailedThrowsException(): void
+    {
+        $this->fakeFailedResponse();
+
+        $this->expectException(BaseTelegramBotException::class);
+        $this->expectExceptionMessage(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED);
+
+        $this->botService->setPrivateChatCommandsForAdmins();
+    }
+
+    /**
+     * Testcase where the setMyCommands function throws an exception if admins array is empty.
+     * @return void
+     */
+    public function testSetPrivateChatCommandsForAdminsIfAdminsIdsEmptyThrowsException(): void
+    {
+        $this->chat->update([
+            'chat_admins' => []
         ]);
 
-        $this->botService->setMyCommands();
+        $this->expectException(BaseTelegramBotException::class);
+        $this->expectExceptionMessage(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED .
+            CONSTANTS::EMPTY_ADMIN_IDS_ARRAY);
 
-        // Assert that the visibility was set
-        $this->assertTrue(Cache::has(CONSTANTS::CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY . $this->chatId));
+        $this->botService->setPrivateChatCommandsForAdmins();
+    }
+
+    /**
+     * Testcase where checkifCommandsAreSet function returns static if commands set correctly  
+     * @return void
+     */
+    public function testCheckIfCommandsAreSet(): void
+    {
+        $command = "test";
+        $description = "description_test";
+        $secondCommand = "test2";
+        $secondDescription = "description_test2";
+
+        $this->fakeGetMyCommandsResponse(
+            $command,
+            $description,
+            $secondCommand,
+            $secondDescription
+        );
+
+        $commands = (new CommandBuilder($this->getAdminId()))
+            ->command($command, $description)
+            ->command($secondCommand, $secondDescription)
+            ->withChatScope()
+            ->get();
+
+        $this->assertInstanceOf(
+            TelegramBotService::class,
+            $this->botService->checkifCommandsAreSet($this->getAdminId(), $commands)
+        );
+    }
+
+    public function testCheckIfCommandsAreSetThrowsException(): void
+    {
+        $command = "test";
+        $description = "description_test";
+        $secondCommand = "test2";
+        $secondDescription = "description_test2";
+
+        $this->fakeGetMyCommandsResponse(
+            $command,
+            $description,
+            $secondCommand,
+            $secondDescription
+        );
+
+        $commands = (new CommandBuilder($this->getAdminId()))
+            ->command("test3", "description_test3")
+            ->command("test4", "description_test4")
+            ->withChatScope()
+            ->get();
+
+        $this->expectException(SetCommandsFailedException::class);
+
+        $this->botService->checkifCommandsAreSet($this->getAdminId(), $commands);
     }
 }
-
-
-
-
-

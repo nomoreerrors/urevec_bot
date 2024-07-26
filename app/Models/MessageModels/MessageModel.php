@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\MessageModels;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseTelegramRequestModel;
 use Exception;
 
 class MessageModel extends BaseTelegramRequestModel
@@ -13,6 +14,8 @@ class MessageModel extends BaseTelegramRequestModel
 
 
     protected bool $hasTextLink = false;
+
+    protected bool $isForward = false;
 
     protected int $messageId = 0;
 
@@ -28,13 +31,12 @@ class MessageModel extends BaseTelegramRequestModel
         parent::__construct($data);
         $this->setHasEntities()
             ->setMessageId()
+            ->setIsForward()
             ->setHasTextLink();
     }
 
-
     protected function setHasEntities(): static
     {
-
         if (
             array_key_exists("entities", $this->data[$this->messageType]) ||
             array_key_exists("caption_entities", $this->data[$this->messageType])
@@ -48,6 +50,13 @@ class MessageModel extends BaseTelegramRequestModel
         return $this;
     }
 
+    private function setIsForward(): static
+    {
+        if (array_key_exists("forward_origin", $this->data[$this->messageType])) {
+            $this->isForward = true;
+        }
+        return $this;
+    }
 
     protected function setMessageId()
     {
@@ -64,8 +73,6 @@ class MessageModel extends BaseTelegramRequestModel
         return $this;
     }
 
-
-
     public function getMessageId(): int
     {
         if (empty($this->messageId)) {
@@ -75,6 +82,10 @@ class MessageModel extends BaseTelegramRequestModel
         return $this->messageId;
     }
 
+    public function getIsForward(): bool
+    {
+        return $this->isForward;
+    }
 
     protected function setHasTextLink(): static
     {

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Middleware;
 
-use App\Models\InvitedUserUpdateModel;
-use App\Models\StatusUpdateModel;
+use App\Models\StatusUpdates\StatusUpdateModel;
+use App\Models\StatusUpdates\InvitedUserUpdateModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Services\ChatRulesService;
@@ -36,6 +36,7 @@ class ChatRulesMiddlewareTest extends TestCase
         //Asserting that if text contains link member blocked
         $this->assertTrue($textModel->getHasLink());
         $response = $this->post("api/webhook", $textModel->getData());
+
         $response->assertSee(CONSTANTS::MEMBER_BLOCKED);
 
         unset($this->data["message"]["text"]);
@@ -102,7 +103,11 @@ class ChatRulesMiddlewareTest extends TestCase
 
     public function test_if_is_forward_message_from_another_group_ban_user(): void
     {
-        $this->data = $this->getForwardMessageModelData();
+        $this->data = $this->getMessageModelData();
+        $this->data["message"]["forward_origin"] = [];
+        // dd($this->data);
+        // $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        // dd($model->getIsForward());
 
         Http::fake([
             '*' => Http::response([

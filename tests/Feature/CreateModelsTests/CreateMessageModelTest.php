@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\BaseMediaModel;
-use App\Models\ForwardMessageModel;
-use App\Models\MessageModel;
-use App\Models\TextMessageModel;
+use App\Models\MessageModels\MediaModels\VideoMediaModel;
+use App\Models\MessageModels\MessageModel;
+use App\Models\MessageModels\TextMessageModel;
+use App\Models\MessageModels\MediaModels\BaseMediaModel;
 use Tests\TestCase;
 use App\Models\BaseTelegramRequestModel;
 
@@ -27,13 +27,6 @@ class CreateMessageModelTest extends TestCase
         //test if has video key model is not a pure message model
         $data["message"]["video"] = "test";
         $model = (new BaseTelegramRequestModel($data))->getModel();
-        $this->assertInstanceOf(BaseMediaModel::class, $model);
-
-        unset($data["message"]["video"]);
-
-        //test if has forward_origin key model is not a pure message model
-        $data["message"]["forward_origin"] = [];
-        $model = (new BaseTelegramRequestModel($data))->getModel();
-        $this->assertInstanceOf(ForwardMessageModel::class, $model);
+        $this->assertInstanceOf(VideoMediaModel::class, $model);
     }
 }

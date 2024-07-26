@@ -25,11 +25,11 @@ class BotErrorNotificationService
                 ]
             )->json();
 
-            // dd($response);
             if (!$response["ok"]) {
                 log::info("ОТПРАВКА СООБЩЕНИЯ НЕ УДАЛАСЬ. " . PHP_EOL . __CLASS__ . PHP_EOL . __METHOD__ . PHP_EOL .
                     "RESPONSE DESCRIPTION: " . $response["description"]);
             }
         }
+        return;
     }
 }

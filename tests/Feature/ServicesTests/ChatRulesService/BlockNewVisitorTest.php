@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\BaseTelegramRequestModel;
-use App\Models\InvitedUserUpdateModel;
-use App\Models\NewMemberJoinUpdateModel;
-use App\Models\StatusUpdateModel;
+use App\Models\StatusUpdates\InvitedUserUpdateModel;
+use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
+use App\Models\StatusUpdates\StatusUpdateModel;
 use App\Services\ChatRulesService;
 use Tests\TestCase;
 

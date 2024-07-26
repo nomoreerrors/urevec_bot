@@ -6,6 +6,7 @@ use App\Services\ChatRulesService;
 use Closure;
 use Illuminate\Http\Request;
 use App\Exceptions\BanUserFailedException;
+use Illuminate\Support\Facades\Cache;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
@@ -25,6 +26,14 @@ class ChatRulesMiddleware
     {
         $model = app("requestModel");
         $data = $model->getData();
+
+        if (!Cache::has(CONSTANTS::CACHE_BAN_FORWARD_MESSAGES . $model->getChatId())) {
+            Cache::put(CONSTANTS::CACHE_BAN_FORWARD_MESSAGES . $model->getChatId(), 0);
+        }
+
+        if (!Cache::has(CONSTANTS::CACHE_MY_COMMANDS_SET . $model->getChatId())) {
+            Cache::put(CONSTANTS::CACHE_MY_COMMANDS_SET . $model->getChatId(), 0);
+        }
 
         if ($model->getFromAdmin()) {
             return $next($request);

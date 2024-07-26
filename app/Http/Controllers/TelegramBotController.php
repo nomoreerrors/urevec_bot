@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Classes\CommandBuilder;
+use App\Classes\CommandsList;
+use App\Exceptions\BaseTelegramBotException;
+use App\Jobs\FailedRequestJob;
 use App\Models\BaseTelegramRequestModel;
-use App\Models\TextMessageModel;
+use App\Models\MessageModels\TextMessageModel;
 use App\Services\BotCommandService;
 use App\Services\TelegramMiddlewareService;
 use GuzzleHttp\Client;
@@ -27,10 +31,14 @@ class TelegramBotController extends Controller
     public function webhookHandler(Request $request)
     {
         $model = app("requestModel");
-        app()->instance("botService", new TelegramBotService($model));
 
-        $this->setMyCommands();
-        $this->commandHandler($model);
+        try {
+            $this->commandHandler($model);
+
+        } catch (BaseTelegramBotException $e) {
+            FailedRequestJob::dispatch($model->getData());
+            return response(Response::$statusTexts[500], Response::HTTP_OK);
+        }
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
     }
@@ -61,7 +69,6 @@ class TelegramBotController extends Controller
     private function checkIfIsCommand(BaseTelegramRequestModel $model)
     {
         if (
-            $model->getFromAdmin() &&
             $model instanceof TextMessageModel &&
             $model->getIsCommand()
         ) {
@@ -79,6 +86,8 @@ class TelegramBotController extends Controller
      */
     private function commandHandler($model): void
     {
+        $this->setMyCommands();
+
         if ($this->checkIfIsCommand($model)) {
             $command = $model->getText();
             $chatId = $model->getFromId();
@@ -92,6 +101,10 @@ class TelegramBotController extends Controller
      */
     private function setMyCommands(): void
     {
+        if (Cache::get(CONSTANTS::CACHE_MY_COMMANDS_SET . app("requestModel")->getChatId())) {
+            return;
+        }
+
         app("botService")->setMyCommands();
     }
 

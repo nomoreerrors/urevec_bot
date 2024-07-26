@@ -1,22 +1,17 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Reactions;
 
-use App\Traits\VideoMediaTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Exception;
+use App\Models\BaseTelegramRequestModel;
 
-class VideoMediaModel extends BaseMediaModel
+class MessageReactionModel extends BaseTelegramRequestModel
 {
-    use VideoMediaTrait;
+    use HasFactory;
 
-        
     public function __construct(array $data)
     {
         parent::__construct($data);
     }
-
-        
-   
 }

@@ -4,7 +4,7 @@ namespace Tests\Feature\CreateModelsTests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use App\Models\TextMessageModel;
+use App\Models\MessageModels\TextMessageModel;
 use Tests\TestCase;
 
 class TextMessageModelTest extends TestCase

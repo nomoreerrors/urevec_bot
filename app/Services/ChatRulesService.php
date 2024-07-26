@@ -2,15 +2,15 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Exceptions\RestrictMemberFailedException;
-use App\Models\BaseMediaModel;
+use App\Models\MessageModels\MediaModels\BaseMediaModel;
 use App\Models\BaseTelegramRequestModel;
-use App\Models\ForwardMessageModel;
-use App\Models\InvitedUserUpdateModel;
-use App\Models\MessageModel;
-use App\Models\NewMemberJoinUpdateModel;
-use App\Models\TextMessageModel;
+use App\Models\MessageModels\MessageModel;
+use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
+use App\Models\StatusUpdates\InvitedUserUpdateModel;
+use App\Models\MessageModels\TextMessageModel;
 
 class ChatRulesService
 {
@@ -33,7 +33,6 @@ class ChatRulesService
             !($this->model instanceof InvitedUserUpdateModel) &&
             !($this->model instanceof NewMemberJoinUpdateModel)
         ) {
-
             return false;
         }
 
@@ -102,12 +101,21 @@ class ChatRulesService
      */
     public function blockUserIfMessageIsForward(): bool
     {
-        if (
-            !$this->model instanceof ForwardMessageModel ||
-            $this->model->getFromAdmin()
-        ) {
+        if (!($this->model instanceof MessageModel)) {
             return false;
         }
+
+        $isForward = $this->model->getIsForward();
+        $isAdmin = $this->model->getFromAdmin();
+
+        if (!$isForward || $isAdmin) {
+            return false;
+        }
+
+        if (Cache::get(CONSTANTS::CACHE_BAN_FORWARD_MESSAGES . $this->model->getChatId())) {
+            return false;
+        }
+
 
         if ($this->telegramBotService->banUser()) {
             return true;
@@ -124,19 +132,23 @@ class ChatRulesService
         if (!($this->model instanceof MessageModel)) {
             return false;
         }
+
         // Text_link key value
         if ($this->model->getHasTextLink()) {
             $this->telegramBotService->banUser();
             return true;
         }
+
         if (
-            $this->model instanceof TextMessageModel ||
-            $this->model instanceof BaseMediaModel &&
+            method_exists($this->model, 'getHasLink') &&
             $this->model->getHasLink()
         ) {
             $this->telegramBotService->banUser();
             return true;
+
         }
+
         return false;
     }
 }
+

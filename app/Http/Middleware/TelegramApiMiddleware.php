@@ -6,8 +6,12 @@ use App\Exceptions\EnvironmentVariablesException;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnexpectedRequestException;
 use App\Jobs\FailedRequestJob;
+use App\Models\Eloquent\BotChat;
 use App\Services\BotErrorNotificationService;
+use App\Services\TelegramBotService;
 use Illuminate\Http\Client\HttpClientException;
+use App\Classes\CommandsList;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Classes\ReplyKeyboardMarkup;
 use App\Classes\Command;
@@ -28,6 +32,8 @@ class TelegramApiMiddleware
 {
     private bool $chatIdAllowed = false;
 
+    private $chatModel = null;
+
     private BaseTelegramRequestModel $requestModel;
 
     private TelegramMiddlewareService $middlewareService;
@@ -47,6 +53,14 @@ class TelegramApiMiddleware
             $this->middlewareService->checkIfIpAllowed(request()->ip());
             $this->requestModel = (new BaseTelegramRequestModel($data))->getModel();
 
+            app()->singleton("botService", fn() => new TelegramBotService($this->requestModel));
+            app()->singleton("commandsList", fn() => new CommandsList());
+            app()->singleton('requestModel', fn() => $this->requestModel);
+
+            $this->addNewChat();
+
+
+
         } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
             return $this->handleException($data, $e);
         } catch (UnknownChatException | UnknownIpAddressException $e) {
@@ -58,7 +72,6 @@ class TelegramApiMiddleware
             return $this->handleException($data, $e);
         }
 
-        app()->instance('requestModel', $this->requestModel);
         return $next($request);
     }
 
@@ -78,10 +91,6 @@ class TelegramApiMiddleware
     }
 
 
-
-
-
-
     private function saveRawRequestData(array $requestData): void
     {
         date_default_timezone_set('Europe/Moscow');
@@ -91,4 +100,18 @@ class TelegramApiMiddleware
     }
 
 
+    private function addNewChat(): void
+    {
+        if ($this->requestModel->getChatType() !== "supergroup") {
+            return;
+        }
+        if (!DB::table("bot_chats")->where("chat_id", $this->requestModel->getChatId())->exists()) {
+            app("botService")->createChat();
+            app("botService")->setMyCommands();
+        }
+        return;
+    }
+
 }
+
+

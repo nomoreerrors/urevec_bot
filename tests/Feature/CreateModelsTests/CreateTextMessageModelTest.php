@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\TextMessageModel;
 use Tests\TestCase;
+use App\Models\MessageModels\TextMessageModel;
 use App\Models\BaseTelegramRequestModel;
 
 class CreateTextMessageModelTest extends TestCase

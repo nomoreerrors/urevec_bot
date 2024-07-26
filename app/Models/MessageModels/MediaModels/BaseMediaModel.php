@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\MessageModels\MediaModels;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Exception;
+use App\Models\MessageModels\MessageModel;
+
 
 class BaseMediaModel extends MessageModel
 {

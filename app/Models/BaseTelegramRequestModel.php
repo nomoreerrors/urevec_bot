@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Eloquent\BotChat;
+use App\Models\MessageModels\MediaModels\BaseMediaModel;
+use App\Models\StatusUpdates\StatusUpdateModel;
+use Illuminate\Support\Facades\Log;
+use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
+use App\Models\StatusUpdates\InvitedUserUpdateModel;
+use App\Models\MessageModels\MediaModels\PhotoMediaModel;
+use App\Models\Reactions\MessageReactionModel;
+use App\Models\MessageModels\MediaModels\VideoMediaModel;
+use App\Models\MessageModels\MediaModels\MultiMediaModel;
+use App\Models\MessageModels\MediaModels\VoiceMediaModel;
+use App\Models\MessageModels\MessageModel;
+use App\Models\MessageModels\TextMessageModel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Exceptions\BaseTelegramBotException;
 use App\Services\TelegramBotService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\CONSTANTS;
 use Exception;
@@ -18,7 +31,11 @@ class BaseTelegramRequestModel extends Model
 
     protected string $messageType = "";
 
+    protected string $chatTitle = "";
+
     protected bool $fromAdmin = false;
+
+    protected string $chatType = "";
 
     protected int $chatId = 0;
 
@@ -36,9 +53,11 @@ class BaseTelegramRequestModel extends Model
         $this->http = new Http();
         $this->setMessageType()
             ->setChatId()
+            ->setChatType()
             ->setAdminsIds()
             ->setFromId()
             ->setFromAdmin()
+            ->setChatTitle()
             ->setFromUserName();
     }
 
@@ -58,7 +77,6 @@ class BaseTelegramRequestModel extends Model
         try {
             $model = $this->createMessageModel()
                 ->createTextMessageModel()
-                ->createForwardMessageModel()
                 ->createStatusUpdateModel()
                 ->createNewMemberJoinUpdateModel()
                 ->createInvitedUserUpdateModel()
@@ -104,36 +122,12 @@ class BaseTelegramRequestModel extends Model
         return $this;
     }
 
-    /**
-     * Summary of createForwardMessageModel
-     * @return BaseTelegramRequestModel|ForwardMessageModel
-     */
-    private function createForwardMessageModel(): BaseTelegramRequestModel
-    {
-        $type = "";
-        if ($this->messageType === "message") {
-            $type = "message";
-        }
-
-        if ($this->messageType === "edited_message") {
-            $type = "edited_message";
-        }
-
-        if (
-            array_key_exists($type, $this->data) &&
-            (array_key_exists("forward_from_chat", $this->data[$type]) ||
-                array_key_exists("forward_origin", $this->data[$type]))
-        ) {
-            return new ForwardMessageModel($this->data);
-        }
-        return $this;
-    }
 
     /**
      * Summary of createTextMessageModel
-     * @return BaseTelegramRequestModel|TextMessageModel
+     * @return \App\Models\BaseTelegramRequestModel|\App\Models\MessageModels\TextMessageModel
      */
-    private function createTextMessageModel(): BaseTelegramRequestModel
+    private function createTextMessageModel(): BaseTelegramRequestModel|TextMessageModel
     {
         $type = "";
         if ($this->messageType === "message") {
@@ -143,13 +137,11 @@ class BaseTelegramRequestModel extends Model
         if ($this->messageType === "edited_message") {
             $type = "edited_message";
         }
+
         if (
             array_key_exists($type, $this->data) &&
-            array_key_exists("text", $this->data[$type]) &&
-            !array_key_exists("forward_from_chat", $this->data[$type]) &&
-            !array_key_exists("forward_origin", $this->data[$type])
+            array_key_exists("text", $this->data[$type])
         ) {
-
             return new TextMessageModel($this->data);
         }
         return $this;
@@ -157,11 +149,13 @@ class BaseTelegramRequestModel extends Model
 
     /**
      * Summary of createMessageModel
-     * @return \App\Models\MessageModel|BaseTelegramRequestModel
+     * @return \App\Models\BaseTelegramRequestModel|\App\Models\MessageModels\MessageModel
      */
-    private function createMessageModel(): BaseTelegramRequestModel
+    private function createMessageModel(): BaseTelegramRequestModel|MessageModel
     {
         $type = "";
+
+
         if ($this->messageType === "message") {
             $type = "message";
         }
@@ -170,27 +164,29 @@ class BaseTelegramRequestModel extends Model
             $type = "edited_message";
         }
 
-        if (
-            array_key_exists($type, $this->data) &&
-            !array_key_exists("text", $this->data[$type]) &&
-            !array_key_exists("video", $this->data[$type]) &&
-            !array_key_exists("photo", $this->data[$type]) &&
-            !array_key_exists("voice", $this->data[$type]) &&
-            !array_key_exists("forward_from_chat", $this->data[$type]) &&
-            !array_key_exists("forward_origin", $this->data[$type])
-        ) {
+        if (empty($type)) {
+            return $this;
+        }
 
+        $hasVIdeo = array_key_exists("video", $this->data[$type]);
+        $hasPhoto = array_key_exists("photo", $this->data[$type]);
+        $hasVoice = array_key_exists("voice", $this->data[$type]);
+        $hasText = array_key_exists("text", $this->data[$type]);
+
+        if (
+            !$hasText &&
+            !$hasVIdeo &&
+            !$hasPhoto &&
+            !$hasVoice
+        ) {
             return new MessageModel($this->data);
         }
         return $this;
     }
 
 
-    /**
-     * Summary of createStatusUpdateModel
-     * @return BaseTelegramRequestModel|StatusUpdateModel
-     */
-    private function createStatusUpdateModel(): BaseTelegramRequestModel
+
+    private function createStatusUpdateModel(): BaseTelegramRequestModel|StatusUpdateModel
     {
         if ($this->messageType === "chat_member") {
             if (
@@ -249,42 +245,36 @@ class BaseTelegramRequestModel extends Model
 
     /**
      * Summary of createMediaModel
-     * @return \App\Models\BaseTelegramRequestModel
+     * @return mixed
      */
-    private function createMediaModel(): BaseTelegramRequestModel
+    private function createMediaModel(): mixed
     {
         $type = $this->messageType;
+        $hasVideoKey = array_key_exists("video", $this->data[$type]);
+        $hasVoiceKey = array_key_exists("voice", $this->data[$type]);
+        $hasVideoKey = array_key_exists("video", $this->data[$type]);
+        $hasPhotoKey = array_key_exists("photo", $this->data[$type]);
 
-
-        if (!array_key_exists("forward_from_chat", $this->data[$type])) {
-
-
-            if (
-                array_key_exists("video", $this->data[$type]) &&
-                !array_key_exists("photo", $this->data[$type])
-            ) {
-                return new VideoMediaModel($this->data);
-            }
-
-            if (
-                array_key_exists("photo", $this->data[$type]) &&
-                !array_key_exists("video", $this->data[$type])
-            ) {
-                return new PhotoMediaModel($this->data);
-            }
-
-            if (
-                array_key_exists("photo", $this->data[$type]) &&
-                array_key_exists("video", $this->data[$type])
-            ) {
-                return new MultiMediaModel($this->data);
-            }
-
-            if (array_key_exists("voice", $this->data[$type])) {
-                return new VoiceMediaModel($this->data);
-            }
-
+        if ($hasVideoKey && $hasPhotoKey) {
+            return new MultiMediaModel($this->data);
         }
+
+        if ($hasPhotoKey && !$hasVideoKey) {
+            return new PhotoMediaModel($this->data);
+        }
+
+        if ($hasVideoKey && !$hasPhotoKey) {
+            return new VideoMediaModel($this->data);
+        }
+
+        if ($hasVoiceKey) {
+            return new VoiceMediaModel($this->data);
+        }
+
+        if ($hasVideoKey && $hasPhotoKey) {
+            new MultiMediaModel($this->data);
+        }
+
         return $this;
     }
 
@@ -326,6 +316,16 @@ class BaseTelegramRequestModel extends Model
             не удалены объекты из тестовой базы", $e->getLine(), __METHOD__);
         }
 
+        return $this;
+    }
+
+    protected function setChatType(): static
+    {
+        if (!array_key_exists("chat", $this->data[$this->messageType])) {
+            $this->propertyErrorHandler("chatType свойство не установлено", __LINE__, __METHOD__);
+        }
+
+        $this->chatType = $this->data[$this->messageType]["chat"]["type"];
         return $this;
     }
 
@@ -392,10 +392,15 @@ class BaseTelegramRequestModel extends Model
      */
     private function setAdminsIds(): static
     {
-        $cacheKey = CONSTANTS::CACHE_CHAT_ADMINS_IDS . $this->chatId;
+        if ($this->chatType === "private") {
+            return $this;
+        }
 
-        if (Cache::has($cacheKey)) {
-            $this->adminsIds = Cache::get($cacheKey);
+        $this->adminsIds = (new BotChat())
+            ->where("chat_id", $this->chatId)
+            ->first()?->chat_admins ?? [];
+
+        if (!empty($this->adminsIds)) {
             return $this;
         }
 
@@ -403,14 +408,28 @@ class BaseTelegramRequestModel extends Model
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
             ['chat_id' => $this->chatId]
         )->json();
+        // dd($response);
+
+        if (!$response['ok']) {
+            throw new BaseTelegramBotException(CONSTANTS::GET_ADMINS_FAILED, __METHOD__);
+        }
 
         $this->adminsIds = array_map(function ($item) {
             return $item['user']['id'];
         }, $response['result']);
 
-        Cache::put($cacheKey, $this->adminsIds);
-
         return $this;
+    }
+
+    public function setChatTitle()
+    {
+        $this->chatTitle = $this->data[$this->messageType]["chat"]["title"];
+        return $this;
+    }
+
+    public function getChatType(): string
+    {
+        return $this->chatType;
     }
 
     public function getFromId(): int
@@ -436,6 +455,11 @@ class BaseTelegramRequestModel extends Model
     public function getFromAdmin(): bool
     {
         return $this->fromAdmin;
+    }
+
+    public function getChatTitle(): string
+    {
+        return $this->chatTitle;
     }
 
     public function getChatId(): int

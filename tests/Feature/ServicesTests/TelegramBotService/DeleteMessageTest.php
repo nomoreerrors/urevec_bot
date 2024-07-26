@@ -4,14 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\BaseTelegramRequestModel;
 use App\Services\CONSTANTS;
-use App\Models\MessageModel;
-use App\Models\TextMessageModel;
 use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
-use App\Models\TelegramMessageModel;
 use App\Services\TelegramBotService;
 
 class DeleteMessageTest extends TestCase

@@ -1,19 +1,22 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\MessageModels\MediaModels;
 
+use App\Traits\VideoMediaTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Exception;
 
-class NewMemberJoinUpdateModel extends StatusUpdateModel
+class VideoMediaModel extends BaseMediaModel
 {
-    use HasFactory;
+    use VideoMediaTrait;
 
-    /**
-     * Class constructor.
-     */
+
     public function __construct(array $data)
     {
         parent::__construct($data);
     }
+
+
+
 }

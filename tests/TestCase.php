@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use Illuminate\Support\Facades\Http;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
 use App\Models\MultiMediaModel;
@@ -66,6 +67,52 @@ abstract class TestCase extends BaseTestCase
         $this->secondTestUserId = 1087968824; //bot id
     }
 
+    public function fakeSucceedResponse()
+    {
+        Http::fake(fn() => Http::response([
+            "ok" => true,
+            "description" => "success",
+        ], 200));
+    }
+
+    public function fakeGetMyCommandsResponse($command, $description, $secondCommand, $secondDescription)
+    {
+        Http::fake([
+            '*' => Http::response([
+                "ok" => true,
+                "result" => [
+                    [
+                        "command" => $command,
+                        "description" => $description
+                    ],
+                    [
+                        "command" => $secondCommand,
+                        "description" => $secondDescription
+                    ]
+                ]
+            ], 200, [])
+        ]);
+    }
+
+    public function fakeFailedResponse()
+    {
+        Http::fake(fn() => Http::response([
+            "ok" => false,
+            "description" => "Bad Request: chat not found",
+        ], 500));
+    }
+
+    public function fakeResponseWithAdminsIds(int $id, int $secondId, bool $status = true)
+    {
+        return Http::fake(fn() => Http::response([
+            'ok' => $status,
+            'description' => 'ok',
+            'result' => [
+                ['user' => ['id' => $id]], // Admin 1
+                ['user' => ['id' => $secondId]] // Admin 2
+            ]
+        ], 200));
+    }
 
 
     public function getAdminId()
@@ -124,7 +171,9 @@ abstract class TestCase extends BaseTestCase
             "message" => [
                 "message_id" => 17770,
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "type" => "supergroup",
+                    "title" => "Jared Leto"
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),
@@ -162,7 +211,9 @@ abstract class TestCase extends BaseTestCase
             "message" => [
                 "message_id" => 17770,
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "type" => "supergroup",
+                    "title" => "Jared Leto"
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),

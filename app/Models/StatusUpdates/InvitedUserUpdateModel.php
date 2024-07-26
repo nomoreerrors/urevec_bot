@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\StatusUpdates;
 
 use Hamcrest\Arrays\IsArray;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

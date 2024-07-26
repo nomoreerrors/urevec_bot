@@ -10,7 +10,6 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Services\TelegramBotService;
 use Illuminate\Support\Facades\DB;
-use App\Models\TelegramMessageModel;
 
 class RestrictChatMemberTest extends TestCase
 {

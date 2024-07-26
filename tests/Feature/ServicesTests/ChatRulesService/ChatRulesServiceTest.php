@@ -8,9 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use App\Models\NewMemberJoinUpdateModel;
 use App\Models\BaseTelegramRequestModel;
-use App\Models\InvitedUserUpdateModel;
 use App\Services\CONSTANTS;
 
 class ChatRulesServiceTest extends TestCase
@@ -136,8 +134,9 @@ class ChatRulesServiceTest extends TestCase
      */
     public function test_if_forward_message_is_forward_by_admin_block_function_returns_false(): void
     {
-        $this->data = $this->getForwardMessageModelData();
+        $this->data = $this->getMessageModelData();
         $this->data["message"]["from"]["id"] = $this->getAdminId();
+        $this->data["message"]["forward_origin"] = [];
         $chatId = $this->data["message"]["chat"]["id"];
         //Prepare admin id in cache so it can be used to check if user is admin
         Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);

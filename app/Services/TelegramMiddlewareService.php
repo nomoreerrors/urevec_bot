@@ -21,8 +21,6 @@ class TelegramMiddlewareService
 
     private string $objectType = "";
 
-    private array $adminsId = [];
-
     private int $chatId = 0;
 
     public function __construct(private array $data)
@@ -77,6 +75,7 @@ class TelegramMiddlewareService
 
     public function checkIfChatIdAllowed(int $chatId): void
     {
+        // if ($this->data[$this->objectType]["chat"]["type"] == "private" &&) {
         $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
 
         if (!in_array($chatId, $allowedChats)) {

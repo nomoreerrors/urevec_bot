@@ -18,15 +18,17 @@ class CommandBuilder
 
     /**
      *  Methods calling order
-     *   $command = (new Command("command", "description"))
-     *      ->withScope()
-     *      ->default()
-     *      ->addChatId($id) 
+     *   $command = (new CommandBuilder($chatId))
+     *      ->command("command", "description")
+     *      ->withDefaultScope()
      *     ->get();
      * 
      * https://core.telegram.org/bots/api#botcommandscope
      */
-    public function __construct()
+    /**
+     * @param int $chat_id can be Chat id or User id
+     */
+    public function __construct(private int $chatId)
     {
     }
 
@@ -36,105 +38,130 @@ class CommandBuilder
      */
     public function command(string $command, string $description): static
     {
-        // array_push($this->commandsArray["commands"], ["command" => $command, "description" => $description]);
         $this->commandsArray["commands"][] = ["command" => $command, "description" => $description];
         return $this;
     }
 
     /**
-     * Add scope array. Required scope type and chatId
+     * Only for private chat with bot for specific user or admin
      * Use it if you want to manage commands visibility for different types of users
      * @return ReplyKeyboardMarkup
      */
-    public function withScope(): static
+    public function withChatScope(): static
     {
-        $this->scope = true;
-        $this->commandsArray["scope"] = [];
-        return $this;
-    }
-
-    private function exceptionHandler(): void
-    {
-        if ($this->scope === false) {
-            throw new BaseTelegramBotException("НЕВЕРНЫЙ ПОРЯДОК МЕТОДОВ. ПРАВИЛЬНЫЙ ВЫЗОВ:
-             (new Command(command, description))->withScope->(type)->addChatId(id)->get()", __METHOD__);
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
         }
-    }
-
-    /**Add scope type */
-    public function default(): static
-    {
-
-        $this->exceptionHandler();
-
-        $this->commandsArray["scope"]["type"] = "default";
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "chat",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
     /**Add scope type */
-    public function allPrivateChats(): static
+    public function withDefaultScope(): static
     {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "all_private_chats";
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "default",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
     /**Add scope type */
-    public function allGroupChats(): static
+    public function withAllPrivateChatsScope(): static
     {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "all_group_chats";
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "all_private_chats",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
     /**Add scope type */
-    public function allChatAdministrators(): static
+    public function withAllGroupChatsScope(): static
     {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "all_chat_administrators";
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "all_group_chats",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
     /**Add scope type */
-    public function chat(): static
+    public function withAllChatAdministratorsScope(): static
     {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "chat";
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "all_chat_adminiistrators",
+            "chat_id" => $this->chatId
+        ];
+        return $this;
+    }
+
+
+    /**Add scope type */
+    public function withChatAdministratorsScope(): static
+    {
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "chat_administrators",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
     /**Add scope type */
-    public function chatAdministrators(): static
+    public function withChatMemberScope(): static
     {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "chat_administrators";
+        if ($this->scope === true) {
+            throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
+        }
+
+        $this->scope = true;
+        $this->commandsArray["scope"] = [
+            "type" => "chat_member",
+            "chat_id" => $this->chatId
+        ];
         return $this;
     }
 
-    /**Add scope type */
-    public function chatMember(): static
-    {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["type"] = "chat_member";
-        return $this;
-    }
 
-    /**
-     * Required option
-     * Add chatId key to scope array
-     * @param int $id
-     * @return CommandBuilder
-     */
-    public function addChatId(int $id): static
-    {
-        $this->exceptionHandler();
-        $this->commandsArray["scope"]["chat_id"] = $id;
-        return $this;
-    }
 
     public function get(): array
     {
         $this->exceptionHandler();
         return $this->commandsArray;
     }
+
+
+    private function exceptionHandler(): void
+    {
+        if (empty($this->commandsArray["commands"])) {
+            throw new BaseTelegramBotException("НЕВЕРНЫЙ ПОРЯДОК МЕТОДОВ ИЛИ МЕТОД SCOPE ВЫЗВАН ПОВТОРНО.  ПРАВИЛЬНЫЙ ВЫЗОВ:  .
+             (new CommandBuilder())->command(command, description)->withChatScope()->get()", __METHOD__);
+        }
+    }
+
 }

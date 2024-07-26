@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\StatusUpdates;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseTelegramRequestModel;
 
 class StatusUpdateModel extends BaseTelegramRequestModel
 {

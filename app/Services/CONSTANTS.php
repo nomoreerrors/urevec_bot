@@ -26,6 +26,10 @@ class CONSTANTS
     public const DELETE_MESSAGE_FAILED = "ERROR: НЕ УДАЛОСЬ УДАЛИТЬ СООБЩЕНИЕ. " . PHP_EOL;
     public const WRONG_INSTANCE_TYPE = "ERROR:̆ НЕВЕРНЫЙ ТИП ОБЪЕКТА. " . PHP_EOL;
     public const RESTRICT_MEMBER_FAILED = "ERROR: НЕ УДАЛОСЬ ОГРАНИЧИТЬ ПРАВА ПОЛЬЗОВАТЕЛЯ. " . PHP_EOL;
+    public const GET_ADMINS_FAILED = "ERORR: НЕ УДАЛОСЬ ПОЛУЧИТЬ СПИСОК АДМИНИСТРАТОРОВ. " . PHP_EOL;
+    public const SET_GROUP_CHAT_COMMANDS_FAILED = "ERROR: Failed to set group chat commands visibility " . PHP_EOL;
+    public const SET_PRIVATE_CHAT_COMMANDS_FAILED = "ERROR: Failed to set private chat commands visibility " . PHP_EOL;
+    public const EMPTY_ADMIN_IDS_ARRAY = "ERROR: EMPTY ADMIN IDS ARRAY " . PHP_EOL;
 
     /**
      * SUCCSESS MESSAGES
@@ -42,15 +46,15 @@ class CONSTANTS
      *  BOT COMMANDS
      */
     public const UNKNOWN_COMMAND = "Команда не распознана";
-    public const MODERATION_SETTINGS_CMD = "/moderation_settings";
+    public const MODERATION_SETTINGS_CMD = "moderation_settings";
     public const NEW_USERS_RESTRICT_SETTINGS_CMD = "/new_users_restrict_settings";
-    public const FILTER_SETTINGS_CMD = "/filter_settings";
-    public const BAN_SETTINGS_CMD = "/ban_settings";
-    public const RESTRICT_NEW_USERS_FOR_24H_CMD = "/24 часа";
-    public const RESTRICT_NEW_USERS_FOR_2H_CMD = "/2 часа";
-    public const RESTRICT_NEW_USERS_FOR_1W_CMD = "/Неделя";
-    public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "/Месяц";
-    public const STOP_RESTRICT_NEW_MEMBERS_CMD = "/Не ограничивать";
+    public const FILTER_SETTINGS_CMD = "filter_settings";
+    public const BAN_SETTINGS_CMD = "ban_settings";
+    public const RESTRICT_NEW_USERS_FOR_24H_CMD = "24 часа";
+    public const RESTRICT_NEW_USERS_FOR_2H_CMD = "2 часа";
+    public const RESTRICT_NEW_USERS_FOR_1W_CMD = "Неделя";
+    public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "Месяц";
+    public const STOP_RESTRICT_NEW_MEMBERS_CMD = "Не ограничивать";
 
     /**
      * TIME 
@@ -65,7 +69,9 @@ class CONSTANTS
      * CACHE 
      */
     public const CACHE_CHAT_ADMINS_IDS = "chat_admins";
+    public const CACHE_BAN_FORWARD_MESSAGES = "ban_forward_messages_";
     public const CACHE_ADMINS_GROUP_CHAT_COMMANDS_VISIBILITY = "bot_admins_group_chat_commands_status_";
+    public const CACHE_MY_COMMANDS_SET = "my_commands_set_";
     public const CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY = "admins_private_chats_commands_visibility_";
     public const CACHE_ADMINS_IDS_NOT_SET = "СПИСОК АДМИНИСТРАТОРОВ НЕ УСТАНОВЛЕН В КЭШЕ. " . PHP_EOL;
 }

@@ -3,9 +3,7 @@
 namespace Tests\Feature\Middleware\ChatRulesService;
 
 use App\Models\BaseTelegramRequestModel;
-use App\Models\MessageModel;
 use Illuminate\Support\Facades\Http;
-use App\Models\TextMessageModel;
 use Illuminate\Support\Facades\Cache;
 use App\Services\ChatRulesService;
 use App\Services\CONSTANTS;
