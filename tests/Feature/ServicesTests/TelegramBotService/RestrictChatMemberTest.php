@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Exceptions\BaseTelegramBotException;
 use App\Services\CONSTANTS;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -32,8 +32,8 @@ class RestrictChatMemberTest extends TestCase
      */
     public function testRestrictUserByIdReturnsTrue()
     {
-        $requestModel = new BaseTelegramRequestModel($this->requestData);
-        $requestModel->getModel();
+        $requestModel = new TelegramRequestModelBuilder($this->requestData);
+        $requestModel->create();
         $service = new TelegramBotService($requestModel);
 
         $this->assertTrue($service->restrictChatMember());
@@ -49,8 +49,8 @@ class RestrictChatMemberTest extends TestCase
     {
         $this->requestData['message']['from']['id'] = $this->getInvalidUserId();
 
-        $requestModel = new BaseTelegramRequestModel($this->requestData);
-        $requestModel->getModel();
+        $requestModel = new TelegramRequestModelBuilder($this->requestData);
+        $requestModel->create();
         $telegramBotService = new TelegramBotService($requestModel);
 
         $this->expectException(BaseTelegramBotException::class);

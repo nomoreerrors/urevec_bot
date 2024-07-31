@@ -8,6 +8,5 @@ use Exception;
 
 trait VoiceMediaTrait
 {
-    
-   
+    // 
 }

@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Models\FailedRequestModel;
 use App\Models\PhotoMediaModel;
 use App\Models\VideoMediaModel;

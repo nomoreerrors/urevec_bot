@@ -4,14 +4,14 @@ namespace App\Models\Reactions;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 
-class MessageReactionModel extends BaseTelegramRequestModel
+class MessageReactionModel extends TelegramRequestModelBuilder
 {
     use HasFactory;
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
+        //
     }
 }

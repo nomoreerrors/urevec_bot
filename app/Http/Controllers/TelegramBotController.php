@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Classes\CommandBuilder;
 use App\Classes\CommandsList;
+use App\Classes\ModerationSettings;
 use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Models\MessageModels\TextMessageModel;
 use App\Services\BotCommandService;
+use App\Services\PrivateChatCommandService;
 use App\Services\TelegramMiddlewareService;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +25,15 @@ use Illuminate\Http\Request;
 
 class TelegramBotController extends Controller
 {
+    private $requestModel;
+
+    private TelegramBotService $botService;
+
+    public function __construct()
+    {
+        $this->requestModel = app("requestModel");
+        $this->botService = app("botService");
+    }
     /**
      * Summary of webhookHandler
      * @param \Illuminate\Http\Request $request
@@ -30,13 +41,11 @@ class TelegramBotController extends Controller
      */
     public function webhookHandler(Request $request)
     {
-        $model = app("requestModel");
-
         try {
-            $this->commandHandler($model);
+            $this->commandHandler();
 
         } catch (BaseTelegramBotException $e) {
-            FailedRequestJob::dispatch($model->getData());
+            FailedRequestJob::dispatch($this->requestModel->getData());
             return response(Response::$statusTexts[500], Response::HTTP_OK);
         }
 
@@ -63,49 +72,33 @@ class TelegramBotController extends Controller
 
     /**
      * Summary of checkIfIsCommand
-     * @param \App\Models\BaseTelegramRequestModel $model
+     * @param \App\Models\TelegramRequestModelBuilder $requestModel
      * @return bool
      */
-    private function checkIfIsCommand(BaseTelegramRequestModel $model)
+    private function checkIfIsCommand(): bool
     {
         if (
-            $model instanceof TextMessageModel &&
-            $model->getIsCommand()
+            $this->requestModel instanceof TextMessageModel &&
+            $this->requestModel->getIsCommand()
         ) {
-            Log::info("inside the checkIfIsCommand");
             return true;
         }
-        Log::info("inside the checkIfIsCommand false");
         return false;
     }
 
+
     /**
      * Summary of commandHandler
-     * @param mixed $model
+     * @param mixed $requestModel
      * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
      */
-    private function commandHandler($model): void
+    private function commandHandler(): void
     {
-        $this->setMyCommands();
-
-        if ($this->checkIfIsCommand($model)) {
-            $command = $model->getText();
-            $chatId = $model->getFromId();
-            (new BotCommandService($command, $chatId));
+        if ($this->checkIfIsCommand()) {
+            if ($this->requestModel->getChatType() === "private") {
+                (new PrivateChatCommandService());
+            }
         }
+        return;
     }
-
-    /**
-     * Set bot menu button and commands list
-     * @return void
-     */
-    private function setMyCommands(): void
-    {
-        if (Cache::get(CONSTANTS::CACHE_MY_COMMANDS_SET . app("requestModel")->getChatId())) {
-            return;
-        }
-
-        app("botService")->setMyCommands();
-    }
-
 }

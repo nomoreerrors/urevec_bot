@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Exceptions\BanUserFailedException;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Models\BaseMediaModel;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Models\ForwardMessageModel;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;

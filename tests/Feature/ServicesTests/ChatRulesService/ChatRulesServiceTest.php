@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Services\CONSTANTS;
 
 class ChatRulesServiceTest extends TestCase
@@ -29,7 +29,7 @@ class ChatRulesServiceTest extends TestCase
     public function test_message_has_link_but_user_is_administrator_returns_false()
     {
         $this->data["message"]["from"]["id"] = $this->getAdminId();
-        $messageModel = (new BaseTelegramRequestModel($this->data))->getModel();
+        $messageModel = (new TelegramRequestModelBuilder($this->data))->create();
         //Prepare admin id in cache
         Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $messageModel->getChatId(), [$this->getAdminId()]);
 
@@ -60,26 +60,26 @@ class ChatRulesServiceTest extends TestCase
         ]);
 
 
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
 
         $service = new ChatRulesService($model);
         $this->assertFalse($service->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains blacklisted word from badWords.json returns true
         $this->data["message"]["text"] = "администратор";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains blacklisted phrases from badPhrases.json returns true
         $this->data["message"]["text"] = "сдается в аренду";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains Chinese or Arabic etc. letters  returns true
         $this->data["message"]["text"] = "Arabic: ب تاء , Chinese: 我你 , Japanese: すせ";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
     }
@@ -104,25 +104,25 @@ class ChatRulesServiceTest extends TestCase
         ]);
 
         // Testcase where media model does not contain any blacklisted word returns false
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertFalse($service->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains blacklisted word from badWords.json returns true
         $this->data["message"]["caption"] = "администратор";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains blacklisted phrases from badPhrases.json returns true
         $this->data["message"]["caption"] = "Продаю свойский чеснок,сорт Грибоаский,можно на еду,на хранение и на посадку.Цена за 1 кг 300 руб, от трех кг по 250р.Все вопросы в личку. ";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains Chinese or Arabic etc. letters returns true
         $this->data["message"]["caption"] = "Arabic: ب تاء , Chinese: 我你 , Japanese: すせ";
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
         $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
     }
@@ -141,7 +141,7 @@ class ChatRulesServiceTest extends TestCase
         //Prepare admin id in cache so it can be used to check if user is admin
         Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);
 
-        $forwardMessageModel = (new BaseTelegramRequestModel($this->data))->getModel();
+        $forwardMessageModel = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($forwardMessageModel);
         $this->assertFalse($service->blockUserIfMessageIsForward());
     }

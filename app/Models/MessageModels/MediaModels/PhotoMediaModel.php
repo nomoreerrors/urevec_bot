@@ -12,11 +12,8 @@ class PhotoMediaModel extends BaseMediaModel
     use PhotoMediaTrait;
 
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
-        // $this->setMessageType();
-        // dd($this->messageType);
-        // dd($this->data);
+        parent::__construct();
     }
 }

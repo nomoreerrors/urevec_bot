@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
@@ -13,7 +14,7 @@ use App\Services\ChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
 use App\Models\NewMemberJoinUpdateModel;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Services\CONSTANTS;
 
 
@@ -31,7 +32,7 @@ abstract class TestCase extends BaseTestCase
 
     private int $adminId = 7400599756;
 
-    private int $testUserId;
+    private int $testUserId = 9999999;
 
     protected int $invalidUserId = 9999999;
 
@@ -144,7 +145,10 @@ abstract class TestCase extends BaseTestCase
         return [
             "chat_member" => [
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "title" => "Jared Leto",
+                    "type" => "supergroup"
+
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),
@@ -183,6 +187,14 @@ abstract class TestCase extends BaseTestCase
         ];
     }
 
+    public function addFakeChatToDatabase(): void
+    {
+        Chat::create([
+            "chat_id" => -1002222230714,
+            "chat_title" => "Jared Leto",
+            "chat_admins" => [23456, 34567]
+        ]);
+    }
 
     public function getTextMessageModelData(): array
     {
@@ -191,7 +203,10 @@ abstract class TestCase extends BaseTestCase
             "message" => [
                 "message_id" => 17770,
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "title" => "Jared Leto",
+                    "type" => "supergroup"
+
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),
@@ -238,7 +253,9 @@ abstract class TestCase extends BaseTestCase
             "message" => [
                 "message_id" => 17770,
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "title" => "Jared Leto",
+                    "type" => "supergroup"
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),
@@ -261,7 +278,9 @@ abstract class TestCase extends BaseTestCase
         return [
             "chat_member" => [
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "title" => "Jared Leto",
+                    "type" => "supergroup"
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),

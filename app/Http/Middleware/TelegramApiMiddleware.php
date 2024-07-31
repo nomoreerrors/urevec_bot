@@ -3,10 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\EnvironmentVariablesException;
+use App\Models\Admin;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnexpectedRequestException;
 use App\Jobs\FailedRequestJob;
-use App\Models\Eloquent\BotChat;
+use App\Models\Chat;
 use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
 use Illuminate\Http\Client\HttpClientException;
@@ -21,7 +22,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Exceptions\UnknownChatException;
 use App\Exceptions\UnknownIpAddressException;
 use App\Models\UnknownObjectModel;
@@ -34,7 +35,7 @@ class TelegramApiMiddleware
 
     private $chatModel = null;
 
-    private BaseTelegramRequestModel $requestModel;
+    private TelegramRequestModelBuilder $requestModel;
 
     private TelegramMiddlewareService $middlewareService;
 
@@ -46,19 +47,23 @@ class TelegramApiMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $data = $request->all();
+
         try {
             $this->saveRawRequestData($data);
             $this->middlewareService = new TelegramMiddlewareService($data);
             $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
             $this->middlewareService->checkIfIpAllowed(request()->ip());
-            $this->requestModel = (new BaseTelegramRequestModel($data))->getModel();
+            $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
 
             app()->singleton("botService", fn() => new TelegramBotService($this->requestModel));
             app()->singleton("commandsList", fn() => new CommandsList());
             app()->singleton('requestModel', fn() => $this->requestModel);
 
-            $this->addNewChat();
+            if ($this->requestModel->getChatType() === "private") {
+                return $next($request);
+            }
 
+            $this->setChat();
 
 
         } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
@@ -100,14 +105,18 @@ class TelegramApiMiddleware
     }
 
 
-    private function addNewChat(): void
+    private function setChat(): void
     {
-        if ($this->requestModel->getChatType() !== "supergroup") {
-            return;
-        }
-        if (!DB::table("bot_chats")->where("chat_id", $this->requestModel->getChatId())->exists()) {
+        $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
+
+        if (
+            !$chatExists &&
+            $this->requestModel->getChatType() === "supergroup"
+        ) {
             app("botService")->createChat();
             app("botService")->setMyCommands();
+        } else {
+            app("botService")->setChat($this->requestModel->getChatId());
         }
         return;
     }

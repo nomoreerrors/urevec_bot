@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Middleware;
 
-use App\Models\Eloquent\BotChat;
+use App\Models\Chat;
+use App\Models\ChatAdmins;
 use App\Models\StatusUpdates\StatusUpdateModel;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use App\Services\ChatRulesService;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\Http;
 use App\Services\CONSTANTS;
 use Tests\TestCase;
@@ -16,29 +17,27 @@ use Tests\TestCase;
 class NewSupergroupChatAddedTest extends TestCase
 {
     use RefreshDatabase;
-    protected function setUp(): void
-    {
-        parent::setUp();
-    }
 
-    /** 
-     * Test case where new supergroup request comes and new chat is created in the database
-     * as soon as the bot is added to a new group and gets admin rights and first message is sent in that chat by anyone
-     * request is comes and new chat is created in the database with bot commands set
-     */
-    public function testNewSupergroupRequestCreatesNewChatInDatabaseWithBotCommandsSet(): void
+    public function testNewSupergroupChatCreatesAndBotCommandsAreSet()
     {
-        $data = $this->getMessageModelData();
-        $this->post("api/webhook", $data);
+        $requestData = $this->getMessageModelData();
+        $this->postJson('api/webhook', $requestData);
 
-        $requestModel = (new BaseTelegramRequestModel($data))->getModel();
-        $chat = new BotChat();
-        $newChat = $chat->where("chat_id", $requestModel->getChatId())->first();
-        // dd($newChat);
-        $this->assertEquals($requestModel->getChatId(), $newChat->chat_id);
-        $this->assertEquals($requestModel->getChatTitle(), $newChat->chat_title);
-        $this->assertEquals($requestModel->getAdminsIds(), $newChat->chat_admins);
-        $this->assertEquals($requestModel->getAdminsIds(), $newChat->private_commands_access);
-        $this->assertEquals("admins", $newChat->group_commands_access);
+        //!! RefreshDatabase isn't working while using xdebug and tables are always empty
+        $requestModel = (new TelegramRequestModelBuilder($requestData))->create();
+
+        $chat = Chat::where('chat_id', $requestModel->getChatId())->first();
+
+        $this->assertEquals($chat->chat_title, $requestModel->getChatTitle());
+
+        foreach ($chat->admins as $admin) {
+            $this->assertNotNull($admin->admin_id);
+            $this->assertNotNull($admin->first_name);
+            $this->assertNotNull($admin->username);
+            $this->assertEquals(1, $admin->pivot->private_commands_access);
+            $this->assertEquals(1, $admin->pivot->group_commands_access);
+            $this->assertEquals(1, $admin->pivot->my_commands_set);
+        }
     }
 }
+

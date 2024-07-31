@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Exception;
 
+
+/**
+ * Calling sequence:
+ *   $replyKeyboardMarkup = (new ReplyKeyboardMarkup())
+ * ->addRow()
+ * ->addButton($text)
+ * ->addButton($text)
+ * ->addRow()
+ * ->get()
+ */
 class ReplyKeyboardMarkup
 {
     private array $keyBoard = [];

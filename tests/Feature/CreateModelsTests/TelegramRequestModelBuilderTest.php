@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exceptions\UnknownChatException;
-use App\Models\Eloquent\BotChat;
+use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use App\Services\CONSTANTS;
@@ -15,11 +15,11 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Mockery\MockInterface;
 use Tests\TestCase;
 use Illuminate\Http\Client\Response;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\Log;
 use App\Services\TelegramBotService;
 
-class BaseTelegramRequestModelTest extends TestCase
+class TelegramRequestModelBuilderTest extends TestCase
 {
     use RefreshDatabase;
     private array $data;
@@ -43,16 +43,16 @@ class BaseTelegramRequestModelTest extends TestCase
     {
         // TelegramBotService needs the commandsList to create a complete chat in database
         app()->singleton("commandsList", fn() => new CommandsList());
-        // Fake response so that BaseTelegramRequestModel assign fake Ids to property adminsIds
+        // Fake response so that TelegramRequestModelBuilder assign fake Ids to property adminsIds
         $this->fakeResponseWithAdminsIds(1000, 2000);
         // Assigning fake Ids to property adminsIds
-        $requestModel = new BaseTelegramRequestModel($this->data);
+        $requestModel = new TelegramRequestModelBuilder($this->data);
         //Creating a new chat in database with fake admins ids
         (new TelegramBotService($requestModel))->createChat();
         // Fake response with two another values 
         $this->fakeResponseWithAdminsIds(5000, 7000);
-        // BaseTelegramRequestModel assigns fake ids once again
-        $requestModel = new BaseTelegramRequestModel($this->data);
+        // TelegramRequestModelBuilder assigns fake ids once again
+        $requestModel = new TelegramRequestModelBuilder($this->data);
         // Asserting that the ids didn't change because they are from database this time and Http call didn't happen
         $this->assertContains(1000, $requestModel->getAdminsIds());
         $this->assertContains(2000, $requestModel->getAdminsIds());
@@ -68,7 +68,7 @@ class BaseTelegramRequestModelTest extends TestCase
         // Mock the HTTP client to return a fake response
         $this->fakeResponseWithAdminsIds(456, 789);
         // Assigning fake Ids to property adminsIds
-        $model = new BaseTelegramRequestModel($this->data);
+        $model = new TelegramRequestModelBuilder($this->data);
         $this->assertContains(456, $model->getAdminsIds());
         $this->assertContains(789, $model->getAdminsIds());
     }
@@ -79,7 +79,7 @@ class BaseTelegramRequestModelTest extends TestCase
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::GET_ADMINS_FAILED);
 
-        (new BaseTelegramRequestModel($this->data));
+        (new TelegramRequestModelBuilder($this->data));
     }
 
 

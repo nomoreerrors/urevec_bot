@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -22,7 +22,7 @@ class SendMessageTest extends TestCase
     {
         parent::setUp();
         $this->data = $this->getMessageModelData();
-        $this->model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->service = new TelegramBotService($this->model);
     }
 

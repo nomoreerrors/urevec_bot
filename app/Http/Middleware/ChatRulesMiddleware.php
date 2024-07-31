@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Symfony\Component\HttpFoundation\Response;
 use App\Services\CONSTANTS;
 use Illuminate\Support\Facades\Log;
@@ -24,22 +24,14 @@ class ChatRulesMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $model = app("requestModel");
-        $data = $model->getData();
+        $requestModel = app("requestModel");
+        $data = $requestModel->getData();
+        $ruleService = new ChatRulesService($requestModel);
+        $admin = app()->bound("admin") ?? null;
 
-        if (!Cache::has(CONSTANTS::CACHE_BAN_FORWARD_MESSAGES . $model->getChatId())) {
-            Cache::put(CONSTANTS::CACHE_BAN_FORWARD_MESSAGES . $model->getChatId(), 0);
-        }
-
-        if (!Cache::has(CONSTANTS::CACHE_MY_COMMANDS_SET . $model->getChatId())) {
-            Cache::put(CONSTANTS::CACHE_MY_COMMANDS_SET . $model->getChatId(), 0);
-        }
-
-        if ($model->getFromAdmin()) {
+        if ($requestModel->getChatType() === "private") {
             return $next($request);
         }
-
-        $ruleService = new ChatRulesService($model);
 
         try {
             if ($ruleService->blockNewVisitor()) {

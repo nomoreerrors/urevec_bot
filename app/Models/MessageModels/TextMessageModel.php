@@ -16,9 +16,9 @@ class TextMessageModel extends MessageModel
 
     protected bool $isCommand = false;
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
+        parent::__construct();
         $this->setText()
             ->setHasLink()
             ->setIsCommand();
@@ -26,7 +26,7 @@ class TextMessageModel extends MessageModel
 
     protected function setText()
     {
-        $this->text = $this->data[$this->messageType]["text"];
+        $this->text = self::$data[self::$messageType]["text"];
         $this->setHasLink();
         return $this;
     }
@@ -59,9 +59,6 @@ class TextMessageModel extends MessageModel
 
     public function getText(): string
     {
-        if (empty($this->text)) {
-            $this->errorLog(__METHOD__);
-        }
         return $this->text;
     }
 
@@ -70,3 +67,4 @@ class TextMessageModel extends MessageModel
         return $this->hasLink;
     }
 }
+

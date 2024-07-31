@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Exceptions\BanUserFailedException;
+use App\Models\Admin;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\SetCommandsFailedException;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
+use App\Models\ChatAdmins;
 use Illuminate\Support\Facades\Cache;
-use App\Models\Eloquent\BotChat;
+use App\Models\Chat;
 use Illuminate\Http\Client\Response;
 use App\Classes\CommandBuilder;
 use App\Models\InvitedUserUpdateModel;
@@ -22,11 +24,11 @@ use PHPUnit\TextUI\Configuration\Constant;
 
 class TelegramBotService
 {
-    private $chatModel = null;
+    private $chat = null;
 
     private $textCommands = null;
 
-    public function __construct(private BaseTelegramRequestModel $requestModel)
+    public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
     }
 
@@ -73,8 +75,9 @@ class TelegramBotService
             throw new BaseTelegramBotException(CONSTANTS::DELETE_MESSAGE_FAILED .
                 CONSTANTS::WRONG_INSTANCE_TYPE, __METHOD__);
         }
-
-        $response = Http::post(
+        $http = app(Http::class);
+        $http;
+        $response = $http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
             [
                 "chat_id" => $this->requestModel->getChatId(),
@@ -82,6 +85,7 @@ class TelegramBotService
             ]
         );
         // dd($response->json());
+        $response->json();
 
         if ($response->ok()) {
             return;
@@ -96,7 +100,7 @@ class TelegramBotService
      * @return void
      * @throws BaseTelegramBotException
      */
-    public function sendMessage(string $text_message, array $reply_markup = null): void
+    public function sendMessage(string $text_message, $reply_markup = null): void
     {
         $params = [
             "chat_id" => $this->requestModel->getChatId(),
@@ -107,12 +111,11 @@ class TelegramBotService
             $params["reply_markup"] = $reply_markup;
         }
 
-        // dd("here");
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             $params
         );
-        // dd($response);
+
         if ($response->ok()) {
             return;
         }
@@ -139,22 +142,26 @@ class TelegramBotService
         throw new BanUserFailedException(CONSTANTS::BAN_USER_FAILED, __METHOD__);
     }
 
-    public function createChat(): BotChat
+    public function createChat(): Chat
     {
-        $this->chatModel = BotChat::create([
+        // Create chat in bot_chats table
+        $this->chat = Chat::create([
             "chat_id" => $this->requestModel->getChatId(),
             "chat_title" => $this->requestModel->getChatTitle(),
-            "chat_admins" => $this->requestModel->getAdminsIds(),
         ]);
 
-        // $this->setMyCommands();
-        return $this->chatModel;
+        // Create admins in admins table and attaching them to the chat id from the incoming request   
+        foreach ($this->requestModel->getAdmins() as $admin) {
+            $admin = Admin::create($admin);
+            $admin->chats()->attach($this->chat->id);
+        }
+
+        return $this->chat;
     }
 
     /**
-     * Set menu commands for bot in private and group chats
-     * 
-     * !!! Working badly with Telegram desktop app. Check status at web version or smartphone app.
+     * Set menu commands for the bot in private and group chats.
+     *
      * @return void
      * @throws BaseTelegramBotException
      */
@@ -163,9 +170,10 @@ class TelegramBotService
         $this->setGroupChatCommandsForAdmins();
         $this->setPrivateChatCommandsForAdmins();
 
-        $this->chatModel->update([
-            "my_commands_set" => 1
-        ]);
+        $chatAdmins = $this->chat->admins;
+        foreach ($chatAdmins as $admin) {
+            $admin->pivot->update(['my_commands_set' => 1]);
+        }
     }
 
     public function getMyCommands(string $type, int $chatId): array
@@ -191,7 +199,7 @@ class TelegramBotService
      */
     public function setPrivateChatCommandsForAdmins(): void
     {
-        $adminsIdsArray = $this->chatModel->chat_admins;
+        $adminsIdsArray = $this->requestModel->getAdminsIds();
         $moderationSettings = app("commandsList")->moderationSettings;
 
         if (empty($adminsIdsArray)) {
@@ -217,8 +225,8 @@ class TelegramBotService
             $this->checkifCommandsAreSet($adminId, $commands);
         }
 
-        $this->chatModel->update([
-            "private_commands_access" => $adminsIdsArray
+        $this->chat->admins()->update([
+            "private_commands_access" => 1
         ]);
     }
 
@@ -242,8 +250,9 @@ class TelegramBotService
         if (!$response->ok()) {
             throw new BaseTelegramBotException(CONSTANTS::SET_GROUP_CHAT_COMMANDS_FAILED, __METHOD__);
         }
-        $this->chatModel->update([
-            "group_commands_access" => "admins"
+
+        $this->chat->admins()->update([
+            "group_commands_access" => 1
         ]);
     }
 
@@ -257,14 +266,12 @@ class TelegramBotService
     public function checkifCommandsAreSet(int $chatId, array $commands): static
     {
         $updatedCommands = $this->getMyCommands("chat", $chatId)["result"];
-        // dd($updatedCommands);
 
         for ($i = 0; $i < count($commands["commands"]); $i++) {
-            // dd($updatedCommands[$i], $commands["commands"][$i]);
+
             $result = array_diff($updatedCommands[$i], $commands["commands"][$i]);
 
             if (!empty($result)) {
-                // dd('here');
                 throw new SetCommandsFailedException($commands, $updatedCommands);
             }
         }
@@ -286,4 +293,10 @@ class TelegramBotService
 
         return $response;
     }
+
+    public function setChat(int $chatId): void
+    {
+        $this->chat = Chat::where("chat_id", $chatId)->first();
+    }
 }
+

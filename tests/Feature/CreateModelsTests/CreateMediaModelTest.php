@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Models\MessageModels\MediaModels\MultiMediaModel;
 use App\Models\MessageModels\MediaModels\VideoMediaModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,21 +25,21 @@ class CreateMediaModelTest extends TestCase
     public function test_create_video_media_model(): void
     {
         $this->data["message"]["video"] = [];
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->assertInstanceOf(VideoMediaModel::class, $model);
     }
 
     public function test_create_photo_media_model(): void
     {
         $this->data["message"]["photo"] = [];
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->assertInstanceOf(PhotoMediaModel::class, $model);
     }
 
     public function test_create_voice_media_model(): void
     {
         $this->data["message"]["voice"] = [];
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->assertInstanceOf(VoiceMediaModel::class, $model);
     }
 
@@ -47,7 +47,7 @@ class CreateMediaModelTest extends TestCase
     {
         $this->data["message"]["video"] = [];
         $this->data["message"]["photo"] = [];
-        $model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->assertInstanceOf(MultiMediaModel::class, $model);
     }
 

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Models\MessageModels\MediaModels\BaseMediaModel;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Models\MessageModels\MessageModel;
 use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;
@@ -16,7 +16,7 @@ class ChatRulesService
 {
     private TelegramBotService $telegramBotService;
 
-    public function __construct(private BaseTelegramRequestModel $model)
+    public function __construct(private TelegramRequestModelBuilder $model)
     {
         $this->telegramBotService = new TelegramBotService($this->model);
     }

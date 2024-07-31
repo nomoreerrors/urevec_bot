@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Middleware\ChatRulesService;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use App\Services\ChatRulesService;
@@ -21,7 +21,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
         $data = $this->getMessageModelData();
         $data["message"]["from"]["id"] = $this->getAdminId();
         $chatId = $data["message"]["chat"]["id"];
-        $messageModel = (new BaseTelegramRequestModel($data))->getModel();
+        $messageModel = (new TelegramRequestModelBuilder($data))->create();
         //prepare admins id in cache
         Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);
 
@@ -36,7 +36,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
     public function test_if_message_is_not_message_model_instance_returns_false()
     {
         $data = $this->getNewMemberJoinUpdateModelData();
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = (new TelegramRequestModelBuilder($data))->create();
 
         $chatRulesService = new ChatRulesService($model);
         $this->assertFalse($chatRulesService->ifMessageHasLinkBlockUser());
@@ -49,7 +49,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
     {
         $data = $this->getTextMessageModelData();
         $data['message']['text'] = "https://www.google.com";
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = (new TelegramRequestModelBuilder($data))->create();
 
         Http::fake([
             '*' => Http::response($data, 200),
@@ -67,7 +67,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
     {
         $data = $this->getMessageModelData();
         $data["message"]["entities"]["type"] = "text_link";
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = (new TelegramRequestModelBuilder($data))->create();
 
         Http::fake([
             '*' => Http::response($data, 200),
@@ -91,7 +91,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
     {
         $data = $this->getMultiMediaModelData();
         $data["message"]["caption_entities"]["type"] = "text_link";
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = (new TelegramRequestModelBuilder($data))->create();
 
         Http::fake([
             '*' => Http::response($data, 200),
@@ -105,7 +105,7 @@ class IfMessageHasLinkBlockUserTest extends TestCase
     {
         $data = $this->getMultiMediaModelData();
         $data['message']['caption'] = "https://www.google.com";
-        $model = (new BaseTelegramRequestModel($data))->getModel();
+        $model = (new TelegramRequestModelBuilder($data))->create();
 
         Http::fake([
             '*' => Http::response($data, 200),

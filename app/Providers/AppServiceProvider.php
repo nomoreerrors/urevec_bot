@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Services\TelegramMiddlewareService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\HttpClientException;

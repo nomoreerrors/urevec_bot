@@ -18,7 +18,9 @@ class TextMessageModelTest extends TestCase
             "message" => [
                 "message_id" => 17770,
                 "chat" => [
-                    "id" => -1002222230714
+                    "id" => -1002222230714,
+                    "type" => "supergroup",
+                    "title" => "Rahat Lukum"
                 ],
                 "from" => [
                     "id" => $this->getTestUserId(),

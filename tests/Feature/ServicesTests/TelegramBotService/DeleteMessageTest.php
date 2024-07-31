@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use App\Services\CONSTANTS;
 use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +21,7 @@ class DeleteMessageTest extends TestCase
     {
         parent::setUp();
         $this->data = $this->getMessageModelData();
-        $this->model = (new BaseTelegramRequestModel($this->data))->getModel();
+        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->botService = new TelegramBotService($this->model);
     }
 
@@ -59,12 +59,13 @@ class DeleteMessageTest extends TestCase
 
     public function testNotAMessageModelInstanceThrowsException(): void
     {
-        $this->model = (new BaseTelegramRequestModel($this->getNewMemberJoinUpdateModelData()))->getModel();
+        $this->model = (new TelegramRequestModelBuilder($this->getNewMemberJoinUpdateModelData()))->create();
         $this->botService = new TelegramBotService($this->model);
 
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::DELETE_MESSAGE_FAILED .
             CONSTANTS::WRONG_INSTANCE_TYPE);
         $this->botService->deleteMessage();
+        sleep(5);
     }
 }

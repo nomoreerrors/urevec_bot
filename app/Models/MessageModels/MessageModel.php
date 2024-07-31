@@ -4,10 +4,10 @@ namespace App\Models\MessageModels;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Exception;
 
-class MessageModel extends BaseTelegramRequestModel
+class MessageModel extends TelegramRequestModelBuilder
 {
     use HasFactory;
 
@@ -21,14 +21,11 @@ class MessageModel extends BaseTelegramRequestModel
 
     protected bool $hasEntities = false;
 
-    protected int $fromId = 0;
-
     protected bool $hasLink = false;
 
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
         $this->setHasEntities()
             ->setMessageId()
             ->setIsForward()
@@ -38,8 +35,8 @@ class MessageModel extends BaseTelegramRequestModel
     protected function setHasEntities(): static
     {
         if (
-            array_key_exists("entities", $this->data[$this->messageType]) ||
-            array_key_exists("caption_entities", $this->data[$this->messageType])
+            array_key_exists("entities", self::$data[self::$messageType]) ||
+            array_key_exists("caption_entities", self::$data[self::$messageType])
         ) {
             // dd("here");
             $this->hasEntities = true;
@@ -52,7 +49,7 @@ class MessageModel extends BaseTelegramRequestModel
 
     private function setIsForward(): static
     {
-        if (array_key_exists("forward_origin", $this->data[$this->messageType])) {
+        if (array_key_exists("forward_origin", self::$data[self::$messageType])) {
             $this->isForward = true;
         }
         return $this;
@@ -61,13 +58,13 @@ class MessageModel extends BaseTelegramRequestModel
     protected function setMessageId()
     {
 
-        if (array_key_exists("message_id", $this->data[$this->messageType])) {
+        if (array_key_exists("message_id", self::$data[self::$messageType])) {
 
-            $this->messageId = $this->data[$this->messageType]["message_id"];
+            $this->messageId = self::$data[self::$messageType]["message_id"];
         }
 
         if (empty($this->messageId)) {
-            dd($this->data);
+            dd(self::$data);
         }
 
         return $this;
@@ -75,10 +72,6 @@ class MessageModel extends BaseTelegramRequestModel
 
     public function getMessageId(): int
     {
-        if (empty($this->messageId)) {
-            dd($this->data);
-            $this->errorLog(__METHOD__);
-        }
         return $this->messageId;
     }
 
@@ -91,12 +84,12 @@ class MessageModel extends BaseTelegramRequestModel
     {
         if ($this->hasEntities) {
 
-            if (array_key_exists("entities", $this->data[$this->messageType])) {
-                $entitiesToString = json_encode($this->data[$this->messageType]["entities"]);
+            if (array_key_exists("entities", self::$data[self::$messageType])) {
+                $entitiesToString = json_encode(self::$data[self::$messageType]["entities"]);
             }
 
-            if (array_key_exists("caption_entities", $this->data[$this->messageType])) {
-                $entitiesToString = json_encode($this->data[$this->messageType]["caption_entities"]);
+            if (array_key_exists("caption_entities", self::$data[self::$messageType])) {
+                $entitiesToString = json_encode(self::$data[$this->messageType]["caption_entities"]);
             }
 
 
@@ -106,8 +99,8 @@ class MessageModel extends BaseTelegramRequestModel
                 return $this;
             }
         }
-        if ($this->data["update_id"] === 117305689) {
-            dd($this->data);
+        if (self::$data["update_id"] === 117305689) {
+            dd(self::$data);
         }
         return $this;
     }

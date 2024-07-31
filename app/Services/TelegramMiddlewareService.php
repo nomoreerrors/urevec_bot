@@ -26,7 +26,6 @@ class TelegramMiddlewareService
     public function __construct(private array $data)
     {
         $this->checkIfObjectTypeExpected();
-        $this->checkIfChatIdAllowed($this->chatId);
     }
 
     public function checkIfObjectTypeExpected(): void
@@ -70,19 +69,6 @@ class TelegramMiddlewareService
     public function getChatId(): int
     {
         return $this->chatId;
-    }
-
-
-    public function checkIfChatIdAllowed(int $chatId): void
-    {
-        // if ($this->data[$this->objectType]["chat"]["type"] == "private" &&) {
-        $allowedChats = explode(",", env("ALLOWED_CHATS_ID"));
-
-        if (!in_array($chatId, $allowedChats)) {
-            throw new UnknownChatException(CONSTANTS::REQUEST_CHAT_ID_NOT_ALLOWED, __METHOD__);
-        } else {
-            return;
-        }
     }
 
 

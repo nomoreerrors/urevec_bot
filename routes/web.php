@@ -5,7 +5,7 @@ use App\Http\Controllers\TelegramBotController;
 use Illuminate\Support\Facades\Route;
 use \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 
-// Route::get('/', function () {
+// Route::get('/xdgebugtest', function () {
 //     return view('welcome');
 // });
 

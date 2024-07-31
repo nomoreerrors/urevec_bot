@@ -4,19 +4,14 @@ namespace App\Models\StatusUpdates;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 
-class StatusUpdateModel extends BaseTelegramRequestModel
+class StatusUpdateModel extends TelegramRequestModelBuilder
 {
     use HasFactory;
 
-
-    protected string $messageType = "chat_member";
-
-
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
         $this->setFromId()
             ->setFromUserName();
     }

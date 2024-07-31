@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\MessageModels\MediaModels\BaseMediaModel;
 use App\Models\MessageModels\TextMessageModel;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class FilterService
 {
-    public function __construct(private BaseTelegramRequestModel $model)
+    public function __construct(private TelegramRequestModelBuilder $model)
     {
     }
 

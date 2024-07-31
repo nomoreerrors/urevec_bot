@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Classes\CommandBuilder;
 use App\Exceptions\SetCommandsFailedException;
-use App\Models\BaseTelegramRequestModel;
+use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\DB;
-use App\Models\Eloquent\BotChat;
+use App\Models\Chat;
 use App\Models\MessageModels\MediaModels\MultiMediaModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Exceptions\BaseTelegramBotException;
@@ -40,7 +40,7 @@ class SetMyCommandsTest extends TestCase
         // It's created in a TelegramApiMiddleware in a general workflow
         app()->instance("commandsList", new CommandsList());
         //Setting up admins ids array when creating model
-        $this->model = new BaseTelegramRequestModel($this->data);
+        $this->model = new TelegramRequestModelBuilder($this->data);
         $this->botService = new TelegramBotService($this->model);
         $this->chat = $this->botService->createChat();
     }
@@ -57,6 +57,7 @@ class SetMyCommandsTest extends TestCase
         $this->assertEquals([7400599756, 754429643], $this->chat->private_commands_access);
         $this->assertEquals('admins', $this->chat->group_commands_access);
         $this->assertEquals(1, $this->chat->my_commands_set);
+        sleep(5);
     }
 
     /**

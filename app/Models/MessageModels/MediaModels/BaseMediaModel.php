@@ -12,9 +12,8 @@ class BaseMediaModel extends MessageModel
 {
     private string $caption = "";
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
         $this->setCaption()
             ->setHasLink();
     }
@@ -22,8 +21,8 @@ class BaseMediaModel extends MessageModel
 
     private function setCaption(): static
     {
-        if (array_key_exists("caption", $this->data[$this->messageType])) {
-            $this->caption = $this->data[$this->messageType]["caption"];
+        if (array_key_exists("caption", self::$data[self::$messageType])) {
+            $this->caption = self::$data[self::$messageType]["caption"];
         }
         return $this;
     }
@@ -51,3 +50,4 @@ class BaseMediaModel extends MessageModel
         }
     }
 }
+

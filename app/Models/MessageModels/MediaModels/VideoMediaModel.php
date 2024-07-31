@@ -12,9 +12,9 @@ class VideoMediaModel extends BaseMediaModel
     use VideoMediaTrait;
 
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
+        parent::__construct();
     }
 
 

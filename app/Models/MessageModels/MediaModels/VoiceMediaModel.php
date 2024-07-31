@@ -12,8 +12,8 @@ class VoiceMediaModel extends BaseMediaModel
 {
     use VoiceMediaTrait;
 
-    public function __construct(array $data)
+    public function __construct()
     {
-        parent::__construct($data);
+        parent::__construct();
     }
 }
