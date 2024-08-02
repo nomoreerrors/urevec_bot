@@ -111,7 +111,7 @@ class TelegramApiMiddleware
 
         if (
             !$chatExists &&
-            $this->requestModel->getChatType() === "supergroup"
+            $this->requestModel->getChatType() !== "private"
         ) {
             app("botService")->createChat();
             app("botService")->setMyCommands();

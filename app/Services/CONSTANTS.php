@@ -30,6 +30,8 @@ class CONSTANTS
     public const SET_GROUP_CHAT_COMMANDS_FAILED = "ERROR: Failed to set group chat commands visibility " . PHP_EOL;
     public const SET_PRIVATE_CHAT_COMMANDS_FAILED = "ERROR: Failed to set private chat commands visibility " . PHP_EOL;
     public const EMPTY_ADMIN_IDS_ARRAY = "ERROR: EMPTY ADMIN IDS ARRAY " . PHP_EOL;
+    public const USER_NOT_ALLOWED = "ERROR: USER NOT ALLOWED. ADMIN NOT SET OR NOT EXISTS IN DATABASE" . PHP_EOL;
+    public const SELECTED_CHAT_NOT_SET = "ERROR: SELECTED CHAT NOT SET. " . PHP_EOL;
 
     /**
      * SUCCSESS MESSAGES
@@ -56,6 +58,15 @@ class CONSTANTS
     public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "/Месяц";
     public const STOP_RESTRICT_NEW_MEMBERS_CMD = "/Не ограничивать";
 
+
+    /** 
+     * Reply messages
+     */
+    public const ADD_BOT_TO_GROUP = "Добавьте бота в свою группу и назначьте администратором,
+             чтобы активировать работу." . PHP_EOL;
+
+
+
     /**
      * TIME 
      */
@@ -74,4 +85,5 @@ class CONSTANTS
     public const CACHE_MY_COMMANDS_SET = "my_commands_set_";
     public const CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY = "admins_private_chats_commands_visibility_";
     public const CACHE_ADMINS_IDS_NOT_SET = "СПИСОК АДМИНИСТРАТОРОВ НЕ УСТАНОВЛЕН В КЭШЕ. " . PHP_EOL;
+    public const CACHE_LAST_COMMAND = "last_command_";
 }

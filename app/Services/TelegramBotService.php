@@ -115,8 +115,9 @@ class TelegramBotService
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
             $params
         );
-
+        // dd("here");
         if ($response->ok()) {
+            log::info($text_message . json_encode($params)); //для отладки
             return;
         }
         throw new BaseTelegramBotException(CONSTANTS::SEND_MESSAGE_FAILED, __METHOD__);
@@ -149,11 +150,14 @@ class TelegramBotService
             "chat_id" => $this->requestModel->getChatId(),
             "chat_title" => $this->requestModel->getChatTitle(),
         ]);
-
+        // dd($this->requestModel->getAdmins());
         // Create admins in admins table and attaching them to the chat id from the incoming request   
+
         foreach ($this->requestModel->getAdmins() as $admin) {
-            $admin = Admin::create($admin);
-            $admin->chats()->attach($this->chat->id);
+            $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
+                ? Admin::where('admin_id', $admin['admin_id'])->first()
+                : Admin::create($admin);
+            $adminModel->chats()->attach($this->chat->id);
         }
 
         return $this->chat;
@@ -297,6 +301,11 @@ class TelegramBotService
     public function setChat(int $chatId): void
     {
         $this->chat = Chat::where("chat_id", $chatId)->first();
+    }
+
+    public function getChat()
+    {
+        return $this->chat;
     }
 }
 

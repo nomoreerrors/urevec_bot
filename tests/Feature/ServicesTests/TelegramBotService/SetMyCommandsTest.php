@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Classes\CommandBuilder;
+use App\Models\Admin;
+use Database\Seeders\SimpleSeeder;
 use App\Exceptions\SetCommandsFailedException;
 use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\DB;
@@ -33,14 +35,15 @@ class SetMyCommandsTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-
+        // Getting a multimedia model data just for various testcases
+        // with a real chat id to successfully set up commands for real admins
         $this->data = $this->getMultiMediaModelData();
         $this->chatId = $this->data["message"]["chat"]["id"];
-        // TelegramBotService needs commandsList instance to work
-        // It's created in a TelegramApiMiddleware in a general workflow
+        // Setting up commandsList instance for TelegramBotService's constructor
         app()->instance("commandsList", new CommandsList());
-        //Setting up admins ids array when creating model
+        //Setting up admins ids array 
         $this->model = new TelegramRequestModelBuilder($this->data);
+        // Using admins ids from model to create a new chat and attaching admins
         $this->botService = new TelegramBotService($this->model);
         $this->chat = $this->botService->createChat();
     }
@@ -53,11 +56,11 @@ class SetMyCommandsTest extends TestCase
     {
         // Make sure that RefreshDatabase trait works before test
         $this->botService->setMyCommands();
-
-        $this->assertEquals([7400599756, 754429643], $this->chat->private_commands_access);
-        $this->assertEquals('admins', $this->chat->group_commands_access);
-        $this->assertEquals(1, $this->chat->my_commands_set);
-        sleep(5);
+        foreach ($this->chat->admins as $admin) {
+            $this->assertEquals(1, $admin->pivot->my_commands_set);
+            $this->assertEquals(1, $admin->pivot->group_commands_access);
+            $this->assertEquals(1, $admin->pivot->private_commands_access);
+        }
     }
 
     /**
@@ -84,23 +87,6 @@ class SetMyCommandsTest extends TestCase
 
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED);
-
-        $this->botService->setPrivateChatCommandsForAdmins();
-    }
-
-    /**
-     * Testcase where the setMyCommands function throws an exception if admins array is empty.
-     * @return void
-     */
-    public function testSetPrivateChatCommandsForAdminsIfAdminsIdsEmptyThrowsException(): void
-    {
-        $this->chat->update([
-            'chat_admins' => []
-        ]);
-
-        $this->expectException(BaseTelegramBotException::class);
-        $this->expectExceptionMessage(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED .
-            CONSTANTS::EMPTY_ADMIN_IDS_ARRAY);
 
         $this->botService->setPrivateChatCommandsForAdmins();
     }
@@ -135,7 +121,7 @@ class SetMyCommandsTest extends TestCase
         );
     }
 
-    public function testCheckIfCommandsAreSetThrowsException(): void
+    public function testCheckIfSetCommandsFailedThrowsException(): void
     {
         $command = "test";
         $description = "description_test";

@@ -15,6 +15,8 @@ class Admin extends Model
         "is_bot",
         "first_name",
         "username",
+        "language_code",
+        "is_premium",
     ];
 
 

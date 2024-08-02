@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->report(function (\Throwable $e) {
 
             if (!($e instanceof BaseTelegramBotException)) {
-                BotErrorNotificationService::send(get_class($e) . PHP_EOL . $e->getMessage() . PHP_EOL . "Class: " . $e->getFile());
+                BotErrorNotificationService::send($e->getMessage() . PHP_EOL . "Class: " . $e->getFile() . " Line: " . $e->getLine());
             }
         });
     })->create();

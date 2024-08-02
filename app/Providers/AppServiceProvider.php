@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Classes\ModerationSettings;
+use App\Classes\ReplyInterface;
 use App\Models\TelegramRequestModelBuilder;
+use App\Services\BotCommandService;
+use App\Services\PrivateChatCommandService;
 use App\Services\TelegramMiddlewareService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\HttpClientException;
@@ -16,13 +20,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // $this->app->bind(Client::class, function (Application $app) {
-        //     if ($app->environment('testing')) {
-        //         return new \Mockery::mock(\GuzzleHttp\Client::class); 
-        //     } else {
-        //         return new Client(); // Use the default Http client for other environments
-        //     }
-        // });
+        // $this->app->when(PrivateChatCommandService::class)
+        //     ->needs(ReplyInterface::class)
+        //     ->give(
+        //         function (Application $app) {
+        //             return $app->make(ModerationSettings::class);
+        //         }
+        //     );
+
+        // $this->app->when(BotCommandService::class)
+        //     ->needs(ReplyInterface::class)
+        //     ->give(
+        //         function (Application $app) {
+        //             return $app->make(ModerationSettings::class);
+        //         }
+        //     );
     }
 
     /**

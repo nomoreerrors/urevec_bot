@@ -31,7 +31,7 @@ class CommandsList extends \stdClass
     public function setModerationSettings(): void
     {
         $this->moderationSettings = (object) [
-            "command" => CONSTANTS::MODERATION_SETTINGS_CMD,
+            "command" => "moderation_settings", // Must be without a slash "/" 
             "description" => "TEST 234!!! Configure bot moderation settiings"
         ];
     }

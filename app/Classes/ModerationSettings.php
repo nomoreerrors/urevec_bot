@@ -4,7 +4,7 @@ namespace App\Classes;
 
 use App\Services\CONSTANTS;
 
-class ModerationSettings
+class ModerationSettings implements ReplyInterface
 {
     /**
      * Send moderation settings buttons to user

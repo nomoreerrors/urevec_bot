@@ -109,8 +109,22 @@ abstract class TestCase extends BaseTestCase
             'ok' => $status,
             'description' => 'ok',
             'result' => [
-                ['user' => ['id' => $id]], // Admin 1
-                ['user' => ['id' => $secondId]] // Admin 2
+                [
+                    'user' => [
+                        'id' => $id, //Id converted to admin_id when it's assigning in TelegramRequestModelBuilder
+                        'is_bot' => false,
+                        'first_name' => 'Dolph Lundgren',
+                        'username' => 'DolphLundgren'
+                    ]
+                ], // Admin 1
+                [
+                    'user' => [
+                        'id' => $secondId,
+                        'is_bot' => false,
+                        'first_name' => 'Antonio Banderos',
+                        'username' => 'AntonioBanderos'
+                    ]
+                ], // Admin 2
             ]
         ], 200));
     }

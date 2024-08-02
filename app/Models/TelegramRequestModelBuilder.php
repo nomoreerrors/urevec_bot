@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Models\Chat;
 use App\Models\MessageModels\MediaModels\BaseMediaModel;
 use App\Models\StatusUpdates\StatusUpdateModel;
+use App\Services\BotErrorNotificationService;
 use Illuminate\Support\Facades\Log;
 use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;
@@ -436,6 +437,7 @@ class TelegramRequestModelBuilder
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
             ['chat_id' => self::$chatId]
         )->json();
+        BotErrorNotificationService::send("getChatAdministrators: " . json_encode($response));
         // dd($response);
 
         if (!$response['ok']) {

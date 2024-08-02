@@ -22,16 +22,5 @@ class SimpleSeeder extends Seeder
         Admin::factory($adminsCount)->has(
             Chat::factory($chatsCount)
         )->create();
-
-        // Add at least one more admin to each chat and set some additional columns values to true
-        // foreach ($admins as $admin) {
-        //     ChatAdmins::create([
-        //         'chat_id' => $chats->random()->id,
-        //         'admin_id' => $admin->id,
-        //         'private_commands_access' => fake()->boolean(),
-        //         'group_commands_access' => fake()->boolean(),
-        //         'my_commands_set' => fake()->boolean(),
-        //     ]);
-        // }
     }
 }
