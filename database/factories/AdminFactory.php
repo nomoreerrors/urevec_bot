@@ -16,6 +16,7 @@ class AdminFactory extends Factory
      */
     public function definition(): array
     {
+        $stop = 0;
         return [
             'admin_id' => fake()->numberBetween(100000, 500000),
             'is_bot' => fake()->boolean(),

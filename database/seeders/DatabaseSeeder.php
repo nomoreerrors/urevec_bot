@@ -5,8 +5,11 @@ namespace Database\Seeders;
 use App\Models\Chat;
 use App\Models\ChatAdmins;
 use App\Models\Admin;
+use App\Models\ChatNewUserRestriction;
+use App\Models\NewUserRestriction;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Factories\ChatFactory;
+use Database\Factories\NewUserRestrictionFactory;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -21,6 +24,9 @@ class DatabaseSeeder extends Seeder
         // each admin related to only one chat
         $admins = Admin::factory(20)->has(
             Chat::factory(1)
+                ->has(
+                    NewUserRestriction::factory(1)
+                )
         )->create();
 
         $chats = Chat::all();
@@ -35,5 +41,7 @@ class DatabaseSeeder extends Seeder
                 'my_commands_set' => fake()->boolean(),
             ]);
         }
+
+        // Dont' forget to clear Database before seeding.
     }
 }

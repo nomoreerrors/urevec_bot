@@ -13,7 +13,7 @@ return new class extends Migration {
     {
         Schema::create('chat_admins', function (Blueprint $table) {
             $table->id();
-            $table->integer("admin_id");
+            $table->unsignedInteger("admin_id");
             $table->bigInteger("chat_id");
             $table->boolean('private_commands_access')->default(0);
             $table->boolean('group_commands_access')->default(0);

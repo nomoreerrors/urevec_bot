@@ -32,6 +32,7 @@ class CONSTANTS
     public const EMPTY_ADMIN_IDS_ARRAY = "ERROR: EMPTY ADMIN IDS ARRAY " . PHP_EOL;
     public const USER_NOT_ALLOWED = "ERROR: USER NOT ALLOWED. ADMIN NOT SET OR NOT EXISTS IN DATABASE" . PHP_EOL;
     public const SELECTED_CHAT_NOT_SET = "ERROR: SELECTED CHAT NOT SET. " . PHP_EOL;
+    public const SELECT_CHAT_FIRST = "ERROR: SELECT CHAT FIRST. " . PHP_EOL;
 
     /**
      * SUCCSESS MESSAGES
@@ -49,14 +50,36 @@ class CONSTANTS
      */
     public const UNKNOWN_COMMAND = "Команда не распознана";
     public const MODERATION_SETTINGS_CMD = "/moderation_settings";
-    public const NEW_USERS_RESTRICT_SETTINGS_CMD = "/new_users_restrict_settings";
-    public const FILTER_SETTINGS_CMD = "/filter_settings";
+    public const START_CMD = "/start";
     public const BAN_SETTINGS_CMD = "/ban_settings";
-    public const RESTRICT_NEW_USERS_FOR_24H_CMD = "/24 часа";
-    public const RESTRICT_NEW_USERS_FOR_2H_CMD = "/2 часа";
-    public const RESTRICT_NEW_USERS_FOR_1W_CMD = "/Неделя";
-    public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "/Месяц";
-    public const STOP_RESTRICT_NEW_MEMBERS_CMD = "/Не ограничивать";
+
+    /**
+     * RESTRICTIONS COMMANDS
+     */
+    public const RESTRICT_NEW_USERS_SETTINGS_CMD = "/restrict_new_users_settings";
+    public const RESTRICT_NEW_USERS_FOR_24H_CMD = "/restrict_new_users_for_24_hours";
+    public const RESTRICT_NEW_USERS_FOR_2H_CMD = "/restrict_new_users_for_2_hours";
+    public const RESTRICT_NEW_USERS_FOR_1W_CMD = "/restrict_new_users_for_one_week";
+    public const RESTRICT_NEW_USERS_FOR_MONTH_CMD = "/restrict_new_users_for_one_month";
+    public const RESTRICT_MESSAGES_FOR_NEW_USERS_CMD = "/restrict_send_messages_for_new_users";
+    public const RESTRICT_MEDIA_FOR_NEW_USERS_CMD = "/restrict_send_media_for_new_users";
+    public const RESTRICT_STOP_RESTRICT_NEW_MEMBERS_CMD = "/restrict_stop_new_users_restriction"; // "Не ограничивать";
+    public const RESTRICT_SET_NEW_USERS_RESTRICTION_TIME_CMD = "/restrict_set_new_users_restriction_time";
+
+    /**
+     * Restriction time
+     */
+    public const RESTIME_2H = 1;
+    public const RESTIME_DAY = 2;
+    public const RESTIME_WEEK = 3;
+    public const RESTIME_MONTH = 4;
+    public const RESTIME_NONE = 0;
+
+    /**
+     * FILTER COMMANDS
+     */
+    public const FILTER_SETTINGS_CMD = "/filter_settings";
+
 
 
     /** 
@@ -86,4 +109,12 @@ class CONSTANTS
     public const CACHE_ADMINS_PRIVATE_CHATS_COMMANDS_VISIBILITY = "admins_private_chats_commands_visibility_";
     public const CACHE_ADMINS_IDS_NOT_SET = "СПИСОК АДМИНИСТРАТОРОВ НЕ УСТАНОВЛЕН В КЭШЕ. " . PHP_EOL;
     public const CACHE_LAST_COMMAND = "last_command_";
+
+
+    /**
+     *  Reply messages
+     */
+
+    public const REPLY_RESTRICT_SELECT_RESTRICTIONS_FOR_NEW_USERS = "Выберите ограничения для новых пользователей. По умолчанию ограничения включены" . PHP_EOL;
+
 }

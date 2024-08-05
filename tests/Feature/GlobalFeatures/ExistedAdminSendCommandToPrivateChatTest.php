@@ -59,7 +59,7 @@ class ExistedAdminSendCommandToPrivateChatTest extends TestCase
 
         $this->postJson('api/webhook', $data);
         //Make sure that there is no chat selected 
-        $this->assertNull((new PrivateChatCommandService())->getChat());
+        $this->assertNull((new PrivateChatCommandService())->getSelectedChat());
         //Storage facade is not working in tests. I set a file path in .env.testing file and in logging.php file
         // so it stores the logs in that file only while testing
         $logContents = file_get_contents(storage_path('logs/testing.log'));

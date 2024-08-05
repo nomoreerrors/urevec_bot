@@ -103,30 +103,45 @@ abstract class TestCase extends BaseTestCase
         ], 500));
     }
 
+    public function fakeSendMessageSucceedResponse()
+    {
+        Http::fake([
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage" =>
+                Http::response([
+                    "ok" => true,
+                    "description" => "success",
+                ], 200)
+        ]);
+    }
+
     public function fakeResponseWithAdminsIds(int $id, int $secondId, bool $status = true)
     {
-        return Http::fake(fn() => Http::response([
-            'ok' => $status,
-            'description' => 'ok',
-            'result' => [
-                [
-                    'user' => [
-                        'id' => $id, //Id converted to admin_id when it's assigning in TelegramRequestModelBuilder
-                        'is_bot' => false,
-                        'first_name' => 'Dolph Lundgren',
-                        'username' => 'DolphLundgren'
+        return Http::fake([
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators" =>
+                Http::response([
+
+                    'ok' => $status,
+                    'description' => 'ok',
+                    'result' => [
+                        [
+                            'user' => [
+                                'id' => $id, //Id converted to admin_id when it's assigning in TelegramRequestModelBuilder
+                                'is_bot' => false,
+                                'first_name' => 'Dolph Lundgren',
+                                'username' => 'DolphLundgren'
+                            ]
+                        ], // Admin 1
+                        [
+                            'user' => [
+                                'id' => $secondId,
+                                'is_bot' => false,
+                                'first_name' => 'Antonio Banderos',
+                                'username' => 'AntonioBanderos'
+                            ]
+                        ], // Admin 2
                     ]
-                ], // Admin 1
-                [
-                    'user' => [
-                        'id' => $secondId,
-                        'is_bot' => false,
-                        'first_name' => 'Antonio Banderos',
-                        'username' => 'AntonioBanderos'
-                    ]
-                ], // Admin 2
-            ]
-        ], 200));
+                ], 200)
+        ]);
     }
 
 
@@ -311,6 +326,7 @@ abstract class TestCase extends BaseTestCase
                 ]
             ]
         ];
+
     }
 
 

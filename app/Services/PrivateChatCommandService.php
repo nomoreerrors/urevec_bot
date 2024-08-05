@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Classes\CommandChatSelector;
+use App\Classes\FilterSettingsCommand;
+use App\Models\Chat;
 use App\Classes\ModerationSettings;
 use App\Classes\ReplyInterface;
 use App\Classes\ReplyKeyboardMarkup;
+use App\Classes\RestrictUserCommand;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
@@ -35,57 +39,45 @@ class PrivateChatCommandService extends BotCommandService
             ->handle();
     }
 
+
     protected function handle(): static
     {
         $this->chatSelectionHandler();
+
+        if (str_starts_with($this->command, "/restrict_")) {
+            new RestrictUserCommand($this->command);
+            return $this;
+        }
+
+        if (str_starts_with($this->command, "/filter_")) {
+            new FilterSettingsCommand($this->command);
+            return $this;
+        }
+
         switch ($this->command) {
-            case "/start":
+            case CONSTANTS::START_CMD:
                 $this->startHandler();
             case CONSTANTS::MODERATION_SETTINGS_CMD:
-                $this->settingsHandler();
-                break;
-            case CONSTANTS::NEW_USERS_RESTRICT_SETTINGS_CMD:
-                $this->settings->sendNewUsersRestrictionsSettings();
-                break;
-            // case CONSTANTS::RESTRICT_NEW_USERS_FOR_2H_CMD:
-            //     $this->cacheRestriction(CONSTANTS::HOUR * 2);
-            //     break;
-            // case CONSTANTS::RESTRICT_NEW_USERS_FOR_24H_CMD:
-            //     $this->cacheRestriction(CONSTANTS::DAY);
-            //     break;
-            // case CONSTANTS::RESTRICT_NEW_USERS_FOR_1W_CMD:
-            //     $this->cacheRestriction(CONSTANTS::WEEK);
-            //     break;
-            // case CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD:
-            //     $this->cacheRestriction(CONSTANTS::MONTH);
-            //     break;
-            // case CONSTANTS::STOP_RESTRICT_NEW_MEMBERS_CMD:
-            //     $this->cacheRestriction(0);
-            //     break;
-            // case CONSTANTS::FILTER_SETTINGS_CMD:
-            //     // Handle filter settings command
-            //     break;
-            // case CONSTANTS::BAN_SETTINGS_CMD:
-            //     // Handle ban settings command
-            //     break;
-            default:
+                $this->moderationSettingsHandler();
+            default: {
                 app("botService")->sendMessage("Неизвестная команда");
                 log::info("Неизвестная команда в приватном чате" . $this->command);
                 response(CONSTANTS::UNKNOWN_CMD, 200);
+                return $this;
+            }
         }
-        return $this;
     }
 
     /**
      * Send the list of available chats to user as buttons
      * @return void
      */
-    private function setChat(): void
+    private function setSelectedChat(): void
     {
         $chatId = $this->findSelectedChatId();
         $this->botService->setChat($chatId);
-        $this->chat = $this->botService->getChat();
-        $this->botService->sendMessage("Selected chat: " . $this->chat->chat_title);
+        $this->botService->sendMessage("Selected chat: " . $this->botService->getChat()->chat_title);
+        $this->rememberLastSelectedChatId();
     }
 
     public function sendSelectChatButtons(): void
@@ -113,13 +105,16 @@ class PrivateChatCommandService extends BotCommandService
         return $this;
     }
 
-    protected function settingsHandler(): void
+    /**
+     * Send the list of available chats to user as buttons
+     * @return void
+     */
+    protected function moderationSettingsHandler(): void
     {
         if (!empty($this->botService->getChat())) {
             $this->settings->send();
-        } else {
-            $this->setChat();
-        }
+        } else
+            throw new BaseTelegramBotException(CONSTANTS::SELECT_CHAT_FIRST, __METHOD__);
     }
 
     protected function setGroupsTitles(): static
@@ -151,6 +146,53 @@ class PrivateChatCommandService extends BotCommandService
         return $chatId;
     }
 
+    private function chatSelectionHandler(): static
+    {
+        if ($this->admin->chats->count() <= 1) {
+            $this->botService->setChat($this->admin->chats->first()->chatId);
+            return $this;
+        }
+
+        if (
+            !empty($this->botService->getChat()) &&
+            !$this->checkIfIsSelectChatCommand()
+        ) {
+            return $this;
+        }
+
+        if ($this->checkIfIsSelectChatCommand()) {
+            // means that chat was previously selected or that user has entered the select certain chat command manually
+            $this->setSelectedChat();
+            $lastCommand = $this->getLastCommandFromCache();
+            if ($lastCommand) {
+                $this->command = $lastCommand;
+            }
+        }
+
+        $chatId = $this->getLastSelectedChatIdFromCache();
+        if (!empty($chatId)) {
+            $this->botService->setChat($chatId);
+            return $this;
+        } else {
+            $this->sendSelectChatButtons();
+            $this->rememberLastCommand();
+            return $this;
+        }
+    }
+
+    private function getLastSelectedChatIdFromCache()
+    {
+        return Cache::get("last_selected_chat_" . $this->requestModel->getChatId());
+    }
+
+    private function rememberLastSelectedChatId()
+    {
+        return Cache::put(
+            "last_selected_chat_" . $this->requestModel->getChatId(),
+            $this->botService->getChat()->chat_id
+        );
+    }
+
     protected function checkIfIsSelectChatCommand(): bool
     {
         //Remove "/" to compare
@@ -158,36 +200,15 @@ class PrivateChatCommandService extends BotCommandService
         return in_array($cleanedCommand, $this->groupsTitles);
     }
 
-    public function rememberCommand()
+    public function rememberLastCommand()
     {
         Cache::put("last_command_" . $this->requestModel->getChatId(), $this->command);
     }
 
-    /**
-     * Get the previously saved command from cache and execute it, than update chat
-     * @return PrivateChatCommandService
-     */
-    private function chatSelectionHandler(): static
+    private function getLastCommandFromCache()
     {
-        if ($this->checkIfIsSelectChatCommand()) {
-            // means that chat was previously selected or that user has entered the select certain chat command manually
-            $this->setChat();
-            $lastCommand = Cache::get(CONSTANTS::CACHE_LAST_COMMAND . $this->requestModel->getChatId());
-            if ($lastCommand) {
-                $this->command = $lastCommand;
-            }
-        }
-        // if chat not selected yet but the user is sending any command, cache it to
-        //  use after selecting chat and send select chat buttons
-        if (empty($this->chat)) {
-            $this->sendSelectChatButtons();
-            $this->rememberCommand();
-        }
-
-        return $this;
+        return Cache::get("last_command_" . $this->requestModel->getChatId());
     }
+
+
 }
-
-
-
-

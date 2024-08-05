@@ -17,7 +17,7 @@ abstract class BotCommandService
 
     protected $botService;
 
-    protected $chat = null;
+    protected $selectedChat = null;
 
     protected ReplyInterface $settings;
 
@@ -36,9 +36,9 @@ abstract class BotCommandService
     abstract protected function handle(): static;
 
 
-    public function getChat(): ?Chat
+    public function getSelectedChat(): ?Chat
     {
-        return $this->chat;
+        return $this->selectedChat;
     }
 
 }

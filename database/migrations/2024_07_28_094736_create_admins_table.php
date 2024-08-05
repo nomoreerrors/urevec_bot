@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger("admin_id");
+            $table->unsignedBigInteger("admin_id");
             $table->boolean('is_bot')->default(0);
             $table->string("first_name", 100);
             $table->string("username", 100)->nullable();

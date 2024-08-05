@@ -117,7 +117,7 @@ class TelegramBotService
         );
         // dd("here");
         if ($response->ok()) {
-            log::info($text_message . json_encode($params)); //для отладки
+            log::info($text_message . json_encode($params, JSON_UNESCAPED_UNICODE)); //для отладки
             return;
         }
         throw new BaseTelegramBotException(CONSTANTS::SEND_MESSAGE_FAILED, __METHOD__);

@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('new_users_restrictions', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger("chat_id");
+            $table->unsignedBigInteger("chat_id");
             $table->boolean("restrict_new_users")->default(0);
             $table->boolean("can_send_messages")->default(0);
             $table->boolean("can_send_media")->default(0);
@@ -20,6 +20,9 @@ return new class extends Migration {
 
 
             $table->timestamps();
+            // Foreign key is an unsigned big integer so it can't to be directly referenced to chat_id in chats
+            // that is bigInteger type and the value may be signed.
+            $table->foreign('chat_id')->references('id')->on('chats')->onDelete('cascade');
         });
     }
 
