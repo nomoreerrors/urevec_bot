@@ -36,9 +36,5 @@ abstract class BotCommandService
     abstract protected function handle(): static;
 
 
-    public function getSelectedChat(): ?Chat
-    {
-        return $this->selectedChat;
-    }
 
 }

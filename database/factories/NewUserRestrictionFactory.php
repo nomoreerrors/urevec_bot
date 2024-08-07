@@ -32,14 +32,13 @@ class NewUserRestrictionFactory extends Factory
         // $lol = Chat::find($id)->get("chat_id");
         // $chatId = Chat::where("id", $id)->value("chat_id");
         $chatId = Chat::where("id", $id)->value("id");
-        $stop = 0;
 
         return [
             'chat_id' => $chatId,
             'restrict_new_users' => $this->faker->boolean(),
             'can_send_messages' => $this->faker->boolean(),
             'can_send_media' => $this->faker->boolean(),
-            'restriction_time' => $this->faker->numberBetween(0, 10),
+            'restriction_time' => $this->faker->numberBetween(0, 4),
         ];
     }
 }

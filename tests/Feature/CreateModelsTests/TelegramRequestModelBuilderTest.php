@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Exceptions\UnknownChatException;
 use App\Models\Chat;
+use Database\Seeders\SimpleSeeder;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use App\Services\CONSTANTS;
@@ -39,23 +40,16 @@ class TelegramRequestModelBuilderTest extends TestCase
      * Testcase where setAdminsIds function gets ids from database if it exists 
      * @return void
      */
-    public function testSetAdminsIdsFunctionGetsIdsFromDatabase(): void
+    public function testSetAdminsFunctionGetsIdsFromDatabase(): void
     {
-        // TelegramBotService needs the commandsList to create a complete chat in database
-        app()->singleton("commandsList", fn() => new CommandsList());
-        // Fake response so that TelegramRequestModelBuilder assign fake Ids to property adminsIds
-        $this->fakeResponseWithAdminsIds(1000, 2000);
-        // Assigning fake Ids to property adminsIds
-        $requestModel = new TelegramRequestModelBuilder($this->data);
-        //Creating a new chat in database with fake admins ids
-        (new TelegramBotService($requestModel))->createChat();
-        // Fake response with two another values 
-        $this->fakeResponseWithAdminsIds(5000, 7000);
-        // TelegramRequestModelBuilder assigns fake ids once again
+        (new SimpleSeeder)->run(1, 5);
+        $chat = Chat::first();
+        $adminId = $chat->admins->first()->admin_id;
+        $this->data["message"]["chat"]["id"] = $chat->chat_id;
+        // // Assigning fake Ids to property adminsIds
         $requestModel = new TelegramRequestModelBuilder($this->data);
         // Asserting that the ids didn't change because they are from database this time and Http call didn't happen
-        $this->assertContains(1000, $requestModel->getAdminsIds());
-        $this->assertContains(2000, $requestModel->getAdminsIds());
+        $this->assertContains($adminId, $requestModel->getAdminsIds());
     }
 
     /**
@@ -80,19 +74,6 @@ class TelegramRequestModelBuilderTest extends TestCase
         $this->expectExceptionMessage(CONSTANTS::GET_ADMINS_FAILED);
 
         (new TelegramRequestModelBuilder($this->data));
-    }
-
-
-    public function fakeResponseWithAdminsIds(int $id, int $secondId, bool $status = true)
-    {
-        return Http::fake(fn() => Http::response([
-            'ok' => $status,
-            'description' => 'ok',
-            'result' => [
-                ['user' => ['id' => $id]], // Admin 1
-                ['user' => ['id' => $secondId]] // Admin 2
-            ]
-        ], 200));
     }
 
 }

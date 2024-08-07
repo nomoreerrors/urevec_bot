@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\ResTime;
 use App\Exceptions\BanUserFailedException;
 use App\Models\Admin;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\SetCommandsFailedException;
+use App\Models\NewUserRestriction;
 use App\Models\TelegramRequestModelBuilder;
 use App\Models\ChatAdmins;
 use Illuminate\Support\Facades\Cache;
@@ -28,6 +30,8 @@ class TelegramBotService
 
     private $textCommands = null;
 
+    private ResTime $chatRestrictionTime = ResTime::DAY;
+
     public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
     }
@@ -37,18 +41,16 @@ class TelegramBotService
      * @param int $id 
      * @return array
      */
-    public function restrictChatMember(int $time = null, int $id = null): bool
+    public function restrictChatMember(ResTime $resTime = null, int $id = null): bool
     {
-        if (empty($time)) {
-            $time = Cache::get("new_users_restriction_time");
-        }
-        $until_date = time() + $time;
+        $time = $resTime ?? $this->chatRestrictionTime;
+        $until_date = time() + $time->value;
 
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
                 "chat_id" => $this->requestModel->getChatId(),
-                "user_id" => $id > 0 ? $id : $this->requestModel->getFromId(),
+                "user_id" => $id ?? $this->requestModel->getFromId(),
                 "can_send_messages" => false,
                 "can_send_documents" => false,
                 "can_send_photos" => false,
@@ -59,6 +61,8 @@ class TelegramBotService
             ]
         );
         if ($response->Ok()) {
+            log::info(CONSTANTS::MEMBER_BLOCKED . " " . $this->requestModel->getFromId() .
+                " " . $time->getHumanRedable());
             return true;
         }
         throw new BaseTelegramBotException(CONSTANTS::RESTRICT_MEMBER_FAILED, __METHOD__);
@@ -125,14 +129,13 @@ class TelegramBotService
 
     /**
      * Summary of banUser
-     * @param int $time 24 hours by default
+     * @param ResTime $resTime
      * @throws \App\Exceptions\BanUserFailedException
      * @return bool
      */
-    public function banUser(int $time = 86400): bool
+    public function banUser(ResTime $resTime = null): bool
     {
-        log::info("inside banNewUser");
-
+        $time = $resTime ?? $this->chatRestrictionTime;
         $result = $this->restrictChatMember($time);
 
         if ($result) {
@@ -150,9 +153,14 @@ class TelegramBotService
             "chat_id" => $this->requestModel->getChatId(),
             "chat_title" => $this->requestModel->getChatTitle(),
         ]);
-        // dd($this->requestModel->getAdmins());
-        // Create admins in admins table and attaching them to the chat id from the incoming request   
 
+        $newUsersRestricitons = NewUserRestriction::create([
+            "chat_id" => $this->chat->id,
+        ]);
+
+        $this->chat->newUserRestrictions()->attach($newUsersRestricitons->id);
+
+        // Create admins in admins table and attaching them to the chat id from the incoming request   
         foreach ($this->requestModel->getAdmins() as $admin) {
             $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
                 ? Admin::where('admin_id', $admin['admin_id'])->first()
@@ -301,11 +309,19 @@ class TelegramBotService
     public function setChat(int $chatId): void
     {
         $this->chat = Chat::where("chat_id", $chatId)->first();
+        $this->setChatRestrictionTime();
     }
 
     public function getChat()
     {
         return $this->chat;
+    }
+
+
+    private function setChatRestrictionTime(): void
+    {
+        $time = $this->chat->newUserRestrictions->restriction_time;
+        $this->chatRestrictionTime = ResTime::from($time);
     }
 }
 

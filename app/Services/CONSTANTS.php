@@ -5,9 +5,17 @@ namespace App\Services;
 
 class CONSTANTS
 {
-    public function __construct()
-    {
-    }
+    /**
+     * TIME
+     */
+    public const MONTH = 2592000;
+    public const WEEK = 604800;
+    public const DAY = 86400;
+    public const HOUR = 3600;
+    public const MINUTE = 60;
+
+
+
     /**
      * ERRORS
      * @var string
@@ -40,7 +48,7 @@ class CONSTANTS
      */
     public const NEW_MEMBER_RESTRICTED = "НОВЫЙ ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН НА СУТКИ " . PHP_EOL;
     public const INVITED_USER_BLOCKED = "НОВЫЙ ПРИГЛАШЕННЫЙ ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН НА СУТКИ " . PHP_EOL;
-    public const MEMBER_BLOCKED = "ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН НА СУТКИ " . PHP_EOL;
+    public const MEMBER_BLOCKED = "ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН" . PHP_EOL;
     public const DEFAULT_RESPONSE = "ОБРАБОТКА ЗАВЕРШЕНА " . PHP_EOL;
     public const DELETED_BY_FILTER = "СООБЩЕНИЕ УДАЛЕНО ФИЛЬТРОМ FILTER SERVICE" . PHP_EOL;
 
@@ -90,14 +98,6 @@ class CONSTANTS
 
 
 
-    /**
-     * TIME 
-     */
-    public const DAY = 86400;
-    public const HOUR = 3600;
-    public const WEEK = 604800;
-    public const MONTH = 2592000;
-
 
     /**
      * CACHE 
@@ -114,7 +114,12 @@ class CONSTANTS
     /**
      *  Reply messages
      */
-
     public const REPLY_RESTRICT_SELECT_RESTRICTIONS_FOR_NEW_USERS = "Выберите ограничения для новых пользователей. По умолчанию ограничения включены" . PHP_EOL;
+    public const REPLY_RESTRICT_SELECT_RESTRICTION_TIME_FOR_NEW_USERS = "Выберите время ограничения для новых пользователей. По умолчанию 24 часа." . PHP_EOL;
+    public const REPLY_RESTRICT_NEW_USERS_FOR_2H = "Установлено ограничение новых пользователей на 2 часа";
+    public const REPLY_RESTRICT_NEW_USERS_FOR_24H = 'Установлено ограничение новых пользователей на 24 часа';
+    public const REPLY_RESTRICT_NEW_USERS_FOR_1W = "Установлено ограничение новых пользователей на 1 неделю";
+    public const REPLY_RESTRICT_NEW_USERS_FOR_MONTH = "Установлено ограничение новых пользователей на 1 месяц";
 
 }
+

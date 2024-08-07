@@ -18,16 +18,11 @@ use Illuminate\Support\Facades\Log;
 
 class ChatRulesMiddleware
 {
-    /**
-     * Handle an incoming request.
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $requestModel = app("requestModel");
         $data = $requestModel->getData();
         $ruleService = new ChatRulesService($requestModel);
-        $admin = app()->bound("admin") ?? null;
 
         if ($requestModel->getChatType() === "private") {
             return $next($request);

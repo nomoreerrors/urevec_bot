@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
+use App\Enums\Time;
 use Illuminate\Support\Facades\Log;
+use App\Enums\ResTime;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Models\MessageModels\MediaModels\BaseMediaModel;
 use App\Models\TelegramRequestModelBuilder;
@@ -14,11 +16,15 @@ use App\Models\MessageModels\TextMessageModel;
 
 class ChatRulesService
 {
-    private TelegramBotService $telegramBotService;
+    private TelegramBotService $botService;
+    private ?ResTime $restrictionTime;
+
+    private string $humanReadableRerestritionTime = "";
 
     public function __construct(private TelegramRequestModelBuilder $model)
     {
-        $this->telegramBotService = new TelegramBotService($this->model);
+        $this->botService = app("botService");
+        // $this->setRestrictionTime();
     }
 
     /**
@@ -36,9 +42,10 @@ class ChatRulesService
             return false;
         }
 
+
         if ($this->model instanceof NewMemberJoinUpdateModel) {
 
-            $result = $this->telegramBotService->restrictChatMember();
+            $result = $this->botService->restrictChatMember();
 
             if ($result) {
                 log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->model->getFromId());
@@ -54,7 +61,7 @@ class ChatRulesService
 
                 foreach ($invitedUsers as $user_id) {
 
-                    $result = $this->telegramBotService->restrictChatMember(id: $user_id);
+                    $result = $this->botService->restrictChatMember(id: $user_id);
                     if ($result) {
                         log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
                     }
@@ -87,7 +94,7 @@ class ChatRulesService
         $filter = new FilterService($this->model);
 
         if ($filter->wordsFilter()) {
-            $this->telegramBotService->banUser();
+            $this->botService->banUser();
             return true;
         }
 
@@ -117,7 +124,7 @@ class ChatRulesService
         }
 
 
-        if ($this->telegramBotService->banUser()) {
+        if ($this->botService->banUser()) {
             return true;
         }
         return false;
@@ -135,7 +142,7 @@ class ChatRulesService
 
         // Text_link key value
         if ($this->model->getHasTextLink()) {
-            $this->telegramBotService->banUser();
+            $this->botService->banUser();
             return true;
         }
 
@@ -143,7 +150,7 @@ class ChatRulesService
             method_exists($this->model, 'getHasLink') &&
             $this->model->getHasLink()
         ) {
-            $this->telegramBotService->banUser();
+            $this->botService->banUser();
             return true;
 
         }
@@ -151,4 +158,5 @@ class ChatRulesService
         return false;
     }
 }
+
 

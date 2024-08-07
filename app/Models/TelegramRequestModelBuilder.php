@@ -263,9 +263,7 @@ class TelegramRequestModelBuilder
                 self::$data["chat_member"]["new_chat_member"]["user"]["id"] &&
                 self::$data["chat_member"]["new_chat_member"]["status"] === "member" &&
                 self::$data["chat_member"]["old_chat_member"]["status"] !== "restricted"
-
             ) {
-
                 return new InvitedUserUpdateModel();
             }
         }
@@ -353,7 +351,6 @@ class TelegramRequestModelBuilder
         if (!array_key_exists("chat", self::$data[self::$messageType])) {
             $this->propertyErrorHandler("chatType свойство не установлено", __LINE__, __METHOD__);
         }
-        $cuddy = self::$messageType;
 
         self::$chatType = self::$data[self::$messageType]["chat"]["type"];
         return $this;
@@ -426,7 +423,7 @@ class TelegramRequestModelBuilder
             return $this;
         }
 
-        $chat = Chat::with('admins:admin_id')->where("chat_id", self::$chatId)->first();
+        $chat = Chat::where("chat_id", self::$chatId)->first();
         self::$adminsIds = $chat?->admins?->pluck("admin_id")->toArray() ?? [];
 
         if (!empty(self::$adminsIds)) {
@@ -437,7 +434,7 @@ class TelegramRequestModelBuilder
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
             ['chat_id' => self::$chatId]
         )->json();
-        BotErrorNotificationService::send("getChatAdministrators: " . json_encode($response));
+        // BotErrorNotificationService::send("getChatAdministrators: " . json_encode($response));
         // dd($response);
 
         if (!$response['ok']) {

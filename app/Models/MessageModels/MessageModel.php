@@ -85,22 +85,31 @@ class MessageModel extends TelegramRequestModelBuilder
         if ($this->hasEntities) {
 
             if (array_key_exists("entities", self::$data[self::$messageType])) {
-                $entitiesToString = json_encode(self::$data[self::$messageType]["entities"]);
+                $entities = self::$data[self::$messageType]["entities"];
+                $arrayOfTypes = array_column($entities, "type");
+
+                $arrayOfUrls = array_column($entities, "url");
+                if (!empty($arrayOfUrls)) {
+                    $this->hasTextLink = true;
+                    return $this;
+                }
             }
 
             if (array_key_exists("caption_entities", self::$data[self::$messageType])) {
-                $entitiesToString = json_encode(self::$data[$this->messageType]["caption_entities"]);
+                $caption_entities = self::$data[self::$messageType]["caption_entities"];
+                $arrayOfTypes = array_column($caption_entities, "type");
+
+                $arrayOfUrls = array_column($caption_entities, "url");
+                if (!empty($arrayOfUrls)) {
+                    $this->hasTextLink = true;
+                    return $this;
+                }
             }
 
-
-            if (str_contains($entitiesToString, "text_link") || str_contains($entitiesToString, "url")) {
+            if (in_array("url", $arrayOfTypes) || in_array("text_link", $arrayOfTypes)) {
                 $this->hasTextLink = true;
-
                 return $this;
             }
-        }
-        if (self::$data["update_id"] === 117305689) {
-            dd(self::$data);
         }
         return $this;
     }

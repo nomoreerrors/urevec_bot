@@ -85,13 +85,11 @@ class TelegramApiMiddleware
     {
         Log::error($e->getmessage() . " Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
 
-        if (!($e instanceof UnknownChatException)) {
-            FailedRequestJob::dispatch($requestData);
-        }
-
         if (env("APP_DEBUG")) {
             return response($e->getMessage(), Response::HTTP_OK);
         }
+
+        FailedRequestJob::dispatch($requestData);
         return response(Response::$statusTexts[500], Response::HTTP_OK);
     }
 

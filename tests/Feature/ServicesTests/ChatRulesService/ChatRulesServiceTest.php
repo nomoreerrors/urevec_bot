@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\StatusUpdateModel;
 use App\Services\ChatRulesService;
+use App\Services\TelegramBotService;
+use App\Models\Admin;
+use App\Models\Chat;
+use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Http;
@@ -15,10 +19,21 @@ class ChatRulesServiceTest extends TestCase
 {
     use RefreshDatabase;
     private array $data;
+
+    private Chat $chat;
+
+    private Admin $admin;
     protected function setUp(): void
     {
         parent::setUp();
+        $this->fakeSendMessageSucceedResponse();
+        $this->fakeDeleteMessageSucceedResponse();
+        $this->fakeRestrictMemberSucceedResponse();
+        (new SimpleSeeder())->run(1, 5);
+        $this->chat = Chat::first();
+        $this->admin = $this->chat->admins->first();
         $this->data = $this->getMessageModelData();
+        $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
     }
 
     /**
@@ -28,13 +43,10 @@ class ChatRulesServiceTest extends TestCase
      */
     public function test_message_has_link_but_user_is_administrator_returns_false()
     {
-        $this->data["message"]["from"]["id"] = $this->getAdminId();
-        $messageModel = (new TelegramRequestModelBuilder($this->data))->create();
-        //Prepare admin id in cache
-        Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $messageModel->getChatId(), [$this->getAdminId()]);
-
-        $ruleService = new ChatRulesService($messageModel);
-        $this->assertFalse($ruleService->ifMessageHasLinkBlockUser());
+        $this->data["message"]["from"]["id"] = $this->admin->admin_id;
+        // Set prepared fake admin id from DB to model admins array instead of calling api 
+        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+        $this->assertFalse((new ChatRulesService($requestModel))->ifMessageHasLinkBlockUser());
     }
 
 
@@ -47,21 +59,7 @@ class ChatRulesServiceTest extends TestCase
     {
         //Testcase where text not contains any blacklisted word returns false
         $this->data = $this->getTextMessageModelData();
-        $chatId = $this->data["message"]["chat"]["id"];
-
-        //Prepare admin id in cache so it can be used to check if user is admin
-        Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);
-
-        Http::fake([
-            '*' => Http::response([
-                'ok' => true,
-                'result' => $this->getMessageModelData()
-            ], 200)
-        ]);
-
-
         $model = (new TelegramRequestModelBuilder($this->data))->create();
-
         $service = new ChatRulesService($model);
         $this->assertFalse($service->ifMessageContainsBlackListWordsBanUser());
 
@@ -91,18 +89,6 @@ class ChatRulesServiceTest extends TestCase
     public function testifMediaModelCaptionContainsBlackListWordsBanUser(): void
     {
         $this->data = $this->getMultiMediaModelData();
-        $chatId = $this->data["message"]["chat"]["id"];
-
-        //Prepare admin id in cache so it can be used to check if user is admin
-        Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);
-
-        Http::fake([
-            '*' => Http::response([
-                'ok' => true,
-                'result' => $this->data
-            ], 200)
-        ]);
-
         // Testcase where media model does not contain any blacklisted word returns false
         $model = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($model);
@@ -132,17 +118,40 @@ class ChatRulesServiceTest extends TestCase
      * @method blockUserIfMessageIsForward 
      * @return void
      */
-    public function test_if_forward_message_is_forward_by_admin_block_function_returns_false(): void
+    public function test_if_forward_message_is_forwarded_by_admin_block_function_returns_false(): void
     {
         $this->data = $this->getMessageModelData();
-        $this->data["message"]["from"]["id"] = $this->getAdminId();
+        $this->data["message"]["from"]["id"] = $this->admin->admin_id;
         $this->data["message"]["forward_origin"] = [];
-        $chatId = $this->data["message"]["chat"]["id"];
-        //Prepare admin id in cache so it can be used to check if user is admin
-        Cache::put(CONSTANTS::CACHE_CHAT_ADMINS_IDS . $chatId, [$this->getAdminId()]);
 
         $forwardMessageModel = (new TelegramRequestModelBuilder($this->data))->create();
         $service = new ChatRulesService($forwardMessageModel);
         $this->assertFalse($service->blockUserIfMessageIsForward());
+    }
+
+
+    public function testNewUserJoinCheckRestrictionTimeInDatabaseAndBlockIfEnabled()
+    {
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+
+        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 1,
+            'restriction_time' => CONSTANTS::RESTIME_WEEK,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $message = CONSTANTS::MEMBER_BLOCKED . " " . $requestModel->getFromId() .
+            " " . "BLOCK TIME: " . "ONE WEEK";
+        $this->assertStringContainsString($message, $sendMessageLog);
+        $this->clearTestLogFile();
     }
 }

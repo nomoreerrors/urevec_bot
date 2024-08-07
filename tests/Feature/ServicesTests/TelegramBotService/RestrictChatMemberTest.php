@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exceptions\BaseTelegramBotException;
+use App\Enums\ResTime;
 use App\Services\CONSTANTS;
 use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,6 +17,10 @@ class RestrictChatMemberTest extends TestCase
     use RefreshDatabase;
 
     protected $requestData;
+
+    protected $requestModel;
+
+    protected TelegramBotService $botService;
 
     protected int $updateId;
 
@@ -32,11 +37,9 @@ class RestrictChatMemberTest extends TestCase
      */
     public function testRestrictUserByIdReturnsTrue()
     {
-        $requestModel = new TelegramRequestModelBuilder($this->requestData);
-        $requestModel->create();
-        $service = new TelegramBotService($requestModel);
-
-        $this->assertTrue($service->restrictChatMember());
+        $this->clearTestLogFile();
+        $this->prepareDependencies();
+        $this->assertTrue($this->botService->restrictChatMember());
     }
 
 
@@ -48,20 +51,45 @@ class RestrictChatMemberTest extends TestCase
     public function testExceptionIsThrownAndRequestDispatchedToQueueWhenRestrictingUserFails(): void
     {
         $this->requestData['message']['from']['id'] = $this->getInvalidUserId();
-
-        $requestModel = new TelegramRequestModelBuilder($this->requestData);
-        $requestModel->create();
-        $telegramBotService = new TelegramBotService($requestModel);
+        $this->prepareDependencies();
 
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::RESTRICT_MEMBER_FAILED);
 
-        $telegramBotService->restrictChatMember();
+        $this->botService->restrictChatMember();
 
         $jobInQueue = DB::table('jobs')
             ->where('payload', 'like', "%{$this->updateId}%")
             ->first();
 
         $this->assertNotNull($jobInQueue);
+    }
+
+    public function testTimeArgumentPassedRestrictAccordingToTime()
+    {
+        $this->prepareDependencies();
+        $this->botService->restrictChatMember(ResTime::WEEK);
+        $lol = $this->getTestLogFile();
+        $this->assertStringContainsString(ResTime::WEEK->getHumanRedable(), $this->getTestLogFile());
+        $this->clearTestLogFile();
+    }
+
+    /**
+     * Test that the default time is taken from that was set in a TelegramBotService if an argument is not passed
+     * @return void
+     */
+    public function testTimeArgumentNotPassedRestrictTimeIsTakenFromDatabase()
+    {
+        $this->prepareDependencies();
+        $this->botService->restrictChatMember();
+        $this->assertStringContainsString(ResTime::DAY->getHumanRedable(), $this->getTestLogFile());
+        $this->clearTestLogFile();
+    }
+
+    public function prepareDependencies()
+    {
+        $this->requestModel = (new TelegramRequestModelBuilder($this->requestData))->create();
+        $this->botService = new TelegramBotService($this->requestModel);
+        $this->clearTestLogFile();
     }
 }

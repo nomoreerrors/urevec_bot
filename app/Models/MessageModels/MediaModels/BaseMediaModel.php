@@ -14,6 +14,7 @@ class BaseMediaModel extends MessageModel
 
     public function __construct()
     {
+        parent::__construct();
         $this->setCaption()
             ->setHasLink();
     }

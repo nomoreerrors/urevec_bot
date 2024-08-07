@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ResNewUsersCmd;
 use App\Models\TelegramRequestModelBuilder;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Chat;
@@ -24,6 +25,7 @@ class PrivateChatCommandServiceTest extends TestCase
     private $data;
     private $model;
     private $botService;
+    private $chat;
     protected function setUp(): void
     {
         parent::setUp();
@@ -37,15 +39,11 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->data["message"]["chat"]["id"] = $this->admin->admin_id;
         //Prepare fake admins ids so that ModelBuilder can get them instead of calling api
         $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($this->model);
-        // PrivateChatCommandService dependencies   
-        app()->instance("requestModel", $this->model);
-        app()->instance("botService", $this->botService);
     }
 
     public function testSetGroupTitles()
     {
+        $this->prepareDependencies();
         $chatTitle = Chat::first()->chat_title;
         $commandsService = new PrivateChatCommandService();
         $titles = $commandsService->getGroupsTitles();
@@ -54,6 +52,7 @@ class PrivateChatCommandServiceTest extends TestCase
 
     public function testAdminDoesNotExistsInDatabaseOrPropertyisNotSetThrowsException(): void
     {
+        $this->prepareDependencies();
         $this->admin->delete();
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::USER_NOT_ALLOWED);
@@ -73,110 +72,106 @@ class PrivateChatCommandServiceTest extends TestCase
         $title = $this->admin->chats->first()->chat_title;
         // Mock request with the title from one of the user's chats
         $this->data["message"]["text"] = "/" . $title;
-        // Just to avoid multiple calls to api:
-        $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
         // Make request model and bot service to be used in PrivateChatCommandService
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($this->model);
-        app()->instance("requestModel", $this->model);
-        $chat = (new PrivateChatCommandService())->getSelectedChat();
-        $this->assertInstanceOf(Chat::class, $chat);
-        $this->assertEquals($chat->chat_title, $title);
+        $this->prepareDependencies();
 
-        $sendMessageLog = file_get_contents(storage_path("logs/testing.log"));
+        new PrivateChatCommandService();
+        $this->chat = $this->botService->getChat();
+        $this->assertInstanceOf(Chat::class, $this->chat);
+        $this->assertEquals($this->chat->chat_title, $title);
+
+        $sendMessageLog = $this->getTestLogFile();
         // Assert that when the chat was set the message to user with a selected chat title has been sent
         $this->assertStringContainsString("Selected chat: " . $title . "", $sendMessageLog);
         // Assert that a previously saved command was executed and moderation settings buttons were sent
         $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_SETTINGS_CMD, $sendMessageLog);
         $this->assertStringContainsString(CONSTANTS::FILTER_SETTINGS_CMD, $sendMessageLog);
-
-        unlink(storage_path("logs/testing.log"));
+        $this->clearTestLogFile();
     }
 
 
     public function testSelectNewUsersRestrictionsReplyWithButtons()
     {
-        $chat = Chat::first();
-        $this->data["message"]["text"] = CONSTANTS::RESTRICT_NEW_USERS_SETTINGS_CMD;
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        new TelegramBotService($this->model);
-
-        app()->instance("requestModel", $this->model);
-        app()->instance("botService", $this->botService);
+        $this->data["message"]["text"] = ResNewUsersCmd::SETTINGS->value;
+        $this->prepareDependencies();
         // Fake that the chat was previously selected and it's id has been saved in cache
-        Cache::put("last_selected_chat_" . $this->model->getChatId(), $chat->chat_id);
-
+        Cache::put("last_selected_chat_" . $this->model->getChatId(), $this->chat->chat_id);
         (new PrivateChatCommandService());
 
-        $sendMessageLog = file_get_contents(storage_path("logs/testing.log"));
+
+        $canSendMessages = $this->chat->newUserRestrictions->can_send_messages;
+        $canSendMedia = $this->chat->newUserRestrictions->can_send_media;
+        $restrictNewUsers = $this->chat->newUserRestrictions->restrict_new_users;
 
 
-        $this->assertStringContainsString(CONSTANTS::RESTRICT_MESSAGES_FOR_NEW_USERS_CMD, $sendMessageLog);
-        $this->assertStringContainsString(CONSTANTS::RESTRICT_MEDIA_FOR_NEW_USERS_CMD, $sendMessageLog);
-        $this->assertStringContainsString(CONSTANTS::RESTRICT_SET_NEW_USERS_RESTRICTION_TIME_CMD, $sendMessageLog);
-        $this->assertStringContainsString(CONSTANTS::REPLY_RESTRICT_SELECT_RESTRICTIONS_FOR_NEW_USERS, $sendMessageLog);
+        $canSendMessages = $canSendMessages === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
+        $canSendMedia = $canSendMedia === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
+        $restrictNewUsers = $restrictNewUsers === 1 ? ResNewUsersCmd::DISABLE_ALL_RESTRICTIONS->value : ResNewUsersCmd::ENABLE_ALL_RESTRICTIONS->value;
 
-        unlink(storage_path("logs/testing.log"));
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringContainsString($canSendMessages, $sendMessageLog);
+        $this->assertStringContainsString($canSendMedia, $sendMessageLog);
+        $this->assertStringContainsString($restrictNewUsers, $sendMessageLog);
+        $this->clearTestLogFile();
     }
 
 
-    //TODO fix
-    // public function testSelectSetRestrictNewUsersTimeReplyWithButtons()
-    // {
-    //     $chat = Chat::first();
-    //     $this->data["message"]["text"] = CONSTANTS::RESTRICT_SET_NEW_USERS_RESTRICTION_TIME_CMD;
-    //     $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-    //     $botService = new TelegramBotService($this->model);
-    //     $botService->setChat($chat->chat_id);
-    //     $this->assertNotNull($botService->getChat());
+    //TODO Делаем этот тест
 
-    //     app()->instance("requestModel", $this->model);
-    //     app()->instance("botService", $this->botService);
+    public function testSelectSetRestrictNewUsersTimeReplyWithButtons()
+    {
+        $this->data["message"]["text"] = CONSTANTS::RESTRICT_SET_NEW_USERS_RESTRICTION_TIME_CMD;
+        $this->prepareDependencies();
+        $this->botService->setChat($this->chat->chat_id);
+        //Fake that chat was previously selected and it's id has been saved in cache
+        Cache::put("last_selected_chat_" . $this->model->getChatId(), $this->chat->chat_id);
 
-    //     (new PrivateChatCommandService());
-    //     $sendMessageLog = file_get_contents(storage_path("logs/testing.log"));
+        (new PrivateChatCommandService());
+        $sendMessageLog = $this->getTestLogFile();
 
-    //     $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD, $sendMessageLog);
-    //     $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_1W_CMD, $sendMessageLog);
-    //     $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_24H_CMD, $sendMessageLog);
-    //     $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_2H_CMD, $sendMessageLog);
-    //     unlink(storage_path("logs/testing.log"));
-    // }
+        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD, $sendMessageLog);
+        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_1W_CMD, $sendMessageLog);
+        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_24H_CMD, $sendMessageLog);
+        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_2H_CMD, $sendMessageLog);
+        $this->clearTestLogFile();
+    }
 
 
-    // public function testUpdateNewUsersRestrictionsTime()
-    // {
-    //     $chat = Chat::first();
-    //     $this->data["message"]["text"] = CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD;
-    //     $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-    //     $botService = new TelegramBotService($this->model);
-    //     $botService->setChat($chat->chat_id);
-    //     // Asserting that the chat is currently set and there's no need to send select chat buttons to user
-    //     //instead of executing the command
-    //     $this->assertNotNull($botService->getChat());
+    public function testUpdateNewUsersRestrictionsTimeChangesValuesInDatabase()
+    {
+        $this->data["message"]["text"] = CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD;
+        $this->prepareDependencies();
+        $this->botService->setChat($this->chat->chat_id);
 
-    //     app()->instance("requestModel", $this->model);
-    //     app()->instance("botService", $this->botService);
-    //     $chat->newUserRestrictions()->update([
-    //         'restrict_new_users' => 0,
-    //         'restriction_time' => 0,
-    //         'can_send_messages' => 0,
-    //         'can_send_media' => 0
-    //     ]);
+        //Setting everything to 0 to avoid any previous restrictions
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+            'restriction_time' => 0,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
 
-    //     // $lol = $chat->newUserRestrictions()->first()->restrict_new_users;
-    //     $this->assertEquals(0, $chat->newUserRestrictions->restrict_new_users);
+        $this->assertEquals(0, $this->chat->newUserRestrictions->restrict_new_users);
 
-    //     (new PrivateChatCommandService());
+        (new PrivateChatCommandService());
+        $sendMessageLog = $this->getTestLogFile();
 
-    //     $this->assertEquals(1, $chat->newUserRestrictions()->first()->restrict_new_users);
-    //     $this->assertEquals(CONSTANTS::RESTIME_MONTH, $chat->newUserRestrictions()->first()->restriction_time);
+        $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->restrict_new_users);
+        $this->assertEquals(CONSTANTS::RESTIME_MONTH, $this->chat->newUserRestrictions()->first()->restriction_time);
+        $this->assertStringContainsString(CONSTANTS::REPLY_RESTRICT_NEW_USERS_FOR_MONTH, $sendMessageLog);
+        $this->clearTestLogFile();
+    }
 
 
-    //     // $sendMessageLog = file_get_contents(storage_path("logs/testing.log"));
+    private function prepareDependencies()
+    {
+        $this->chat = Chat::first();
+        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
+        $this->botService = new TelegramBotService($this->model);
 
-    //     // $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_FOR_MONTH_CMD, $sendMessageLog);
-    //     unlink(storage_path("logs/testing.log"));
-    // }
+        app()->instance("requestModel", $this->model);
+        app()->instance("botService", $this->botService);
+    }
 }
 

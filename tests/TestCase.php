@@ -114,6 +114,28 @@ abstract class TestCase extends BaseTestCase
         ]);
     }
 
+    public function fakeDeleteMessageSucceedResponse()
+    {
+        Http::fake([
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage" =>
+                Http::response([
+                    "ok" => true,
+                    "description" => "success",
+                ], 200)
+        ]);
+    }
+
+    public function fakeRestrictMemberSucceedResponse()
+    {
+        Http::fake([
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember" =>
+                Http::response([
+                    "ok" => true,
+                    "description" => "success",
+                ], 200)
+        ]);
+    }
+
     public function fakeResponseWithAdminsIds(int $id, int $secondId, bool $status = true)
     {
         return Http::fake([
@@ -267,7 +289,14 @@ abstract class TestCase extends BaseTestCase
                 "photo" => [],
                 "caption" => "some text bla-bla-bla",
                 "caption_entities" => [
-                    "type" => "unknown",
+                    [
+                        "ofsset" => 0,
+                        "type" => "unknown",
+                    ],
+                    [
+                        "ofsset" => 3,
+                        "type" => "unknown2",
+                    ],
                 ]
             ]
         ];
@@ -338,6 +367,19 @@ abstract class TestCase extends BaseTestCase
     public function getInvalidUserId(): int
     {
         return $this->invalidUserId;
+    }
+
+
+    public function getTestLogFile()
+    {
+        return file_get_contents(storage_path("logs/testing.log")) ?? "";
+    }
+
+
+    public function clearTestLogFile()
+    {
+        unlink(storage_path("logs/testing.log"));
+        file_put_contents(storage_path("logs/testing.log"), "");
     }
 
 }

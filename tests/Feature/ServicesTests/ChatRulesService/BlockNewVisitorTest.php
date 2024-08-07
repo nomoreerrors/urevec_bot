@@ -3,24 +3,43 @@
 namespace Tests\Feature;
 
 use App\Models\TelegramRequestModelBuilder;
+use App\Models\Chat;
+use App\Exceptions\BaseTelegramBotException;
+use App\Services\CONSTANTS;
+use App\Services\TelegramBotService;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;
 use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
 use App\Models\StatusUpdates\StatusUpdateModel;
 use App\Services\ChatRulesService;
+use Database\Seeders\SimpleSeeder;
 use Tests\TestCase;
 
+/**
+ * Test BlockNewVisitorTest method of ChatRulesService
+ */
 class BlockNewVisitorTest extends TestCase
 {
-    public function test_if_is_a_new_member_join_update_model_method_returns_true(): void
-    {
-        $data = $this->getNewMemberJoinUpdateModelData();
-        $model = (new TelegramRequestModelBuilder($data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->blockNewVisitor());
+    protected array $data;
+    protected ChatRulesService $rulesService;
+    protected $requestModel;
 
-        $result = (new TelegramRequestModelBuilder($data))->create();
-        $this->assertInstanceOf(NewMemberJoinUpdateModel::class, $result);
-        sleep(5);
+    protected Chat $chat;
+
+    protected TelegramBotService $botService;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        (new SimpleSeeder)->run();
+        $this->chat = Chat::first();
+        $this->fakeRestrictMemberSucceedResponse();
+    }
+
+    public function test_new_member_join_update_model_method_returns_true(): void
+    {
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $this->prepareDependencies();
+        $this->assertTrue($this->rulesService->blockNewVisitor());
     }
 
     /**
@@ -30,49 +49,36 @@ class BlockNewVisitorTest extends TestCase
      */
     public function testBlockingNewVisitorWithInvalidModelReturnsFalse(): void
     {
-        $messageModelData = $this->getMessageModelData();
-        $messageModel = (new TelegramRequestModelBuilder($messageModelData))->create();
-        $chatRulesService = new ChatRulesService($messageModel);
-
-        $this->assertFalse($chatRulesService->blockNewVisitor());
+        $this->data = $this->getMessageModelData();
+        $this->prepareDependencies();
+        $this->assertFalse($this->rulesService->blockNewVisitor());
     }
 
     /**
      *  Make sure that if request new member status "left" the model isn't a NewMemberJoinUpdateModel
+     *  or invited update model
      *  and BlockNewUser method returns false
      * @return void
      */
     public function testBlockingNewMemberWithNonMemberStatusReturnsFalse(): void
     {
-        $data = $this->getNewMemberJoinUpdateModelData();
-        $data['chat_member']['new_chat_member']['status'] = 'left';
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $this->prepareDependencies();
+        $this->data['chat_member']['new_chat_member']['status'] = 'left';
+        $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
 
-        $requestModel = new TelegramRequestModelBuilder($data);
-        $statusUpdateModel = $requestModel->create();
-
-        $this->assertInstanceOf(StatusUpdateModel::class, $statusUpdateModel);
-
-        $chatRulesService = new ChatRulesService($statusUpdateModel);
-        $this->assertFalse($chatRulesService->blockNewVisitor());
-        $this->assertFalse($statusUpdateModel instanceof NewMemberJoinUpdateModel);
+        $this->assertInstanceOf(StatusUpdateModel::class, $this->requestModel);
+        $this->rulesService = new ChatRulesService($this->requestModel);
+        $this->assertFalse($this->rulesService->blockNewVisitor());
+        $this->assertFalse($this->requestModel instanceof NewMemberJoinUpdateModel);
     }
-
-    //TODO
-    // public function test_a_few_new_users_invited_blocked_everyone(): void
-    // {
-    //     $message = $this->getInvitedUserUpdateModel();
-    //     $service = new ChatRulesService($message);
-    //     $this->assertTrue($service->blockNewVisitor());
-    // }
 
 
     public function testBlockingNewInvitedUserReturnsTrue(): void
     {
-        $data = $this->getInvitedUserUpdateModelData();
-        $model = (new TelegramRequestModelBuilder($data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->blockNewVisitor());
-        sleep(5);
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $this->prepareDependencies();
+        $this->assertTrue($this->rulesService->blockNewVisitor());
     }
 
     /**
@@ -82,19 +88,15 @@ class BlockNewVisitorTest extends TestCase
      */
     public function testIfUserUnrestrictedByAdminModelTypeIsNotInvitedUserModelAndReturnsFalse(): void
     {
-        $data = $this->getInvitedUserUpdateModelData();
-        $model = (new TelegramRequestModelBuilder($data))->create();
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $this->data['chat_member']['from']['id'] = $this->getAdminId();
+        $this->data['chat_member']['old_chat_member']['status'] = 'restricted';
+        $this->data['chat_member']['new_chat_member']['status'] = 'member';
+        $this->prepareDependencies();
 
-        $data['chat_member']['from']['id'] = $this->getAdminId();
-        $data['chat_member']['old_chat_member']['status'] = 'restricted';
-        $data['chat_member']['new_chat_member']['status'] = 'member';
-
-        $message = (new TelegramRequestModelBuilder($data))->create();
-        $service = new ChatRulesService($message);
-
-        $this->assertFalse($service->blockNewVisitor());
-        $this->assertFalse($message instanceof InvitedUserUpdateModel);
-        $this->assertInstanceOf(StatusUpdateModel::class, $message);
+        $this->assertFalse($this->rulesService->blockNewVisitor());
+        $this->assertFalse($this->requestModel instanceof InvitedUserUpdateModel);
+        $this->assertInstanceOf(StatusUpdateModel::class, $this->requestModel);
     }
 
     /**
@@ -106,24 +108,37 @@ class BlockNewVisitorTest extends TestCase
      */
     public function testIfAdminRestrictsOrKicksUserRequestModelIsStatusUpdateModel(): void
     {
-        $messageData = $this->getInvitedUserUpdateModelData();
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $this->data["chat_member"]["from"]["id"] = $this->getAdminId();
+        $this->data["chat_member"]["old_chat_member"]["status"] = "member";
+        $this->prepareDependencies();
 
-        $messageData["chat_member"]["from"]["id"] = $this->getAdminId();
-        $messageData["chat_member"]["old_chat_member"]["status"] = "member";
-
-        $this->assertAdminRestrictsOrKicksUserAndReturnsStatusUpdateModel($messageData, "restricted");
-        $this->assertAdminRestrictsOrKicksUserAndReturnsStatusUpdateModel($messageData, "kicked");
+        $this->assertAdminRestrictsOrKicksUserAndReturnsStatusUpdateModel($this->data, "restricted");
+        $this->assertAdminRestrictsOrKicksUserAndReturnsStatusUpdateModel($this->data, "kicked");
     }
 
     private function assertAdminRestrictsOrKicksUserAndReturnsStatusUpdateModel(array $messageData, string $status): void
     {
-        $messageData["chat_member"]["new_chat_member"]["status"] = $status;
+        $this->data["chat_member"]["new_chat_member"]["status"] = $status;
 
-        $message = (new TelegramRequestModelBuilder($messageData))->create();
-        $service = new ChatRulesService($message);
+        $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+        $service = new ChatRulesService($this->requestModel);
         $this->assertFalse($service->blockNewVisitor());
-        $this->assertFalse($message instanceof InvitedUserUpdateModel);
-        $this->assertFalse($message instanceof NewMemberJoinUpdateModel);
-        $this->assertInstanceOf(StatusUpdateModel::class, $message);
+        $this->assertFalse($this->requestModel instanceof InvitedUserUpdateModel);
+        $this->assertFalse($this->requestModel instanceof NewMemberJoinUpdateModel);
+        $this->assertInstanceOf(StatusUpdateModel::class, $this->requestModel);
     }
+
+    /**
+     * @property mixed $messageType : invited, joined
+     */
+    private function prepareDependencies()
+    {
+        $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+        $this->botService = new TelegramBotService($this->requestModel);
+        $this->botService->setChat($this->chat->chat_id);
+        app()->singleton("botService", fn() => $this->botService);
+        $this->rulesService = new ChatRulesService($this->requestModel);
+    }
+
 }

@@ -24,6 +24,7 @@ class FailedRequestJob implements ShouldQueue
      */
     public function __construct(protected array $data)
     {
+        //
     }
 
     /**

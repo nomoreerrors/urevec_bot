@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Exceptions\UnexpectedRequestException;
 use App\Exceptions\EnvironmentVariablesException;
-use App\Exceptions\UnknownChatException;
 use App\Exceptions\UnknownIpAddressException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

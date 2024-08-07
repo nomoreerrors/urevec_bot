@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Classes\CommandChatSelector;
 use App\Classes\FilterSettingsCommand;
+use App\Enums\ResNewUsersCmd;
 use App\Models\Chat;
 use App\Classes\ModerationSettings;
 use App\Classes\ReplyInterface;
@@ -44,11 +45,13 @@ class PrivateChatCommandService extends BotCommandService
     {
         $this->chatSelectionHandler();
 
-        if (str_starts_with($this->command, "/restrict_")) {
+        if (ResNewUsersCmd::exists($this->command)) {
             new RestrictUserCommand($this->command);
             return $this;
         }
 
+
+        //TODO заменить фильтр на русское словo
         if (str_starts_with($this->command, "/filter_")) {
             new FilterSettingsCommand($this->command);
             return $this;
@@ -150,13 +153,6 @@ class PrivateChatCommandService extends BotCommandService
     {
         if ($this->admin->chats->count() <= 1) {
             $this->botService->setChat($this->admin->chats->first()->chatId);
-            return $this;
-        }
-
-        if (
-            !empty($this->botService->getChat()) &&
-            !$this->checkIfIsSelectChatCommand()
-        ) {
             return $this;
         }
 
