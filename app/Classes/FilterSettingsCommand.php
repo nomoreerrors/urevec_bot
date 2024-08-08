@@ -5,12 +5,17 @@ namespace App\Classes;
 use App\Models\Chat;
 use App\Services\TelegramBotService;
 
-class FilterSettingsCommand implements ReplyInterface
+class FilterSettingsCommand extends BaseCommand
 {
-    private TelegramBotService $botService;
     public function __construct(private string $command)
     {
-        $this->botService = app("botService");
+        parent::__construct($this->command);
+    }
+
+    protected function handle(): static
+    {
+        //
+        return $this;
     }
     public function send(): void
     {

@@ -2,19 +2,14 @@
 
 namespace App\Enums;
 
+use App\Enums\Traits\Exists;
+
 /**
  * Users restrictions commands
  */
 enum ResNewUsersCmd: string
 {
-    // ENGLISH
-    // case SETTINGS = "/new_users_restrictions_settings";
-    // case ENABLE_SEND_MEDIA = "/new_users_restrictions_send_media_enabled";
-    // case DISABLE_SEND_MEDIA = "/new_users_restrictions_send_media_disabled";
-    // case ENABLE_SEND_MESSAGES = "/new_users_restrictions_send_messages_enabled";
-    // case DISABLE_SEND_MESSAGES = "/new_users_restrictions_send_messages_disabled";
-    // case DISABLE_ALL_RESTRICTIONS = "/new_users_restrictions_disable_all";
-    // case ENABLE_ALL_RESTRICTIONS = "/new_users_restrictions_enable_all";
+    use Exists;
 
     case SETTINGS = "Настройки ограничений для новых пользователей";
     case ENABLE_SEND_MEDIA = "Разрешить медиа-сообщения для новых пользователей";
@@ -46,15 +41,15 @@ enum ResNewUsersCmd: string
             self::SET_TIME_MONTH => 'Установлено ограничение новых пользователей на месяц',
         };
     }
-
-    /**
-     * Check if value exists in enum
-     */
-    public static function exists(string $value): bool
-    {
-        $values = array_column(self::cases(), 'value');
-        return in_array($value, $values);
-    }
-
 }
 
+
+
+// ENGLISH
+// case SETTINGS = "/new_users_restrictions_settings";
+// case ENABLE_SEND_MEDIA = "/new_users_restrictions_send_media_enabled";
+// case DISABLE_SEND_MEDIA = "/new_users_restrictions_send_media_disabled";
+// case ENABLE_SEND_MESSAGES = "/new_users_restrictions_send_messages_enabled";
+// case DISABLE_SEND_MESSAGES = "/new_users_restrictions_send_messages_disabled";
+// case DISABLE_ALL_RESTRICTIONS = "/new_users_restrictions_disable_all";
+// case ENABLE_ALL_RESTRICTIONS = "/new_users_restrictions_enable_all";

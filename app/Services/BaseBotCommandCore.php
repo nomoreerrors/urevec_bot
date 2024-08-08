@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Classes\Buttons;
-use App\Classes\ReplyInterface;
+use App\Classes\BaseCommand;
 use Illuminate\Container\Container;
 use Illuminate\Http\Response;
 use App\Models\Chat;
 use App\Models\MessageModels\TextMessageModel;
 
-abstract class BotCommandService
+abstract class BaseBotCommandCore
 {
     protected $command;
 
@@ -18,8 +18,6 @@ abstract class BotCommandService
     protected $botService;
 
     protected $selectedChat = null;
-
-    protected ReplyInterface $settings;
 
     protected TextMessageModel $requestModel;
 

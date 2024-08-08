@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\Chat;
 use App\Models\Admin;
 use App\Services\TelegramBotService;
-use App\Services\PrivateChatCommandService;
+use App\Services\PrivateChatCommandCore;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -46,7 +46,7 @@ class PrivateChatCommandServiceTest extends TestCase
     {
         $this->prepareDependencies();
         $chatTitle = Chat::first()->chat_title;
-        $commandsService = new PrivateChatCommandService();
+        $commandsService = new PrivateChatCommandCore();
         $titles = $commandsService->getGroupsTitles();
         $this->assertContains($chatTitle, $titles);
     }
@@ -57,7 +57,7 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->admin->delete();
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::USER_NOT_ALLOWED);
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
     }
 
     /**
@@ -76,7 +76,7 @@ class PrivateChatCommandServiceTest extends TestCase
         // Make request model and bot service to be used in PrivateChatCommandService
         $this->prepareDependencies();
 
-        new PrivateChatCommandService();
+        new PrivateChatCommandCore();
         $this->chat = $this->botService->getChat();
         $this->assertInstanceOf(Chat::class, $this->chat);
         $this->assertEquals($this->chat->chat_title, $title);
@@ -97,7 +97,7 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->prepareDependencies();
         // Fake that the chat was previously selected and it's id has been saved in cache
         Cache::put("last_selected_chat_" . $this->model->getChatId(), $this->chat->chat_id);
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
 
 
         $canSendMessages = $this->chat->newUserRestrictions->can_send_messages;
@@ -106,7 +106,7 @@ class PrivateChatCommandServiceTest extends TestCase
 
 
         $canSendMessages = $canSendMessages === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
-        $canSendMedia = $canSendMedia === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
+        $canSendMedia = $canSendMedia === 1 ? ResNewUsersCmd::DISABLE_SEND_MEDIA->value : ResNewUsersCmd::ENABLE_SEND_MEDIA->value;
         $restrictNewUsers = $restrictNewUsers === 1 ? ResNewUsersCmd::DISABLE_ALL->value : ResNewUsersCmd::ENABLE_ALL->value;
 
         $sendMessageLog = $this->getTestLogFile();
@@ -126,7 +126,7 @@ class PrivateChatCommandServiceTest extends TestCase
         //Fake that chat was previously selected and it's id has been saved in cache
         Cache::put("last_selected_chat_" . $this->model->getChatId(), $this->chat->chat_id);
 
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
         $sendMessageLog = $this->getTestLogFile();
 
         $this->assertStringContainsString(ResNewUsersCmd::SET_TIME_DAY->value, $sendMessageLog);
@@ -148,7 +148,7 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->assertEquals(0, $this->chat->newUserRestrictions->restrict_new_users);
 
 
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
         $sendMessageLog = $this->getTestLogFile();
 
         $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->restrict_new_users);
@@ -170,8 +170,9 @@ class PrivateChatCommandServiceTest extends TestCase
 
         //Setting everything to 0 before test
         $this->setAllRestrictionsDisabled($this->chat);
+        $this->chat->newUserRestrictions()->update(['restriction_time' => ResTime::DAY->value]);
 
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
         $sendMessageLog = $this->getTestLogFile();
 
         $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->restrict_new_users);
@@ -197,7 +198,7 @@ class PrivateChatCommandServiceTest extends TestCase
         //Setting everything to 0 before test
         $this->setAllRestrictionsDisabled($this->chat);
 
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
         $sendMessageLog = $this->getTestLogFile();
 
         $this->assertEquals(0, $this->chat->newUserRestrictions()->first()->restrict_new_users);

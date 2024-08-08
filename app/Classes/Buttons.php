@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Exceptions\BaseTelegramBotException;
+use App\Services\CONSTANTS;
 use App\Enums\ResNewUsersCmd;
 
 class Buttons
@@ -17,7 +18,7 @@ class Buttons
         $i = 0;
         foreach ($titles as $title) {
             $replyMarkup->addRow()
-                ->addButton("/" . $title);
+                ->addButton($title);
             if (($i + 1) % 2 == 0) {
                 $replyMarkup->addRow();
             }
@@ -70,6 +71,18 @@ class Buttons
             ->addButton(ResNewUsersCmd::SET_TIME_WEEK->value)
             ->addRow()
             ->addButton(ResNewUsersCmd::SET_TIME_MONTH->value)
+            ->get();
+
+        return $keyBoard;
+    }
+
+    public function getModerationSettingsButtons(): array
+    {
+        $keyBoard = (new ReplyKeyboardMarkup())
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SETTINGS->value)
+            ->addRow()
+            ->addButton(CONSTANTS::FILTER_SETTINGS_CMD) //TODO change to enum
             ->get();
 
         return $keyBoard;

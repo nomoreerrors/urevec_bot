@@ -9,8 +9,8 @@ use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
 use App\Models\TelegramRequestModelBuilder;
 use App\Models\MessageModels\TextMessageModel;
-use App\Services\BotCommandService;
-use App\Services\PrivateChatCommandService;
+use App\Services\BaseBotCommandCore;
+use App\Services\PrivateChatCommandCore;
 use App\Services\TelegramMiddlewareService;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
@@ -98,6 +98,6 @@ class TelegramBotController extends Controller
             return;
         }
 
-        (new PrivateChatCommandService());
+        (new PrivateChatCommandCore());
     }
 }

@@ -4,23 +4,17 @@ namespace App\Classes;
 
 use App\Enums\ResNewUsersCmd;
 use App\Enums\ResTime;
-use App\Services\CONSTANTS;
 use App\Models\Chat;
 use App\Services\TelegramBotService;
 
-class RestrictNewUsersCommandService implements ReplyInterface
+class RestrictNewUsersCommand extends BaseCommand
 {
-    private TelegramBotService $botService;
-    private Chat $chat;
-
     public function __construct(private string $command)
     {
-        $this->botService = app("botService");
-        $this->chat = $this->botService->getChat();
-        $this->handle();        //
+        parent::__construct($command);
     }
 
-    private function handle()
+    protected function handle(): static
     {
         switch ($this->command) {
             case ResNewUsersCmd::SETTINGS->value:
@@ -49,6 +43,7 @@ class RestrictNewUsersCommandService implements ReplyInterface
             // ResNewUsersCmd::ENABLE_ALL_RESTRICTIONS->value,
             // ResNewUsersCmd::DISABLE_ALL_RESTRICTIONS->value => fn() => $this->toggleAllRestrictions()
         }
+        return $this;
     }
 
     public function send(): void
@@ -89,17 +84,17 @@ class RestrictNewUsersCommandService implements ReplyInterface
         return $this;
     }
 
-    protected function setNewUsersRestrictions(bool $canSendMessages = false, $canSendMedia = false)
-    {
-        $restrict = $canSendMessages || $canSendMedia ? 1 : 0;
+    // protected function setNewUsersRestrictions(bool $canSendMessages = false, $canSendMedia = false)
+    // {
+    //     $restrict = $canSendMessages || $canSendMedia ? 1 : 0;
 
-        $this->botService->getChat()->newUsersRestrictions()->update([
-            'restrict_new_users' => $restrict,
-            'can_send_messages' => $canSendMessages,
-            'can_send_media' => $canSendMedia
-        ]);
-        return $this;
-    }
+    //     $this->botService->getChat()->newUsersRestrictions()->update([
+    //         'restrict_new_users' => $restrict,
+    //         'can_send_messages' => $canSendMessages,
+    //         'can_send_media' => $canSendMedia
+    //     ]);
+    //     return $this;
+    // }
 
     protected function getRestrictionTime(): ResTime
     {

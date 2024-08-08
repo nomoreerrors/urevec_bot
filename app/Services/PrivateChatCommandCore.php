@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Classes\CommandChatSelector;
 use App\Classes\FilterSettingsCommand;
+use App\Classes\MainMenuCommand;
+use App\Enums\MainMenu;
 use App\Enums\ResNewUsersCmd;
 use App\Models\Chat;
 use App\Classes\ModerationSettings;
-use App\Classes\ReplyInterface;
+use App\Classes\BaseCommand;
 use App\Classes\ReplyKeyboardMarkup;
-use App\Classes\RestrictNewUsersCommandService;
+use App\Classes\RestrictNewUsersCommand;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
@@ -21,20 +23,20 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Enums\COMMAND;
 
-class PrivateChatCommandService extends BotCommandService
+class PrivateChatCommandCore extends BaseBotCommandCore
 {
     private $admin;
 
     private array $groupsTitles = [];
 
-    protected TextMessageModel $requestModel;
+    // protected TextMessageModel $requestModel;
 
     public function __construct()
     {
         parent::__construct();
-        $this->requestModel = app("requestModel");
+        //TODO  убрать, если все работает:
+        //  $this->requestModel = app("requestModel"); 
         $this->admin = Admin::where('admin_id', $this->requestModel->getFromId())->first();
-        $this->settings = new ModerationSettings();
         $this->checkUserAccess()
             ->setGroupsTitles()
             ->handle();
@@ -44,9 +46,18 @@ class PrivateChatCommandService extends BotCommandService
     protected function handle(): static
     {
         $this->chatSelectionHandler();
+        if (empty($this->botService->getChat()))
+            return $this;
+
+
+        if (MainMenu::exists($this->command)) {
+            new MainMenuCommand($this->command);
+            return $this;
+        }
+
 
         if (ResNewUsersCmd::exists($this->command)) {
-            new RestrictNewUsersCommandService($this->command);
+            new RestrictNewUsersCommand($this->command);
             return $this;
         }
 
@@ -57,18 +68,11 @@ class PrivateChatCommandService extends BotCommandService
             return $this;
         }
 
-        switch ($this->command) {
-            case CONSTANTS::START_CMD:
-                $this->startHandler();
-            case CONSTANTS::MODERATION_SETTINGS_CMD:
-                $this->moderationSettingsHandler();
-            default: {
-                app("botService")->sendMessage("Неизвестная команда");
-                log::info("Неизвестная команда в приватном чате" . $this->command);
-                response(CONSTANTS::UNKNOWN_CMD, 200);
-                return $this;
-            }
-        }
+
+        app("botService")->sendMessage("Неизвестная команда");
+        log::info("Неизвестная команда в приватном чате" . $this->command);
+        response(CONSTANTS::UNKNOWN_CMD, 200);
+        return $this;
     }
 
     /**
@@ -90,11 +94,10 @@ class PrivateChatCommandService extends BotCommandService
         return;
     }
 
-    private function startHandler(): Response
-    {
-        $this->settings->send();
-        return response();
-    }
+    // private function startHandler(): Response
+    // {
+    //     return response();
+    // }
 
     protected function checkUserAccess(): static
     {
@@ -106,18 +109,6 @@ class PrivateChatCommandService extends BotCommandService
             throw new UnknownChatException($error, __METHOD__);
         }
         return $this;
-    }
-
-    /**
-     * Send the list of available chats to user as buttons
-     * @return void
-     */
-    protected function moderationSettingsHandler(): void
-    {
-        if (!empty($this->botService->getChat())) {
-            $this->settings->send();
-        } else
-            throw new BaseTelegramBotException(CONSTANTS::SELECT_CHAT_FIRST, __METHOD__);
     }
 
     protected function setGroupsTitles(): static
@@ -149,11 +140,11 @@ class PrivateChatCommandService extends BotCommandService
         return $chatId;
     }
 
-    private function chatSelectionHandler(): static
+    private function chatSelectionHandler()
     {
         if ($this->admin->chats->count() <= 1) {
             $this->botService->setChat($this->admin->chats->first()->chatId);
-            return $this;
+            return;
         }
 
         if ($this->checkIfIsSelectChatCommand()) {
@@ -162,17 +153,17 @@ class PrivateChatCommandService extends BotCommandService
             $lastCommand = $this->getLastCommandFromCache();
             if ($lastCommand) {
                 $this->command = $lastCommand;
+                return;
             }
         }
 
         $chatId = $this->getLastSelectedChatIdFromCache();
         if (!empty($chatId)) {
             $this->botService->setChat($chatId);
-            return $this;
+            return;
         } else {
             $this->sendSelectChatButtons();
             $this->rememberLastCommand();
-            return $this;
         }
     }
 
@@ -205,6 +196,4 @@ class PrivateChatCommandService extends BotCommandService
     {
         return Cache::get("last_command_" . $this->requestModel->getChatId());
     }
-
-
 }

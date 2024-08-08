@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Middleware;
 
+use App\Enums\BanMessages;
+use App\Enums\ResNewUsersCmd;
 use App\Enums\ResTime;
 use App\Models\StatusUpdates\StatusUpdateModel;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;
@@ -116,27 +118,68 @@ class ChatRulesMiddlewareTest extends TestCase
     {
         $this->data = $this->getInvitedUserUpdateModelData();
         $this->prepareDependencies("chat_member");
-
-        $response = $this->postJson("api/webhook", $this->data)->assertOk();
+        $this->setAllRestrictionsEnabled($this->chat);
+        $this->postJson("api/webhook", $this->data)->assertOk();
 
         $testLogFile = $this->getTestLogFile();
-        $this->assertStringContainsString(CONSTANTS::INVITED_USER_BLOCKED, $testLogFile);
+        $this->assertStringContainsString(BanMessages::INVITED_USER_BLOCKED->value, $testLogFile);
         $this->clearTestLogFile();
     }
 
     public function test_new_joined_user_restricted_automatically_and_the_restriction_time_is_getting_from_database(): void
     {
         $this->data = $this->getNewMemberJoinUpdateModelData();
+        $this->setAllRestrictionsEnabled($this->chat);
         $restrictionTime = ResTime::from($this->chat->newUserRestrictions->restriction_time);
         $this->prepareDependencies("chat_member");
 
-        $response = $this->postJson("api/webhook", $this->data)->assertOk();
+        $this->postJson("api/webhook", $this->data)->assertOk();
         $testLogFile = $this->getTestLogFile();
 
-        $this->assertStringContainsString(CONSTANTS::NEW_MEMBER_RESTRICTED, $testLogFile);
+        $this->assertStringContainsString(BanMessages::NEW_MEMBER_RESTRICTED->value, $testLogFile);
         $this->assertStringContainsString($restrictionTime->getHumanRedable(), $testLogFile);
         $this->clearTestLogFile();
     }
+
+
+    public function testRestrictionsDisabledNewJoinedUserNotBlocked()
+    {
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $userId = $this->data["chat_member"]["from"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringNotContainsString(BanMessages::NEW_MEMBER_RESTRICTED->withId($userId), $sendMessageLog);
+    }
+
+
+    public function testRestrictionsDisabledInvitedUserNotBlocked()
+    {
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $invitedUserId = $this->data["chat_member"]["new_chat_member"]["user"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+        (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringNotContainsString(BanMessages::INVITED_USER_BLOCKED->withId($invitedUserId), $sendMessageLog);
+    }
+
 
     /**
      * Types : "message", "chat_member"
@@ -152,5 +195,55 @@ class ChatRulesMiddlewareTest extends TestCase
         app()->singleton("botService", fn() => $this->botService);
         $this->rulesService = new ChatRulesService($this->requestModel);
         $this->clearTestLogFile();
+    }
+
+
+    public function testUserInvitedCheckRestrictionTimeInDatabaseAndBlockIfEnabled()
+    {
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $invitedUserId = $this->data["chat_member"]["new_chat_member"]["user"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+        (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 1,
+            'restriction_time' => ResTime::DAY->value,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringContainsString(BanMessages::INVITED_USER_BLOCKED->withId($invitedUserId), $sendMessageLog);
+        $this->assertStringContainsString(ResTime::DAY->getHumanRedable(), $sendMessageLog);
+    }
+
+
+    public function testNewUserJoinCheckRestrictionTimeInDatabaseAndBlockIfEnabled()
+    {
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $userId = $this->data["chat_member"]["from"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+
+
+        (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 1,
+            'restriction_time' => ResTime::WEEK->value,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringContainsString(BanMessages::NEW_MEMBER_RESTRICTED->withId($userId), $sendMessageLog);
+        $this->assertStringContainsString(ResTime::WEEK->getHumanRedable(), $sendMessageLog);
     }
 }

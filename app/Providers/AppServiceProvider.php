@@ -3,10 +3,10 @@
 namespace App\Providers;
 
 use App\Classes\ModerationSettings;
-use App\Classes\ReplyInterface;
+use App\Classes\BaseCommand;
 use App\Models\TelegramRequestModelBuilder;
-use App\Services\BotCommandService;
-use App\Services\PrivateChatCommandService;
+use App\Services\BaseBotCommandCore;
+use App\Services\PrivateChatCommandCore;
 use App\Services\TelegramMiddlewareService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\HttpClientException;
