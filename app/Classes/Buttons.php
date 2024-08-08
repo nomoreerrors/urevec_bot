@@ -44,8 +44,8 @@ class Buttons
             ResNewUsersCmd::ENABLE_SEND_MEDIA->value;
 
         $restrictionsStatus = $settings ?
-            ResNewUsersCmd::DISABLE_ALL_RESTRICTIONS->value :
-            ResNewUsersCmd::ENABLE_ALL_RESTRICTIONS->value;
+            ResNewUsersCmd::DISABLE_ALL->value :
+            ResNewUsersCmd::ENABLE_ALL->value;
 
         $keyBoard = (new ReplyKeyboardMarkup())
             ->addRow()
@@ -54,6 +54,22 @@ class Buttons
             ->addButton($media)
             ->addRow()
             ->addButton($restrictionsStatus)
+            ->get();
+
+        return $keyBoard;
+    }
+
+    public function getRestrictionsTimeButtons(): array
+    {
+        $keyBoard = (new ReplyKeyboardMarkup())
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SET_TIME_TWO_HOURS->value)
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SET_TIME_DAY->value)
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SET_TIME_WEEK->value)
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SET_TIME_MONTH->value)
             ->get();
 
         return $keyBoard;

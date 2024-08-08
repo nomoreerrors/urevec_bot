@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BanMessages;
 use App\Models\StatusUpdateModel;
+use App\Enums\ResTime;
 use App\Services\ChatRulesService;
 use App\Services\TelegramBotService;
 use App\Models\Admin;
@@ -22,6 +24,7 @@ class ChatRulesServiceTest extends TestCase
 
     private Chat $chat;
 
+    private ChatRulesService $ruleService;
     private Admin $admin;
     protected function setUp(): void
     {
@@ -29,11 +32,14 @@ class ChatRulesServiceTest extends TestCase
         $this->fakeSendMessageSucceedResponse();
         $this->fakeDeleteMessageSucceedResponse();
         $this->fakeRestrictMemberSucceedResponse();
+
         (new SimpleSeeder())->run(1, 5);
+
         $this->chat = Chat::first();
         $this->admin = $this->chat->admins->first();
         $this->data = $this->getMessageModelData();
         $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
+        $this->clearTestLogFile();
     }
 
     /**
@@ -59,27 +65,23 @@ class ChatRulesServiceTest extends TestCase
     {
         //Testcase where text not contains any blacklisted word returns false
         $this->data = $this->getTextMessageModelData();
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertFalse($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertFalse($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains blacklisted word from badWords.json returns true
         $this->data["message"]["text"] = "администратор";
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains blacklisted phrases from badPhrases.json returns true
         $this->data["message"]["text"] = "сдается в аренду";
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         //Testcase where text contains Chinese or Arabic etc. letters  returns true
         $this->data["message"]["text"] = "Arabic: ب تاء , Chinese: 我你 , Japanese: すせ";
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
     }
 
     /**
@@ -90,27 +92,30 @@ class ChatRulesServiceTest extends TestCase
     {
         $this->data = $this->getMultiMediaModelData();
         // Testcase where media model does not contain any blacklisted word returns false
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertFalse($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertFalse($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains blacklisted word from badWords.json returns true
         $this->data["message"]["caption"] = "администратор";
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains blacklisted phrases from badPhrases.json returns true
         $this->data["message"]["caption"] = "Продаю свойский чеснок,сорт Грибоаский,можно на еду,на хранение и на посадку.Цена за 1 кг 300 руб, от трех кг по 250р.Все вопросы в личку. ";
-        $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
 
         // Testcase where media model contains Chinese or Arabic etc. letters returns true
         $this->data["message"]["caption"] = "Arabic: ب تاء , Chinese: 我你 , Japanese: すせ";
+        $this->prepareBlackWordsBanUserTestDeps();
+        $this->assertTrue($this->ruleService->ifMessageContainsBlackListWordsBanUser());
+    }
+
+    public function prepareBlackWordsBanUserTestDeps()
+    {
         $model = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($model);
-        $this->assertTrue($service->ifMessageContainsBlackListWordsBanUser());
+        app()->instance("botService", new TelegramBotService($model));
+        $this->ruleService = new ChatRulesService($model);
     }
 
     /**
@@ -125,8 +130,10 @@ class ChatRulesServiceTest extends TestCase
         $this->data["message"]["forward_origin"] = [];
 
         $forwardMessageModel = (new TelegramRequestModelBuilder($this->data))->create();
-        $service = new ChatRulesService($forwardMessageModel);
-        $this->assertFalse($service->blockUserIfMessageIsForward());
+        //dependency of chatRulesService
+        app()->instance("botService", new TelegramBotService($forwardMessageModel));
+        $ruleService = new ChatRulesService($forwardMessageModel);
+        $this->assertFalse($ruleService->blockUserIfMessageIsForward());
     }
 
 
@@ -134,13 +141,15 @@ class ChatRulesServiceTest extends TestCase
     {
         $this->data = $this->getNewMemberJoinUpdateModelData();
         $chatId = $this->chat->chat_id;
+        $userId = $this->data["chat_member"]["from"]["id"];
         $this->data["chat_member"]["chat"]["id"] = $chatId;
 
-        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+
+        (new TelegramRequestModelBuilder($this->data))->create();
 
         $this->chat->newUserRestrictions()->update([
             'restrict_new_users' => 1,
-            'restriction_time' => CONSTANTS::RESTIME_WEEK,
+            'restriction_time' => ResTime::WEEK->value,
             'can_send_messages' => 0,
             'can_send_media' => 0
         ]);
@@ -149,9 +158,68 @@ class ChatRulesServiceTest extends TestCase
 
         $sendMessageLog = $this->getTestLogFile();
 
-        $message = CONSTANTS::MEMBER_BLOCKED . " " . $requestModel->getFromId() .
-            " " . "BLOCK TIME: " . "ONE WEEK";
-        $this->assertStringContainsString($message, $sendMessageLog);
-        $this->clearTestLogFile();
+        $this->assertStringContainsString(BanMessages::NEW_MEMBER_RESTRICTED->withId($userId), $sendMessageLog);
+        $this->assertStringContainsString(ResTime::WEEK->getHumanRedable(), $sendMessageLog);
+    }
+
+    public function testUserInvitedCheckRestrictionTimeInDatabaseAndBlockIfEnabled()
+    {
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $invitedUserId = $this->data["chat_member"]["new_chat_member"]["user"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+        (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 1,
+            'restriction_time' => ResTime::DAY->value,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringContainsString(BanMessages::INVITED_USER_BLOCKED->withId($invitedUserId), $sendMessageLog);
+        $this->assertStringContainsString(ResTime::DAY->getHumanRedable(), $sendMessageLog);
+    }
+
+
+    public function testRestrictionsDisabledInvitedUserNotBlocked()
+    {
+        $this->data = $this->getInvitedUserUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $invitedUserId = $this->data["chat_member"]["new_chat_member"]["user"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+        (new TelegramRequestModelBuilder($this->data))->create();
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringNotContainsString(BanMessages::INVITED_USER_BLOCKED->withId($invitedUserId), $sendMessageLog);
+    }
+
+    public function testRestrictionsDisabledNewJoinedUserNotBlocked()
+    {
+        $this->data = $this->getNewMemberJoinUpdateModelData();
+        $chatId = $this->chat->chat_id;
+        $userId = $this->data["chat_member"]["from"]["id"];
+        $this->data["chat_member"]["chat"]["id"] = $chatId;
+
+        $this->chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+        ]);
+
+        $this->post('api/webhook', $this->data);
+
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertStringNotContainsString(BanMessages::NEW_MEMBER_RESTRICTED->withId($userId), $sendMessageLog);
     }
 }

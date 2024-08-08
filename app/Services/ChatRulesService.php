@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BanMessages;
 use Illuminate\Support\Facades\Cache;
 use App\Enums\Time;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,6 @@ class ChatRulesService
     public function __construct(private TelegramRequestModelBuilder $model)
     {
         $this->botService = app("botService");
-        // $this->setRestrictionTime();
     }
 
     /**
@@ -42,13 +42,16 @@ class ChatRulesService
             return false;
         }
 
+        if ($this->botService->getChat()->newUserRestrictions->restrict_new_users == 0) {
+            return false;
+        }
 
         if ($this->model instanceof NewMemberJoinUpdateModel) {
 
             $result = $this->botService->restrictChatMember();
 
             if ($result) {
-                log::info(CONSTANTS::NEW_MEMBER_RESTRICTED . "user_id: " . $this->model->getFromId());
+                log::info(BanMessages::NEW_MEMBER_RESTRICTED->withId($this->model->getFromId()));
                 return true;
             }
         }
@@ -63,7 +66,7 @@ class ChatRulesService
 
                     $result = $this->botService->restrictChatMember(id: $user_id);
                     if ($result) {
-                        log::info(CONSTANTS::INVITED_USER_BLOCKED . "USER_ID: " . $user_id);
+                        log::info(BanMessages::INVITED_USER_BLOCKED->withId($user_id));
                     }
                 }
                 return true;

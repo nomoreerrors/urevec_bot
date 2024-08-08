@@ -382,4 +382,30 @@ abstract class TestCase extends BaseTestCase
         file_put_contents(storage_path("logs/testing.log"), "");
     }
 
+    public function setAllRestrictionsToFalse(Chat $chat)
+    {
+        $chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+            'restriction_time' => 0,
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+    }
+
+    public function setAllRestrictionsDisabled(Chat $chat)
+    {
+        $chat->newUserRestrictions()->update([
+            'restrict_new_users' => 0,
+        ]);
+    }
+
+    public function setAllRestrictionsEnabled(Chat $chat)
+    {
+        $chat->newUserRestrictions()->update([
+            'restrict_new_users' => 1,
+            'restriction_time' => 2, // Last restriction time is always stored in DB even if restrictions are disabled
+            'can_send_messages' => 0,
+            'can_send_media' => 0
+        ]);
+    }
 }

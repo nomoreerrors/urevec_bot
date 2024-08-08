@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Http;
 use App\Services\CONSTANTS;
 use Tests\TestCase;
 
-class PrivateChatCommandServiceTest extends TestCase
+class RestrictNewUsersCommandServiceTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -41,82 +41,6 @@ class PrivateChatCommandServiceTest extends TestCase
         //Prepare fake admins ids so that ModelBuilder can get them instead of calling api
         $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
     }
-
-    public function testSetGroupTitles()
-    {
-        $this->prepareDependencies();
-        $chatTitle = Chat::first()->chat_title;
-        $commandsService = new PrivateChatCommandService();
-        $titles = $commandsService->getGroupsTitles();
-        $this->assertContains($chatTitle, $titles);
-    }
-
-    public function testAdminDoesNotExistsInDatabaseOrPropertyisNotSetThrowsException(): void
-    {
-        $this->prepareDependencies();
-        $this->admin->delete();
-        $this->expectException(BaseTelegramBotException::class);
-        $this->expectExceptionMessage(CONSTANTS::USER_NOT_ALLOWED);
-        (new PrivateChatCommandService());
-    }
-
-    /**
-     * Tescase where user selected one of his chats, chat is set and last  command gets from cache and executed
-     * @return void
-     */
-    public function testIfUserPressSelectChatButtonChatIsSetAndLastCommandGetsExecuted(): void
-    {
-        //Mock that user was entered some command previously and it was saved to use after user selected the chat
-        $lastCommand = "/moderation_settings";
-        Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $this->admin->admin_id, $lastCommand);
-        // Mock that user is pressed select chat button with one of the titles from his chats in database
-        $title = $this->admin->chats->first()->chat_title;
-        // Mock request with the title from one of the user's chats
-        $this->data["message"]["text"] = "/" . $title;
-        // Make request model and bot service to be used in PrivateChatCommandService
-        $this->prepareDependencies();
-
-        new PrivateChatCommandService();
-        $this->chat = $this->botService->getChat();
-        $this->assertInstanceOf(Chat::class, $this->chat);
-        $this->assertEquals($this->chat->chat_title, $title);
-
-        $sendMessageLog = $this->getTestLogFile();
-        // Assert that when the chat was set the message to user with a selected chat title has been sent
-        $this->assertStringContainsString("Selected chat: " . $title . "", $sendMessageLog);
-        // Assert that a previously saved command was executed and moderation settings buttons were sent
-        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_SETTINGS_CMD, $sendMessageLog);
-        $this->assertStringContainsString(CONSTANTS::FILTER_SETTINGS_CMD, $sendMessageLog);
-        $this->clearTestLogFile();
-    }
-
-
-    public function testSelectNewUsersRestrictionsReplyWithButtons()
-    {
-        $this->data["message"]["text"] = ResNewUsersCmd::SETTINGS->value;
-        $this->prepareDependencies();
-        // Fake that the chat was previously selected and it's id has been saved in cache
-        Cache::put("last_selected_chat_" . $this->model->getChatId(), $this->chat->chat_id);
-        (new PrivateChatCommandService());
-
-
-        $canSendMessages = $this->chat->newUserRestrictions->can_send_messages;
-        $canSendMedia = $this->chat->newUserRestrictions->can_send_media;
-        $restrictNewUsers = $this->chat->newUserRestrictions->restrict_new_users;
-
-
-        $canSendMessages = $canSendMessages === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
-        $canSendMedia = $canSendMedia === 1 ? ResNewUsersCmd::DISABLE_SEND_MESSAGES->value : ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
-        $restrictNewUsers = $restrictNewUsers === 1 ? ResNewUsersCmd::DISABLE_ALL->value : ResNewUsersCmd::ENABLE_ALL->value;
-
-        $sendMessageLog = $this->getTestLogFile();
-
-        $this->assertStringContainsString($canSendMessages, $sendMessageLog);
-        $this->assertStringContainsString($canSendMedia, $sendMessageLog);
-        $this->assertStringContainsString($restrictNewUsers, $sendMessageLog);
-        $this->clearTestLogFile();
-    }
-
 
     public function testSelectSetRestrictNewUsersTimeReplyWithButtons()
     {
@@ -167,8 +91,11 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->data["message"]["text"] = ResNewUsersCmd::ENABLE_ALL->value;
         $this->prepareDependencies();
         $this->botService->setChat($this->chat->chat_id);
+        // $previousCanSendMessagesStatus = $this->chat->newUserRestrictions->can_send_messages;
+        // $previousCanSendMediaStatus = $this->chat->newUserRestrictions->can_send_media;
+        $lastRestrictionTime = $this->chat->newUserRestrictions->restriction_time;
 
-        //Setting everything to 0 before test
+        //Setting only 'restrict_new_users' to 0 before test
         $this->setAllRestrictionsDisabled($this->chat);
 
         (new PrivateChatCommandService());
@@ -177,12 +104,11 @@ class PrivateChatCommandServiceTest extends TestCase
         $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->restrict_new_users);
         $this->assertEquals(0, $this->chat->newUserRestrictions()->first()->can_send_messages);
         $this->assertEquals(0, $this->chat->newUserRestrictions()->first()->can_send_media);
-        $this->assertEquals(ResTime::DAY->value, $this->chat->newUserRestrictions()->first()->restriction_time);
+        $this->assertEquals($lastRestrictionTime, $this->chat->newUserRestrictions()->first()->restriction_time);
         // Assert that the succeed reply message was sent
         $this->assertStringContainsString(ResNewUsersCmd::ENABLE_ALL->replyMessage(), $sendMessageLog);
         $this->clearTestLogFile();
     }
-
 
     /**
      * Test toggleAllRestricitons method
@@ -202,6 +128,49 @@ class PrivateChatCommandServiceTest extends TestCase
 
         $this->assertEquals(0, $this->chat->newUserRestrictions()->first()->restrict_new_users);
         $this->assertStringContainsString(ResNewUsersCmd::DISABLE_ALL->replyMessage(), $sendMessageLog);
+        $this->clearTestLogFile();
+    }
+
+
+
+    public function testEnableNewUsersCanSendMedia()
+    {
+        $this->data["message"]["text"] = ResNewUsersCmd::ENABLE_SEND_MEDIA->value;
+        $this->prepareDependencies();
+        $this->botService->setChat($this->chat->chat_id);
+
+        //Disable sending media for users before test
+        $this->chat->newUserRestrictions->update([
+            "can_send_media" => 0
+        ]);
+
+        (new PrivateChatCommandService());
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->can_send_media);
+        // Assert that the succeed reply message was sent
+        $this->assertStringContainsString(ResNewUsersCmd::ENABLE_SEND_MEDIA->replyMessage(), $sendMessageLog);
+        $this->clearTestLogFile();
+    }
+
+    public function testDisableNewUsersCanSendMedia()
+    {
+        $this->data["message"]["text"] = ResNewUsersCmd::DISABLE_SEND_MEDIA->value;
+        $this->prepareDependencies();
+        $this->botService->setChat($this->chat->chat_id);
+
+        $this->chat->newUserRestrictions->update([
+            "restrict_new_users" => 0, // Disable restrictions to make sure that it'll be enabled too
+            "can_send_media" => 1 // Enable sending media
+        ]);
+
+        (new PrivateChatCommandService());
+        $sendMessageLog = $this->getTestLogFile();
+
+        $this->assertEquals(1, $this->chat->newUserRestrictions()->first()->restrict_new_users);
+        $this->assertEquals(0, $this->chat->newUserRestrictions()->first()->can_send_media);
+        // Assert that the succeed reply message was sent
+        $this->assertStringContainsString(ResNewUsersCmd::DISABLE_SEND_MEDIA->replyMessage(), $sendMessageLog);
         $this->clearTestLogFile();
     }
 

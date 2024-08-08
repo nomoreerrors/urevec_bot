@@ -9,7 +9,7 @@ use App\Models\Chat;
 use App\Classes\ModerationSettings;
 use App\Classes\ReplyInterface;
 use App\Classes\ReplyKeyboardMarkup;
-use App\Classes\RestrictUserCommand;
+use App\Classes\RestrictNewUsersCommandService;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
@@ -46,7 +46,7 @@ class PrivateChatCommandService extends BotCommandService
         $this->chatSelectionHandler();
 
         if (ResNewUsersCmd::exists($this->command)) {
-            new RestrictUserCommand($this->command);
+            new RestrictNewUsersCommandService($this->command);
             return $this;
         }
 
