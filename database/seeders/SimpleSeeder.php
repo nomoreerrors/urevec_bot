@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\BadWordsFilter;
 use App\Models\Chat;
 use App\Models\ChatAdmins;
 use App\Models\NewUserRestriction;
 use App\Models\Admin;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\UnusualCharsFilter;
 use Illuminate\Database\Seeder;
 
 class SimpleSeeder extends Seeder
@@ -25,8 +26,10 @@ class SimpleSeeder extends Seeder
         Admin::factory($adminsCount)->has(
             Chat::factory($chatsCount)
                 ->has(
-                    NewUserRestriction::factory(1)
+                    NewUserRestriction::factory(1),
                 )
+                ->has(BadWordsFilter::factory(1))
+                ->has(UnusualCharsFilter::factory(1))
         )->create();
     }
 }

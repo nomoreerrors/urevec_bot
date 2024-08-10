@@ -37,11 +37,6 @@ class RestrictNewUsersCommand extends BaseCommand
             case ResNewUsersCmd::DISABLE_SEND_MEDIA->value:
                 $this->toggleSendMedia();
                 break;
-            // ResNewUsersCmd::DISABLE_SEND_MEDIA->value => fn() => $this->toggleSendMedia(),
-            // ResNewUsersCmd::ENABLE_SEND_MESSAGES->value,
-            // ResNewUsersCmd::DISABLE_SEND_MESSAGES->value => fn() => $this->toggleSendMessages(),
-            // ResNewUsersCmd::ENABLE_ALL_RESTRICTIONS->value,
-            // ResNewUsersCmd::DISABLE_ALL_RESTRICTIONS->value => fn() => $this->toggleAllRestrictions()
         }
         return $this;
     }
@@ -66,7 +61,7 @@ class RestrictNewUsersCommand extends BaseCommand
 
     public function sendRestrictionTimeButtons()
     {
-        $keyBoard = (new Buttons())->getRestrictionsTimeButtons();
+        $keyBoard = (new Buttons())->getNewUsersRestrictionsTimeButtons();
 
         app("botService")->sendMessage(
             ResNewUsersCmd::SELECT_TIME->replyMessage(),

@@ -19,11 +19,6 @@ class Chat extends Model
     ];
 
 
-    // protected static function newFactory(): ChatFactory
-    // {
-    //     return ChatFactory::new();
-    // }
-
     public function admins(): BelongsToMany
     {
         return $this->belongsToMany(Admin::class, 'chat_admins', 'chat_id', 'admin_id')->withPivot('private_commands_access', 'group_commands_access', 'my_commands_set');
@@ -32,5 +27,15 @@ class Chat extends Model
     public function newUserRestrictions(): HasOne
     {
         return $this->hasOne(NewUserRestriction::class);
+    }
+
+    public function badWordsFilter(): HasOne
+    {
+        return $this->hasOne(BadWordsFilter::class);
+    }
+
+    public function unusualCharsFilter(): HasOne
+    {
+        return $this->hasOne(UnusualCharsFilter::class);
     }
 }

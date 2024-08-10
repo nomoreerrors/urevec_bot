@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Classes;
 
 use App\Classes\Buttons;
+use App\Models\Admin;
 use App\Classes\BaseCommand;
 use Illuminate\Container\Container;
 use Illuminate\Http\Response;
@@ -17,6 +18,8 @@ abstract class BaseBotCommandCore
 
     protected $botService;
 
+    protected ?Admin $admin;
+
     protected $selectedChat = null;
 
     protected TextMessageModel $requestModel;
@@ -25,7 +28,7 @@ abstract class BaseBotCommandCore
     {
         $this->requestModel = app("requestModel");
         $this->botService = app("botService");
-        $this->command = $this->requestModel->getText();
+        $this->admin = $this->botService->getAdmin();
         $this->buttons = new Buttons();
     }
 

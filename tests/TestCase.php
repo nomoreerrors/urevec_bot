@@ -5,6 +5,7 @@ namespace Tests;
 use App\Models\ForwardMessageModel;
 use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModel;
 use App\Models\MultiMediaModel;
@@ -378,8 +379,12 @@ abstract class TestCase extends BaseTestCase
 
     public function clearTestLogFile()
     {
-        unlink(storage_path("logs/testing.log"));
-        file_put_contents(storage_path("logs/testing.log"), "");
+        if (file_exists(storage_path("logs/testing.log"))) {
+            unlink(storage_path("logs/testing.log"));
+            file_put_contents(storage_path("logs/testing.log"), "");
+            return;
+        }
+        return;
     }
 
     public function setAllRestrictionsToFalse(Chat $chat)
@@ -408,4 +413,31 @@ abstract class TestCase extends BaseTestCase
             'can_send_media' => 0
         ]);
     }
+
+    protected function getPrivateChatMessage(int $fromId, string $command = null): array
+    {
+        $data = $this->getTextMessageModelData();
+        $data["message"]["from"]["id"] = $fromId;
+        $data["message"]["chat"]["id"] = $fromId;
+        $data["message"]["chat"]["type"] = 'private';
+        $data["message"]["text"] = $command ?? "some text";
+        return $data;
+    }
+
+    /**
+     * Summary of putLastChatIdToCache
+     * @param int $adminId Id of user that is typing to private chat
+     * @param int $chatId Id of selected chat - one of his multiple groups
+     * @return bool
+     */
+    protected function putLastChatIdToCache(int $adminId, int $chatId)
+    {
+        return Cache::put(
+            "last_selected_chat_" . $adminId,
+            $chatId,
+        );
+    }
 }
+
+
+

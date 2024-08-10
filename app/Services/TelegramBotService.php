@@ -4,9 +4,12 @@ namespace App\Services;
 
 use App\Enums\ResTime;
 use App\Exceptions\BanUserFailedException;
+use App\Models\BadWordsFilter;
+use App\Models\UnusualCharsFilter;
 use App\Models\Admin;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\SetCommandsFailedException;
+use App\Models\MessageModels\TextMessageModel;
 use App\Models\NewUserRestriction;
 use App\Models\TelegramRequestModelBuilder;
 use App\Models\ChatAdmins;
@@ -28,12 +31,18 @@ class TelegramBotService
 {
     private $chat = null;
 
+    private $admin = null;
+
     private $textCommands = null;
 
     private ResTime $chatRestrictionTime = ResTime::DAY;
 
+    private ?string $privateChatCommand = null;
+
     public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
+        $this->setAdmin()
+            ->setPrivateChatCommand();
     }
 
     /**
@@ -158,7 +167,17 @@ class TelegramBotService
             "chat_id" => $this->chat->id,
         ]);
 
+        $badWordsFilter = BadWordsFilter::create([
+            "chat_id" => $this->chat->id,
+        ]);
+
+        $unusualCharsFilter = UnusualCharsFilter::create([
+            "chat_id" => $this->chat->id,
+        ]);
+
         $this->chat->newUserRestrictions()->attach($newUsersRestricitons->id);
+        $this->chat->badWordsFilter()->attach($badWordsFilter->id);
+        $this->chat->unusualCharsFilter()->attach($unusualCharsFilter->id);
 
         // Create admins in admins table and attaching them to the chat id from the incoming request   
         foreach ($this->requestModel->getAdmins() as $admin) {
@@ -322,6 +341,36 @@ class TelegramBotService
     {
         $time = $this->chat->newUserRestrictions->restriction_time;
         $this->chatRestrictionTime = ResTime::from($time);
+    }
+
+    private function setAdmin(): static
+    {
+        $this->admin = Admin::where('admin_id', $this->requestModel->getFromId())->first();
+        return $this;
+    }
+
+    public function getAdmin()
+    {
+        return $this->admin;
+    }
+
+    public function setPrivateChatCommand(?string $command = null): static
+    {
+        if (
+            $this->requestModel->getChatType() !== "private" ||
+            !($this->requestModel instanceof TextMessageModel)
+        ) {
+            $this->privateChatCommand = null;
+            return $this;
+        }
+
+        $this->privateChatCommand = $command ?? $this->requestModel->getText();
+        return $this;
+    }
+
+    public function getPrivateChatCommand()
+    {
+        return $this->privateChatCommand;
     }
 }
 

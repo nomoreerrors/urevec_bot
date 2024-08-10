@@ -2,14 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MainMenu;
+use App\Enums\UnusualCharsFilterCmd;
 use App\Enums\ResNewUsersCmd;
+use App\Enums\BadWordsFilterCmd;
 use App\Models\TelegramRequestModelBuilder;
 use App\Enums\ResTime;
+use App\Models\UnusualCharsFilter;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Chat;
 use App\Models\Admin;
 use App\Services\TelegramBotService;
-use App\Services\PrivateChatCommandCore;
+use App\Classes\PrivateChatCommandCore;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -18,7 +22,7 @@ use Illuminate\Support\Facades\Http;
 use App\Services\CONSTANTS;
 use Tests\TestCase;
 
-class PrivateChatCommandServiceTest extends TestCase
+class PrivateChatCommandCoreTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -34,59 +38,56 @@ class PrivateChatCommandServiceTest extends TestCase
         //Prepare one admin in database that attached to a few chats
         (new SimpleSeeder())->run(1, 5);
         $this->admin = Admin::first();
-        $this->data = $this->getTextMessageModelData();
-        // Assign fake admin id to correctly set $admin property in PrivateChatCommandService
-        $this->data["message"]["from"]["id"] = $this->admin->admin_id;
-        $this->data["message"]["chat"]["id"] = $this->admin->admin_id;
-        //Prepare fake admins ids so that ModelBuilder can get them instead of calling api
+        $this->chat = Chat::first();
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
         $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
     }
 
-    public function testSetGroupTitles()
-    {
-        $this->prepareDependencies();
-        $chatTitle = Chat::first()->chat_title;
-        $commandsService = new PrivateChatCommandCore();
-        $titles = $commandsService->getGroupsTitles();
-        $this->assertContains($chatTitle, $titles);
-    }
-
-    public function testAdminDoesNotExistsInDatabaseOrPropertyisNotSetThrowsException(): void
-    {
-        $this->prepareDependencies();
-        $this->admin->delete();
-        $this->expectException(BaseTelegramBotException::class);
-        $this->expectExceptionMessage(CONSTANTS::USER_NOT_ALLOWED);
-        (new PrivateChatCommandCore());
-    }
 
     /**
      * Tescase where user selected one of his chats, chat is set and last  command gets from cache and executed
+     * in this case moderation settings menu buttons are sent
      * @return void
      */
-    public function testIfUserPressSelectChatButtonChatIsSetAndLastCommandGetsExecuted(): void
+    public function testChatIsSetAndLastCommandRememberedAndSelectModerationSettingsRepliesWithButtons(): void
     {
         //Mock that user was entered some command previously and it was saved to use after user selected the chat
-        $lastCommand = "/moderation_settings";
+        $lastCommand = MainMenu::SETTINGS->value;
         Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $this->admin->admin_id, $lastCommand);
         // Mock that user is pressed select chat button with one of the titles from his chats in database
         $title = $this->admin->chats->first()->chat_title;
-        // Mock request with the title from one of the user's chats
-        $this->data["message"]["text"] = "/" . $title;
-        // Make request model and bot service to be used in PrivateChatCommandService
+        $this->data["message"]["text"] = $title;
+
         $this->prepareDependencies();
 
         new PrivateChatCommandCore();
-        $this->chat = $this->botService->getChat();
-        $this->assertInstanceOf(Chat::class, $this->chat);
+
         $this->assertEquals($this->chat->chat_title, $title);
 
         $sendMessageLog = $this->getTestLogFile();
         // Assert that when the chat was set the message to user with a selected chat title has been sent
         $this->assertStringContainsString("Selected chat: " . $title . "", $sendMessageLog);
         // Assert that a previously saved command was executed and moderation settings buttons were sent
-        $this->assertStringContainsString(CONSTANTS::RESTRICT_NEW_USERS_SETTINGS_CMD, $sendMessageLog);
-        $this->assertStringContainsString(CONSTANTS::FILTER_SETTINGS_CMD, $sendMessageLog);
+        $this->assertStringContainsString(ResNewUsersCmd::SETTINGS->value, $sendMessageLog);
+        $this->assertStringContainsString(BadWordsFilterCmd::MAIN_SETTINGS->value, $sendMessageLog);
+        $this->assertStringContainsString(MainMenu::SETTINGS->replyMessage(), $sendMessageLog);
+        $this->clearTestLogFile();
+    }
+
+
+    public function testSelectFiltersSettingsReplyWithButtons()
+    {
+        $this->data["message"]["text"] = BadWordsFilterCmd::MAIN_SETTINGS->value;
+        $this->prepareDependencies();
+        // Fake that the chat was previously selected and it's id has been saved in cache
+        $this->putLastChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
+
+        (new PrivateChatCommandCore());
+
+        $sendMessageLog = $this->getTestLogFile();
+        $this->assertStringContainsString(BadWordsFilterCmd::MAIN_SETTINGS->value, $sendMessageLog);
+        $this->assertStringContainsString(UnusualCharsFilterCmd::SETTINGS->value, $sendMessageLog);
+        $this->assertStringContainsString(BadWordsFilterCmd::MAIN_SETTINGS->value, $sendMessageLog);
         $this->clearTestLogFile();
     }
 
@@ -141,7 +142,6 @@ class PrivateChatCommandServiceTest extends TestCase
     {
         $this->data["message"]["text"] = ResNewUsersCmd::SET_TIME_MONTH->value;
         $this->prepareDependencies();
-        $this->botService->setChat($this->chat->chat_id);
 
         //Setting everything to 0 before test
         $this->setAllRestrictionsToFalse($this->chat);
@@ -166,7 +166,6 @@ class PrivateChatCommandServiceTest extends TestCase
     {
         $this->data["message"]["text"] = ResNewUsersCmd::ENABLE_ALL->value;
         $this->prepareDependencies();
-        $this->botService->setChat($this->chat->chat_id);
 
         //Setting everything to 0 before test
         $this->setAllRestrictionsDisabled($this->chat);
@@ -215,6 +214,8 @@ class PrivateChatCommandServiceTest extends TestCase
 
         app()->instance("requestModel", $this->model);
         app()->instance("botService", $this->botService);
+        // Fake that chat was previously selected and saved in cache
+        $this->putLastChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
     }
 }
 

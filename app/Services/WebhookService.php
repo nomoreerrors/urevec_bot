@@ -33,9 +33,7 @@ class WebhookService
                     "message_reaction_count"
                 ]
             ]
-        )->json(); //обязательно json
-        // dd($http);
-        // dd(get_called_class());
+        )->json();
     }
 
     /**

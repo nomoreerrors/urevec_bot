@@ -61,7 +61,7 @@ class ChatSettingsService
                     "can_send_video_notes" => true,
                     "can_send_voice_notes" => true,
                     "can_send_polls" => false,
-                    "can_send_other_messages" => true,
+                    "can_send_other_messages" => false,
                     "can_add_web_page_previews" => false,
                     "can_change_info" => false,
                     "can_invite_users" => true,

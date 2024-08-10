@@ -10,7 +10,7 @@ use App\Jobs\FailedRequestJob;
 use App\Models\TelegramRequestModelBuilder;
 use App\Models\MessageModels\TextMessageModel;
 use App\Services\BaseBotCommandCore;
-use App\Services\PrivateChatCommandCore;
+use App\Classes\PrivateChatCommandCore;
 use App\Services\TelegramMiddlewareService;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
@@ -97,7 +97,6 @@ class TelegramBotController extends Controller
         if ($this->requestModel->getChatType() !== "private") {
             return;
         }
-
         (new PrivateChatCommandCore());
     }
 }

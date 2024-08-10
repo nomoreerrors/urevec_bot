@@ -12,4 +12,5 @@ trait Exists
         $values = array_column(self::cases(), 'value');
         return in_array($value, $values);
     }
+
 }

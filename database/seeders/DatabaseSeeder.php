@@ -2,11 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\BadWordsFilter;
 use App\Models\Chat;
 use App\Models\ChatAdmins;
 use App\Models\Admin;
 use App\Models\ChatNewUserRestriction;
 use App\Models\NewUserRestriction;
+use App\Models\UnusualCharsFilter;
 use App\Models\User;
 use Database\Factories\ChatFactory;
 use Database\Factories\NewUserRestrictionFactory;
@@ -25,8 +27,10 @@ class DatabaseSeeder extends Seeder
         $admins = Admin::factory(20)->has(
             Chat::factory(1)
                 ->has(
-                    NewUserRestriction::factory(1)
+                    NewUserRestriction::factory(1),
                 )
+                ->has(BadWordsFilter::factory(1))
+                ->has(UnusualCharsFilter::factory(1))
         )->create();
 
         $chats = Chat::all();
