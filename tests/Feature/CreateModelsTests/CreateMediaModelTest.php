@@ -15,7 +15,6 @@ use App\Models\MessageModels\MediaModels\VoiceMediaModel;
 
 class CreateMediaModelTest extends TestCase
 {
-    private array $data;
     protected function setUp(): void
     {
         parent::setUp();

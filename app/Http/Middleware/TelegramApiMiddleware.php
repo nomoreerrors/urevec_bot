@@ -87,7 +87,7 @@ class TelegramApiMiddleware
         Log::error($e->getmessage() . " Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
 
         if (env("APP_DEBUG")) {
-            return response($e->getMessage(), Response::HTTP_OK);
+            throw $e;
         }
 
         FailedRequestJob::dispatch($requestData);

@@ -23,7 +23,6 @@ use App\Services\TelegramBotService;
 class TelegramRequestModelBuilderTest extends TestCase
 {
     use RefreshDatabase;
-    private array $data;
 
     private int $chatId;
 

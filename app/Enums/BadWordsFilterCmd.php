@@ -8,12 +8,10 @@ enum BadWordsFilterCmd: string implements EnumHasRestrictionTimeInterface
 {
     use Exists;
 
-    case MAIN_SETTINGS = "Настройки фильтров сообщений";
-
     /**
      * Bad words
      */
-    case BAD_WORDS_SETTINGS = "Фильтр запрещенных слов";
+    case SETTINGS = "Фильтр запрещенных слов";
     case BAD_WORDS_DISABLE = "Отключить фильтр слов";
     case BAD_WORDS_ENABLE = "Включить фильтр слов";
     case BAD_WORDS_ADD_NEW = "Добавить запрещенные слова";
@@ -46,8 +44,7 @@ enum BadWordsFilterCmd: string implements EnumHasRestrictionTimeInterface
     public function replyMessage(): string
     {
         return match ($this) {
-            self::MAIN_SETTINGS => 'Выберите фильтр, который хотите настроить',
-            self::BAD_WORDS_SETTINGS => 'Установите настройки фильтра запрещенных слов',
+            self::SETTINGS => 'Установите настройки фильтра запрещенных слов',
             self::BAD_WORDS_ADD_NEW => 'Установите список в формате: BAD WORDS:слово1,слово2,слово3',
                 // self::UNUSUAL_CHARS => 'Фильтр иероглифов и подозрительных символов оберегает чат от спам-сообщений, которые пытаются обойти блокировки, заменяя обычное написание слов нестандартными символами',
                 // self::ENABLE_UNUSUAL_CHARS => 'Фильтр иероглифов и подозрительных символов включен',

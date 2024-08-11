@@ -21,16 +21,6 @@ use Tests\TestCase;
 
 class FilterSettingsCommandTest extends TestCase
 {
-    protected array $data;
-
-    protected TelegramBotService $botService;
-
-    protected Admin $admin;
-
-    protected Chat $chat;
-
-    protected TextMessageModel $requestModel;
-
     public function setUp(): void
     {
         parent::setUp();
@@ -44,7 +34,7 @@ class FilterSettingsCommandTest extends TestCase
 
     public function testifSelectBadWordsFilterReplyWithBadWordsSettingsButtons()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterCmd::BAD_WORDS_SETTINGS->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterCmd::SETTINGS->value);
         $this->prepareDependencies();
 
         $isEnabled = $this->chat->badWordsFilter->filter_enabled === 1;
@@ -70,7 +60,7 @@ class FilterSettingsCommandTest extends TestCase
         $this->assertStringContainsString($toggleDeleteMessage, $sendMessageLog);
         $this->assertStringContainsString($toggleRestrictUser, $sendMessageLog);
         $this->assertStringContainsString($restrictTime, $sendMessageLog);
-        $this->assertStringContainsString(BadWordsFilterCmd::BAD_WORDS_SETTINGS->replyMessage(), $sendMessageLog);
+        $this->assertStringContainsString(BadWordsFilterCmd::SETTINGS->replyMessage(), $sendMessageLog);
     }
 
 
@@ -222,7 +212,7 @@ class FilterSettingsCommandTest extends TestCase
         app()->singleton("requestModel", fn() => $this->requestModel);
         app()->singleton("botService", fn() => $this->botService);
         // fake that chat was previously selected
-        $this->putLastChatIdToCache(
+        $this->fakeChatSelected(
             $this->admin->admin_id,
             $this->admin->chats->first()->chat_id
         );

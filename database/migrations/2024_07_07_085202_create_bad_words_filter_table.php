@@ -20,10 +20,10 @@ return new class extends Migration {
             $table->boolean("delete_message")->default(1);
             $table->boolean("dasable_send_messages")->default(1);
             $table->tinyInteger("restriction_time")->default(ResTime::TWO_HOURS->value);
-            $table->text("bad_words");
-            $table->text("bad_phrases");
-            $table->text("critical_words");
-            $table->text("critical_phrases");
+            $table->text("bad_words")->nullable();
+            $table->text("bad_phrases")->nullable();
+            $table->text("critical_words")->nullable();
+            $table->text("critical_phrases")->nullable();
             $table->timestamps();
 
 

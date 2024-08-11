@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use App\Models\Admin;
 use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -25,6 +26,12 @@ abstract class TestCase extends BaseTestCase
 
     protected $service;
 
+    protected Chat $chat;
+
+    protected $requestModel;
+
+    protected $model;
+
     protected array $adminsIdArray;
 
     protected $chatPermissions;
@@ -36,6 +43,11 @@ abstract class TestCase extends BaseTestCase
     private int $testUserId = 9999999;
 
     protected int $invalidUserId = 9999999;
+
+    protected TelegramBotService $botService;
+    protected array $data;
+
+    protected Admin $admin;
 
     private int $secondTestUserId;
 
@@ -430,7 +442,7 @@ abstract class TestCase extends BaseTestCase
      * @param int $chatId Id of selected chat - one of his multiple groups
      * @return bool
      */
-    protected function putLastChatIdToCache(int $adminId, int $chatId)
+    protected function fakeChatSelected(int $adminId, int $chatId)
     {
         return Cache::put(
             "last_selected_chat_" . $adminId,

@@ -14,6 +14,7 @@ class UnusualCharsFilter extends Model
     protected $table = 'unusual_chars_filter';
 
     protected $fillable = [
+        'chat_id',
         'filter_enabled',
         'delete_user',
         'restrict_user',

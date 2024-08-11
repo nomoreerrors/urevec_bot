@@ -3,6 +3,7 @@
 namespace App\Enums;
 
 use App\Enums\Traits\Exists;
+use App\Enums\EnumHasRestrictionTimeInterface;
 
 /**
  * Users restrictions commands

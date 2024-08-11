@@ -3,7 +3,7 @@
 namespace App\Classes;
 
 use App\Models\Chat;
-use App\Enums\MainMenu;
+use App\Enums\MainMenuCmd;
 
 class MainMenuCommand extends BaseCommand
 {
@@ -15,11 +15,14 @@ class MainMenuCommand extends BaseCommand
     protected function handle(): static
     {
         switch ($this->command) {
-            // case MainMenu::START
-            // $this->send();
-            // break;
-            case MainMenu::SETTINGS->value:
+            case MainMenuCmd::MODERATION_SETTINGS->value:
                 $this->sendModerationSettings();
+                break;
+            case MainMenuCmd::FILTERS_SETTINGS->value:
+                $this->sendFiltersMainSettings();
+                break;
+            case MainMenuCmd::BACK->value:
+                $this->Back();
                 break;
         }
         return $this;
@@ -33,8 +36,28 @@ class MainMenuCommand extends BaseCommand
     public function sendModerationSettings(): void
     {
         $keyBoard = (new Buttons())->getModerationSettingsButtons();
-        app("botService")->sendMessage(MainMenu::SETTINGS->replyMessage(), $keyBoard);
+        $this->rememberBackMenu();
+        app("botService")->sendMessage(MainMenuCmd::MODERATION_SETTINGS->replyMessage(), $keyBoard);
     }        //
+
+    public function sendFiltersMainSettings(): void
+    {
+        $keyBoard = (new Buttons())->getFiltersMainSettingsButtons();
+        app("botService")->sendMessage(MainMenuCmd::FILTERS_SETTINGS->replyMessage(), $keyBoard);
+    }
+
+    /**
+     * Move back to previous menu
+     * Remove last element from back menu array in cache
+     * and set it as private chat command 
+     * @return void
+     */
+    public function Back(): void
+    {
+        $this->botService->setPrivateChatCommand($this->getBackMenuFromCache());
+        $this->moveBackMenuPointer();
+        new PrivateChatCommandCore();
+    }
 }
 
 

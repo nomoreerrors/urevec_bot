@@ -6,7 +6,7 @@ use App\Classes\CommandChatSelector;
 use App\Classes\FilterSettingsCommand;
 use App\Enums\BadWordsFilterCmd;
 use App\Classes\MainMenuCommand;
-use App\Enums\MainMenu;
+use App\Enums\MainMenuCmd;
 use App\Enums\ResNewUsersCmd;
 use App\Enums\UnusualCharsFilterCmd;
 use App\Services\CONSTANTS;
@@ -48,7 +48,7 @@ class PrivateChatCommandCore extends BaseBotCommandCore
             return $this;
         }
 
-        if (MainMenu::exists($this->command)) {
+        if (MainMenuCmd::exists($this->command)) {
             new MainMenuCommand($this->command);
             return $this;
         }

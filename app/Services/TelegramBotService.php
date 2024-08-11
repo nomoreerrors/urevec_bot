@@ -163,21 +163,9 @@ class TelegramBotService
             "chat_title" => $this->requestModel->getChatTitle(),
         ]);
 
-        $newUsersRestricitons = NewUserRestriction::create([
-            "chat_id" => $this->chat->id,
-        ]);
-
-        $badWordsFilter = BadWordsFilter::create([
-            "chat_id" => $this->chat->id,
-        ]);
-
-        $unusualCharsFilter = UnusualCharsFilter::create([
-            "chat_id" => $this->chat->id,
-        ]);
-
-        $this->chat->newUserRestrictions()->attach($newUsersRestricitons->id);
-        $this->chat->badWordsFilter()->attach($badWordsFilter->id);
-        $this->chat->unusualCharsFilter()->attach($unusualCharsFilter->id);
+        $this->chat->newUserRestrictions()->create();
+        $this->chat->badWordsFilter()->create();
+        $this->chat->unusualCharsFilter()->create();
 
         // Create admins in admins table and attaching them to the chat id from the incoming request   
         foreach ($this->requestModel->getAdmins() as $admin) {

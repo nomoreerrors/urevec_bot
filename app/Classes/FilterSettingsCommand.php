@@ -18,12 +18,8 @@ class FilterSettingsCommand extends BaseCommand
     protected function handle(): static
     {
         switch ($this->command) {
-            // TODO перенести в MainMenu и установить в privatecore if else
-            case BadWordsFilterCmd::MAIN_SETTINGS->value:
+            case BadWordsFilterCmd::SETTINGS->value:
                 $this->send();
-                break;
-            case BadWordsFilterCmd::BAD_WORDS_SETTINGS->value:
-                $this->sendBadWordsFIlterSettings();
                 break;
             case BadWordsFilterCmd::BAD_WORDS_DISABLE->value:
             case BadWordsFilterCmd::BAD_WORDS_ENABLE->value:
@@ -53,14 +49,9 @@ class FilterSettingsCommand extends BaseCommand
     }
 
 
+
+
     public function send(): void
-    {
-        $keyBoard = (new Buttons())->getFiltersMainSettingsButtons();
-        app("botService")->sendMessage(BadWordsFilterCmd::MAIN_SETTINGS->replyMessage(), $keyBoard);
-    }
-
-
-    private function sendBadWordsFIlterSettings(): void
     {
         $filterEnabled = $this->chat->badWordsFilter->filter_enabled === 1;
         $deleteMessagesEnabled = $this->chat->badWordsFilter->delete_message === 1;
@@ -68,7 +59,7 @@ class FilterSettingsCommand extends BaseCommand
 
 
         $keyBoard = (new Buttons())->getBadWordsFilterSettingsButtons($filterEnabled, $deleteMessagesEnabled, $restrictUsersEnabled);
-        app("botService")->sendMessage(BadWordsFilterCmd::BAD_WORDS_SETTINGS->replyMessage(), $keyBoard);
+        app("botService")->sendMessage(BadWordsFilterCmd::SETTINGS->replyMessage(), $keyBoard);
     }
 
 

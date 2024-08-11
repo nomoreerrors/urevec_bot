@@ -20,12 +20,9 @@ use App\Services\CONSTANTS;
 class ChatRulesServiceTest extends TestCase
 {
     use RefreshDatabase;
-    private array $data;
-
-    private Chat $chat;
 
     private ChatRulesService $ruleService;
-    private Admin $admin;
+
     protected function setUp(): void
     {
         parent::setUp();

@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Enums\UnusualCharsFilterCmd;
+use App\Enums\MainMenuCmd;
 use App\Exceptions\BaseTelegramBotException;
 use App\Enums\BadWordsFilterCmd;
 use App\Models\UnusualCharsFilter;
@@ -59,6 +60,10 @@ class Buttons
             ->addButton($toggleSendMedia)
             ->addRow()
             ->addButton($toggleRestrictNewUsers)
+            ->addRow()
+            ->addButton(ResNewUsersCmd::SELECT_TIME->value)
+            ->addRow()
+            ->addButton(MainMenuCmd::BACK->value)
             ->get();
 
         return $keyBoard;
@@ -102,7 +107,7 @@ class Buttons
             ->addRow()
             ->addButton(ResNewUsersCmd::SETTINGS->value)
             ->addRow()
-            ->addButton(BadWordsFilterCmd::MAIN_SETTINGS->value) //TODO change to enum
+            ->addButton(MainMenuCmd::FILTERS_SETTINGS->value) //TODO change to enum
             ->get();
 
         return $keyBoard;
@@ -112,7 +117,7 @@ class Buttons
     {
         $keyBoard = (new ReplyKeyboardMarkup())
             ->addRow()
-            ->addButton(BadWordsFilterCmd::BAD_WORDS_SETTINGS->value)
+            ->addButton(BadWordsFilterCmd::SETTINGS->value)
             ->addRow()
             ->addButton(UnusualCharsFilterCmd::SETTINGS->value)
             ->get();

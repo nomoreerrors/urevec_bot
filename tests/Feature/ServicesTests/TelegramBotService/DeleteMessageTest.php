@@ -13,10 +13,6 @@ use App\Services\TelegramBotService;
 
 class DeleteMessageTest extends TestCase
 {
-    private $data;
-    private $model;
-    private $botService;
-
     public function setUp(): void
     {
         parent::setUp();

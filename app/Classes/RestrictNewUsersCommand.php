@@ -5,6 +5,7 @@ namespace App\Classes;
 use App\Enums\ResNewUsersCmd;
 use App\Enums\ResTime;
 use App\Models\Chat;
+use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
 
 class RestrictNewUsersCommand extends BaseCommand
@@ -27,7 +28,7 @@ class RestrictNewUsersCommand extends BaseCommand
             case ResNewUsersCmd::SET_TIME_WEEK->value:
             case ResNewUsersCmd::SET_TIME_DAY->value:
             case ResNewUsersCmd::SET_TIME_TWO_HOURS->value:
-                $this->setNewUsersRestrictionTime($this->getRestrictionTime());
+                $this->setNewUsersRestrictionTime();
                 break;
             case ResNewUsersCmd::ENABLE_ALL->value:
             case ResNewUsersCmd::DISABLE_ALL->value:
@@ -36,6 +37,10 @@ class RestrictNewUsersCommand extends BaseCommand
             case ResNewUsersCmd::ENABLE_SEND_MEDIA->value:
             case ResNewUsersCmd::DISABLE_SEND_MEDIA->value:
                 $this->toggleSendMedia();
+                break;
+            case ResNewUsersCmd::ENABLE_SEND_MESSAGES->value:
+            case ResNewUsersCmd::DISABLE_SEND_MESSAGES->value:
+                $this->toggleSendMessages();
                 break;
         }
         return $this;
@@ -53,6 +58,7 @@ class RestrictNewUsersCommand extends BaseCommand
             $restrictionsStatus
         );
 
+        $this->rememberBackMenu();
         app("botService")->sendMessage(
             ResNewUsersCmd::SETTINGS->replyMessage(),
             $keyBoard
@@ -69,33 +75,25 @@ class RestrictNewUsersCommand extends BaseCommand
         );
     }
 
-    protected function setNewUsersRestrictionTime(ResTime $resTime)
+    protected function setNewUsersRestrictionTime()
     {
+        $setTimeCase = ResNewUsersCmd::from($this->command);
+
         $this->botService->getChat()->newUserRestrictions()->update([
             'restrict_new_users' => 1,
-            'restriction_time' => $resTime->value
+            'restriction_time' => ResTime::getTime($setTimeCase)
         ]);
         $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
         return $this;
     }
 
-    // protected function setNewUsersRestrictions(bool $canSendMessages = false, $canSendMedia = false)
-    // {
-    //     $restrict = $canSendMessages || $canSendMedia ? 1 : 0;
-
-    //     $this->botService->getChat()->newUsersRestrictions()->update([
-    //         'restrict_new_users' => $restrict,
-    //         'can_send_messages' => $canSendMessages,
-    //         'can_send_media' => $canSendMedia
-    //     ]);
-    //     return $this;
-    // }
 
     protected function getRestrictionTime(): ResTime
     {
+        // BotErrorNotificationService::send($this->command);
         return match ($this->command) {
             ResNewUsersCmd::SET_TIME_MONTH->value => ResTime::MONTH,
-            ResNewUsersCmd::SET_TIME_WEEK => ResTime::WEEK,
+            ResNewUsersCmd::SET_TIME_WEEK->value => ResTime::WEEK,
             ResNewUsersCmd::SET_TIME_DAY->value => ResTime::DAY,
             ResNewUsersCmd::SET_TIME_TWO_HOURS->value => ResTime::TWO_HOURS,
         };
@@ -139,7 +137,7 @@ class RestrictNewUsersCommand extends BaseCommand
             'restrict_new_users' => $isEnableCommand ? $oldRestrictStatus : 1,
             'can_send_messages' => $isEnableCommand ? 1 : 0
         ]);
-
         $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
     }
+
 }

@@ -24,13 +24,9 @@ use App\Classes\CommandsList;
 class SetMyCommandsTest extends TestCase
 {
     use RefreshDatabase;
-    protected $data;
-    protected $chat;
     protected $chatId;
     protected $adminsIdsCacheKey;
     protected $adminsIdsArray;
-    protected $model;
-    protected $botService;
 
     public function setUp(): void
     {

@@ -13,8 +13,6 @@ use Tests\TestCase;
 
 class SendMessageTest extends TestCase
 {
-    private $data;
-    private $model;
     protected $service;
     private $testMessage = "His name is Robert Paulsen";
 
