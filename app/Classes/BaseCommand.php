@@ -20,53 +20,69 @@ abstract class BaseCommand
         $this->handle();        //
     }
 
-    protected function rememberBackMenu()
-    {
-        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
-        $lol = Cache::has($cacheKey);
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+    // protected function rememberBackMenu()
+    // {
+    //     $cacheKey = $this->getBackMenuCacheKey();
+    //     $backMenuArray = $this->getBackMenuFromCache();
 
-        if (empty($backMenuArray)) {
-            $backMenuArray = [$this->command];
-            Cache::put(
-                "back_menu_" . $this->botService->getAdmin()->admin_id,
-                json_encode($backMenuArray)
-            );
-        } else {
-            $backMenuArray;
-            array_push($backMenuArray, $this->command);
-            Cache::put(
-                "back_menu_" . $this->botService->getAdmin()->admin_id,
-                json_encode($backMenuArray)
-            );
-        }
-    }
+    //     if (empty($backMenuArray)) {
+    //         $backMenuArray = [$this->command];
+    //         $this->saveBackMenuToCache($backMenuArray, $cacheKey);
 
-    protected function getBackMenuFromCache()
-    {
-        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+    //     } elseif (in_array($this->command, $backMenuArray)) {
+    //         $this->moveUpBackMenuPointer();
+    //         return;
 
-        $backTo = array_pop($backMenuArray);
-        return $backTo;
-    }
+    //     } else {
+    //         array_push($backMenuArray, $this->command);
+    //         Cache::put(
+    //             $cacheKey,
+    //             json_encode($backMenuArray)
+    //         );
 
-    /**
-     * Decrease menu pointer by analogy with stack pointer
-     * (remove last element from back menu array in cache)
-     * @return void
-     */
-    protected function moveBackMenuPointer()
-    {
-        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+    //     }
+    // }
 
-        array_pop($backMenuArray);
-        Cache::put(
-            $cacheKey,
-            json_encode($backMenuArray)
-        );
-    }
+    // private function saveBackMenuToCache(array $backMenuArray, string $cacheKey)
+    // {
+    //     Cache::put($cacheKey, json_encode($backMenuArray));
+    // }
+
+    // protected function getBackMenuFromCache()
+    // {
+    //     $cacheKey = $this->getBackMenuCacheKey();
+    //     return json_decode(Cache::get($cacheKey), true);
+    // }
+
+    // private function getLastBackMenuFromCache()
+    // {
+    //     $backMenuArray = $this->getBackMenuFromCache();
+    //     $backTo = array_pop($backMenuArray);
+    //     return $backTo;
+    // }
+
+
+
+    // /**
+    //  * Decrease menu pointer by analogy with stack pointer
+    //  * (remove last element from back menu array in cache)
+    //  * @return void
+    //  */
+    // protected function moveUpBackMenuPointer()
+    // {
+    //     $backMenuArray = $this->getBackMenuFromCache();
+    //     $cacheKey = $this->getBackMenuCacheKey();
+    //     array_pop($backMenuArray);
+    //     Cache::put(
+    //         $cacheKey,
+    //         json_encode($backMenuArray)
+    //     );
+    // }
+
+    // protected function getBackMenuCacheKey(): string
+    // {
+    //     return "back_menu_" . $this->botService->getAdmin()->admin_id;
+    // }
 
     abstract protected function handle(): static;
 

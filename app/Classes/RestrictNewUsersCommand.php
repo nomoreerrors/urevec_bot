@@ -7,9 +7,11 @@ use App\Enums\ResTime;
 use App\Models\Chat;
 use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
+use App\Traits\BackMenuButton;
 
 class RestrictNewUsersCommand extends BaseCommand
 {
+    use BackMenuButton;
     public function __construct(private string $command)
     {
         parent::__construct($command);

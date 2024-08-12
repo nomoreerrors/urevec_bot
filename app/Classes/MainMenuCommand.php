@@ -4,9 +4,12 @@ namespace App\Classes;
 
 use App\Models\Chat;
 use App\Enums\MainMenuCmd;
+use App\Traits\BackMenuButton;
 
 class MainMenuCommand extends BaseCommand
 {
+    use BackMenuButton;
+
     public function __construct(private string $command)
     {
         parent::__construct($command);
@@ -55,7 +58,7 @@ class MainMenuCommand extends BaseCommand
     public function Back(): void
     {
         $this->botService->setPrivateChatCommand($this->getBackMenuFromCache());
-        $this->moveBackMenuPointer();
+        $this->moveUpBackMenuPointer();
         new PrivateChatCommandCore();
     }
 }

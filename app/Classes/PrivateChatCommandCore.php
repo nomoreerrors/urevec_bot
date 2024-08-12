@@ -20,6 +20,7 @@ use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
 use App\Models\MessageModels\TextMessageModel;
 use App\Models\TelegramRequestModelBuilder;
+use App\Traits\BackMenuButton;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;

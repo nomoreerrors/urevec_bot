@@ -12,7 +12,7 @@ use App\Models\Admin;
 use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 
-class BaseCommandTest extends TestCase
+class BackMenuButtonTraitTest extends TestCase
 {
     public function setUp(): void
     {
@@ -42,13 +42,13 @@ class BaseCommandTest extends TestCase
      */
     public function testBackMenu()
     {
-        // BaseCommand is an abstract class so it can't be instantiated
-        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
+        $cacheKey = $this->getCacheKey();
         Cache::forget($cacheKey);
 
         $this->rememberBackMenuTest($cacheKey);
-        $this->getBackMenuFromCacheTest();
+        $this->getLastBackMenuFromCacheTest();
         $this->moveBackMenuPointerTest($cacheKey);
+        $this->avoidBackMenuOverflowTest($cacheKey);
     }
 
 
@@ -59,7 +59,7 @@ class BaseCommandTest extends TestCase
         $this->getAccessToProtectedMethod("third text", 'rememberBackMenu');
         $this->getAccessToProtectedMethod("fourth text", 'rememberBackMenu');
 
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+        $backMenuArray = $this->getBackMenuArray();
 
         $this->assertTrue(
             in_array("first text", $backMenuArray) &&
@@ -69,13 +69,14 @@ class BaseCommandTest extends TestCase
         );
     }
 
-
-
-    public function getBackMenuFromCacheTest()
+    /**
+     * Assert that menu pointer indicates the last element in cache 
+     * which means that returned value is the last element of an array 
+     * @return void
+     */
+    public function getLastBackMenuFromCacheTest()
     {
-        // Assert that menu pointer indicates the last element in cache 
-        // which means that returned value is the last element of an array 
-        $menuPointer = $this->getAccessToProtectedMethod("random text", 'getBackMenuFromCache');
+        $menuPointer = $this->getAccessToProtectedMethod("random text", 'getLastBackMenuFromCache');
         $this->assertEquals("fourth text", $menuPointer);
     }
 
@@ -87,24 +88,54 @@ class BaseCommandTest extends TestCase
      */
     public function moveBackMenuPointerTest($cacheKey)
     {
-        $this->getAccessToProtectedMethod("random text", 'moveBackMenuPointer');
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(3, $backMenuArray);
         $this->assertEquals("third text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveBackMenuPointer');
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(2, $backMenuArray);
         $this->assertEquals("second text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveBackMenuPointer');
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(1, $backMenuArray);
         $this->assertEquals("first text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveBackMenuPointer');
-        $backMenuArray = json_decode(Cache::get($cacheKey), true);
+        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(0, $backMenuArray);
+    }
+
+    /**
+     * Test that when the last element of a back menu array is getting from cache
+     * and the open previous menu command gets executed, same command won't write to cache again
+     * and the menu pointer moved to the updated position.
+     * @param string $cacheKey
+     * @return void
+     */
+    public function avoidBackMenuOverflowTest(string $cacheKey)
+    {
+        $backMenuArray = ["first text", "second text", "third text", "fourth text"];
+        $this->setBackMenuArrayToCache($backMenuArray, $cacheKey);
+        $this->getAccessToProtectedMethod("fourth text", 'rememberBackMenu');
+        $this->assertCount(3, $this->getBackMenuArray());
+    }
+
+    /**
+     * Get array from cache
+     * @return array
+     */
+    protected function getBackMenuArray(): array
+    {
+        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
+        return json_decode(Cache::get($cacheKey), true);
+    }
+
+    protected function setBackMenuArrayToCache(array $backMenuArray, string $cacheKey)
+    {
+        Cache::put($cacheKey, json_encode($backMenuArray));
     }
 
 
@@ -119,4 +150,10 @@ class BaseCommandTest extends TestCase
         $result = $method->invoke($myClass);
         return $result;
     }
+
+    public function getCacheKey(): string
+    {
+        return "back_menu_" . $this->botService->getAdmin()->admin_id;
+    }
+
 }
