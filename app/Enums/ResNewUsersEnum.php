@@ -8,7 +8,7 @@ use App\Enums\EnumHasRestrictionTimeInterface;
 /**
  * Users restrictions commands
  */
-enum ResNewUsersCmd: string implements EnumHasRestrictionTimeInterface
+enum ResNewUsersEnum: string implements EnumHasRestrictionTimeInterface
 {
     use Exists;
 
@@ -19,7 +19,7 @@ enum ResNewUsersCmd: string implements EnumHasRestrictionTimeInterface
     case DISABLE_SEND_MESSAGES = "Запретить отправку сообщений для новых пользователей";
     case DISABLE_ALL = "Отключить все ограничения для новых пользователей";
     case ENABLE_ALL = "Включить все ограничения для новых пользователей";
-    case SELECT_TIME = "Выбрать время ограничения для новых пользователей";
+    case SELECT_RESTRICTION_TIME = "Выбрать время ограничения для новых пользователей";
     case SET_TIME_TWO_HOURS = "Ограничивать новых пользователей на 2 часа";
     case SET_TIME_DAY = "Ограничивать новых пользователей на 24 часа";
     case SET_TIME_WEEK = "Ограничивать новых пользователей на неделю";
@@ -35,7 +35,7 @@ enum ResNewUsersCmd: string implements EnumHasRestrictionTimeInterface
             self::DISABLE_SEND_MESSAGES => 'Возможность отправки сообщений для новых участников отключена',
             self::DISABLE_ALL => 'Все ограничения для новых участников отключены',
             self::ENABLE_ALL => 'Все ограничения для новых участников включены',
-            self::SELECT_TIME => 'Выберите время ограничения для новых пользователей',
+            self::SELECT_RESTRICTION_TIME => 'Выберите время ограничения для новых пользователей',
             self::SET_TIME_TWO_HOURS => 'Установлено ограничение новых пользователей на 2 часа',
             self::SET_TIME_DAY => 'Установлено ограничение новых пользователей на 24 часа',
             self::SET_TIME_WEEK => 'Установлено ограничение новых пользователей на неделю',

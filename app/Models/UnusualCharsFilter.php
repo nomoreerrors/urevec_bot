@@ -7,7 +7,7 @@ use App\Models\Chat;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
-class UnusualCharsFilter extends Model
+class UnusualCharsFilter extends FilterModel
 {
     use HasFactory;
 

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BadWordsFilter extends Model
+class BadWordsFilter extends FilterModel
 {
     use HasFactory;
     protected $table = 'bad_words_filter';

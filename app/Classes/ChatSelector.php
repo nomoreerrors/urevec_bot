@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Enums\MainMenuCmd;
 use App\Models\Admin;
 use App\Services\CONSTANTS;
 use App\Models\MessageModels\TextMessageModel;
@@ -135,7 +136,7 @@ class ChatSelector
     public function sendSelectChatButtons(): void
     {
         $keyBoard = $this->buttons->getSelectChatButtons($this->groupsTitles);
-        app("botService")->sendMessage("Select chat", $keyBoard);
+        app("botService")->sendMessage(MainMenuCmd::SELECT_CHAT->replyMessage(), $keyBoard);
         $this->buttonsSended = true;
         return;
     }

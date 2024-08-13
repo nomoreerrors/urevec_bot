@@ -25,8 +25,17 @@ class ExistedAdminSendCommandToPrivateChatTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected TelegramBotService $botService;
-
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->fakeSendMessageSucceedResponse();
+        $this->clearTestLogFile();
+        (new SimpleSeeder())->run();
+        $this->admin = Admin::first();
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
+        // Prepare an admin in database with multiple chats
+        // values won't shown during the RefreshDatabase trait is been used
+    }
 
     /**
      * Testcase where chat is not selected and commands not executed untill the chat is selected
@@ -34,34 +43,15 @@ class ExistedAdminSendCommandToPrivateChatTest extends TestCase
      */
     public function testAdminAttachedToMultipleChatsAndChatNotSelectedRepliesWithSelectChatButtons()
     {
-        $this->fakeSendMessageSucceedResponse();
-        $this->clearTestLogFile();
-        // Prepare an admin in database with multiple chats
-        // values are not shown during the RefreshDatabase trait is been used
-        (new SimpleSeeder())->run();
+        $this->deleteLastCommandFromCache($this->admin->admin_id);
+        $this->setCommand(MainMenuCmd::MODERATION_SETTINGS->value);
 
-        $admin = Admin::first();
-        $data = $this->getTextMessageModelData();
-        // Private messages have no chat title
-        unset($data["message"]["chat"]["title"]);
-        $data["message"]["from"]["id"] = $admin->admin_id;
-        $data["message"]["chat"]["id"] = $admin->admin_id;
-        $data["message"]["chat"]["type"] = 'private';
-        // Mock sending a  random command to our server and expect that it won't be executed because chat is not selected 
-        $data["message"]["text"] = MainMenuCmd::MODERATION_SETTINGS->value;
-
-        $this->postJson('api/webhook', $data);
-        //Storage facade is not working in tests. I set a file path in .env.testing file and in logging.php file
-        // so it stores the logs in that file only while testing
-        $logContents = $this->getTestLogFile();
+        $this->postJson('api/webhook', $this->data);
+        $titles = $this->admin->chats->pluck("chat_title")->toArray();
         //Assert that all expected buttons titles were sent  and write in log file inside sendMessages() method
-        foreach ($admin->chats as $chat) {
-            $this->assertStringContainsString($chat->chat_title, $logContents);
-        }
-        $this->assertStringNotContainsString(MainMenuCmd::MODERATION_SETTINGS->value, $logContents);
+        $this->assertButtonsWereSent($titles);
         //Assert that last command was set in cache so that it can be used after the chat is selected
-        $lastCommand = Cache::get(CONSTANTS::CACHE_LAST_COMMAND . $admin->admin_id);
-        $this->assertEquals(MainMenuCmd::MODERATION_SETTINGS->value, $lastCommand);
+        $this->assertEquals(MainMenuCmd::MODERATION_SETTINGS->value, $this->getLastCommandFromCache($this->admin->admin_id));
         $this->clearTestLogFile();
     }
 }

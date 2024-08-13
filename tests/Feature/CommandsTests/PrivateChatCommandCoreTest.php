@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\MainMenuCmd;
-use App\Enums\UnusualCharsFilterCmd;
-use App\Enums\ResNewUsersCmd;
-use App\Enums\BadWordsFilterCmd;
+use App\Enums\UnusualCharsFilterEnum;
+use App\Enums\ResNewUsersEnum;
+use App\Enums\BadWordsFilterEnum;
 use App\Models\TelegramRequestModelBuilder;
 use App\Enums\ResTime;
 use App\Models\UnusualCharsFilter;
@@ -47,45 +47,38 @@ class PrivateChatCommandCoreTest extends TestCase
      */
     public function testChatIsSetAndLastCommandRememberedAndSelectModerationSettingsRepliesWithButtons(): void
     {
-        //Mock that user was entered some command previously and it was saved to use after user selected the chat
-        $lastCommand = MainMenuCmd::MODERATION_SETTINGS->value;
-        Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $this->admin->admin_id, $lastCommand);
+        $this->deleteSelectedChatFromCache($this->admin->admin_id);
+        $this->putLastCommandToCache($this->admin->admin_id, MainMenuCmd::MODERATION_SETTINGS->value);
         // Mock that user is pressed select chat button with one of the titles from his chats in database
         $title = $this->admin->chats->first()->chat_title;
-        $this->data["message"]["text"] = $title;
-
+        $this->setCommand($title);
         $this->prepareDependencies();
 
         new PrivateChatCommandCore();
 
-        $this->assertEquals($this->chat->chat_title, $title);
-
-        $sendMessageLog = $this->getTestLogFile();
-        // Assert that when the chat was set the message to user with a selected chat title has been sent
-        $this->assertStringContainsString("Selected chat: " . $title . "", $sendMessageLog);
-        // Assert that a previously saved command was executed and moderation settings buttons were sent
-        $this->assertStringContainsString(ResNewUsersCmd::SETTINGS->value, $sendMessageLog);
-        $this->assertStringContainsString(MainMenuCmd::FILTERS_SETTINGS->value, $sendMessageLog);
-        $this->assertStringContainsString(MainMenuCmd::MODERATION_SETTINGS->replyMessage(), $sendMessageLog);
+        $this->assertReplyMessageSent("Selected chat: " . $title);
+        $this->assertReplyMessageSent(MainMenuCmd::MODERATION_SETTINGS->replyMessage());
+        // Assert that buttons were sent and previously saved command was executed
+        $this->assertButtonsWereSent([
+            ResNewUsersEnum::SETTINGS->value,
+            MainMenuCmd::FILTERS_SETTINGS->value
+        ]);
     }
 
 
     public function testSelectFiltersSettingsReplyWithButtons()
     {
-        $this->data["message"]["text"] = MainMenuCmd::FILTERS_SETTINGS->value;
+        $this->setCommand(MainMenuCmd::FILTERS_SETTINGS->value);
         $this->prepareDependencies();
-        // Fake that the chat was previously selected and it's id has been saved in cache
-        $this->fakeChatSelected($this->admin->admin_id, $this->chat->chat_id);
 
         (new PrivateChatCommandCore());
 
-        $sendMessageLog = $this->getTestLogFile();
-        $this->assertStringContainsString(MainMenuCmd::FILTERS_SETTINGS->replyMessage(), $sendMessageLog);
-        $this->assertStringContainsString(UnusualCharsFilterCmd::SETTINGS->value, $sendMessageLog);
-        $this->assertStringContainsString(BadWordsFilterCmd::SETTINGS->value, $sendMessageLog);
+        $this->assertReplyMessageSent(MainMenuCmd::FILTERS_SETTINGS->replyMessage());
+        $this->assertButtonsWereSent([
+            UnusualCharsFilterEnum::SETTINGS->value,
+            BadWordsFilterEnum::SETTINGS->value
+        ]);
     }
-
-
 
 
     private function prepareDependencies()
@@ -96,8 +89,7 @@ class PrivateChatCommandCoreTest extends TestCase
 
         app()->instance("requestModel", $this->model);
         app()->instance("botService", $this->botService);
-        // Fake that chat was previously selected and saved in cache
-        $this->fakeChatSelected($this->admin->admin_id, $this->chat->chat_id);
+        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->chat->chat_id);
     }
 }
 

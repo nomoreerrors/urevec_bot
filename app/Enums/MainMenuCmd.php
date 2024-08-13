@@ -17,7 +17,7 @@ enum MainMenuCmd: string
     {
         return match ($this) {
             self::MODERATION_SETTINGS => 'Настройки модерации чата',
-            self::SELECT_CHAT => 'Вы выбрали чат',
+            self::SELECT_CHAT => 'Выберите чат, который хотите настроить',
             self::FILTERS_SETTINGS => 'Выберите фильтр, который хотите настроить',
         };
     }

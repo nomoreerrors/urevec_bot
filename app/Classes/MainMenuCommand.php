@@ -4,12 +4,11 @@ namespace App\Classes;
 
 use App\Models\Chat;
 use App\Enums\MainMenuCmd;
-use App\Traits\BackMenuButton;
+use App\Classes\BackMenuButton;
+use App\Services\BotErrorNotificationService;
 
 class MainMenuCommand extends BaseCommand
 {
-    use BackMenuButton;
-
     public function __construct(private string $command)
     {
         parent::__construct($command);
@@ -25,7 +24,7 @@ class MainMenuCommand extends BaseCommand
                 $this->sendFiltersMainSettings();
                 break;
             case MainMenuCmd::BACK->value:
-                $this->Back();
+                BackMenuButton::back();
                 break;
         }
         return $this;
@@ -38,28 +37,16 @@ class MainMenuCommand extends BaseCommand
 
     public function sendModerationSettings(): void
     {
+        BackMenuButton::rememberBackMenu($this->command);
         $keyBoard = (new Buttons())->getModerationSettingsButtons();
-        $this->rememberBackMenu();
         app("botService")->sendMessage(MainMenuCmd::MODERATION_SETTINGS->replyMessage(), $keyBoard);
     }        //
 
     public function sendFiltersMainSettings(): void
     {
+        BackMenuButton::rememberBackMenu($this->command);
         $keyBoard = (new Buttons())->getFiltersMainSettingsButtons();
         app("botService")->sendMessage(MainMenuCmd::FILTERS_SETTINGS->replyMessage(), $keyBoard);
-    }
-
-    /**
-     * Move back to previous menu
-     * Remove last element from back menu array in cache
-     * and set it as private chat command 
-     * @return void
-     */
-    public function Back(): void
-    {
-        $this->botService->setPrivateChatCommand($this->getBackMenuFromCache());
-        $this->moveUpBackMenuPointer();
-        new PrivateChatCommandCore();
     }
 }
 

@@ -3,12 +3,12 @@
 namespace App\Classes;
 
 use App\Classes\CommandChatSelector;
-use App\Classes\FilterSettingsCommand;
-use App\Enums\BadWordsFilterCmd;
+use App\Classes\BadWordsFilterCommand;
+use App\Enums\BadWordsFilterEnum;
 use App\Classes\MainMenuCommand;
 use App\Enums\MainMenuCmd;
-use App\Enums\ResNewUsersCmd;
-use App\Enums\UnusualCharsFilterCmd;
+use App\Enums\ResNewUsersEnum;
+use App\Enums\UnusualCharsFilterEnum;
 use App\Services\CONSTANTS;
 use App\Models\Chat;
 use App\Classes\ModerationSettings;
@@ -55,16 +55,22 @@ class PrivateChatCommandCore extends BaseBotCommandCore
         }
 
 
-        if (ResNewUsersCmd::exists($this->command)) {
-            new RestrictNewUsersCommand($this->command);
+        if (ResNewUsersEnum::exists($this->command)) {
+            new RestrictNewUsersCommand($this->command, ResNewUsersEnum::class);
             return $this;
         }
 
         if (
-            BadWordsFilterCmd::exists($this->command) ||
-            UnusualCharsFilterCmd::exists($this->command)
+            BadWordsFilterEnum::exists($this->command) ||
+            UnusualCharsFilterEnum::exists($this->command)
         ) {
-            new FilterSettingsCommand($this->command);
+            $filter = $this->botService->getChat()->badWordsFilter;
+
+            new BadWordsFilterCommand(
+                $this->command,
+                $filter,
+                BadWordsFilterEnum::class
+            );
             return $this;
         }
 

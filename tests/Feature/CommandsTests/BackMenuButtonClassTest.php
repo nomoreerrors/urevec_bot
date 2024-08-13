@@ -2,9 +2,13 @@
 
 namespace Feature\CommandsTests;
 
+use App\Classes\PrivateChatCommandCore;
 use App\Classes\RestrictNewUsersCommand;
+use App\Enums\MainMenuCmd;
+use App\Enums\ResNewUsersEnum;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Database\Console\Migrations\BaseCommand;
+use App\Classes\BackMenuButton;
 use App\Services\TelegramBotService;
 use App\Models\TelegramRequestModelBuilder;
 use Tests\TestCase;
@@ -12,22 +16,15 @@ use App\Models\Admin;
 use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 
-class BackMenuButtonTraitTest extends TestCase
+class BackMenuButtonClassTest extends TestCase
 {
     public function setUp(): void
     {
         parent::setUp();
         (new SimpleSeeder())->run(1, 1);
         $this->admin = Admin::first();
-
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
-        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($requestModel);
-        $this->botService->setChat($this->admin->chats->first()->chat_id);
-
-        app()->singleton("requestModel", fn() => $requestModel);
-        app()->singleton("botService", fn() => $this->botService);
-
+        $this->clearTestLogFile();
     }
 
     /**
@@ -40,10 +37,11 @@ class BackMenuButtonTraitTest extends TestCase
      * @param mixed $menuPointer
      * @return void
      */
-    public function testBackMenu()
+    public function testGeneral()
     {
+        $this->prepareDependencies();
         $cacheKey = $this->getCacheKey();
-        Cache::forget($cacheKey);
+        $this->forgetBackMenuArray();
 
         $this->rememberBackMenuTest($cacheKey);
         $this->getLastBackMenuFromCacheTest();
@@ -52,12 +50,12 @@ class BackMenuButtonTraitTest extends TestCase
     }
 
 
-    public function rememberBackMenuTest($cacheKey)
+    public function rememberBackMenuTest(string $cacheKey)
     {
-        $this->getAccessToProtectedMethod("first text", 'rememberBackMenu');
-        $this->getAccessToProtectedMethod("second text", 'rememberBackMenu');
-        $this->getAccessToProtectedMethod("third text", 'rememberBackMenu');
-        $this->getAccessToProtectedMethod("fourth text", 'rememberBackMenu');
+        BackMenuButton::rememberBackMenu("first text");
+        BackMenuButton::rememberBackMenu("second text");
+        BackMenuButton::rememberBackMenu("third text");
+        BackMenuButton::rememberBackMenu("fourth text");
 
         $backMenuArray = $this->getBackMenuArray();
 
@@ -76,8 +74,8 @@ class BackMenuButtonTraitTest extends TestCase
      */
     public function getLastBackMenuFromCacheTest()
     {
-        $menuPointer = $this->getAccessToProtectedMethod("random text", 'getLastBackMenuFromCache');
-        $this->assertEquals("fourth text", $menuPointer);
+        $menuPointer = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $this->assertEquals("third text", $menuPointer);
     }
 
     /**
@@ -88,22 +86,22 @@ class BackMenuButtonTraitTest extends TestCase
      */
     public function moveBackMenuPointerTest($cacheKey)
     {
-        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(3, $backMenuArray);
         $this->assertEquals("third text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(2, $backMenuArray);
         $this->assertEquals("second text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(1, $backMenuArray);
         $this->assertEquals("first text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod("random text", 'moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(0, $backMenuArray);
     }
@@ -119,7 +117,8 @@ class BackMenuButtonTraitTest extends TestCase
     {
         $backMenuArray = ["first text", "second text", "third text", "fourth text"];
         $this->setBackMenuArrayToCache($backMenuArray, $cacheKey);
-        $this->getAccessToProtectedMethod("fourth text", 'rememberBackMenu');
+
+        BackMenuButton::rememberBackMenu("fourth text");
         $this->assertCount(3, $this->getBackMenuArray());
     }
 
@@ -139,9 +138,45 @@ class BackMenuButtonTraitTest extends TestCase
     }
 
 
-    public function getAccessToProtectedMethod(string $command, string $method)
+    /**
+     * General public method back()
+     * @return void
+     */
+    public function testBackMethod()
     {
-        $myClass = new RestrictNewUsersCommand($command);
+        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->admin->chats->first()->chat_id);
+        $this->fakeSendMessageSucceedResponse();
+
+        // Expect that the command will be saved to cache as previous menu
+        $this->data["message"]["text"] = ResNewUsersEnum::SETTINGS->value;
+        $this->prepareDependencies();
+        $this->forgetBackMenuArray(); //Clear cache before test 
+        new PrivateChatCommandCore();
+
+        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
+
+
+        // Expect that the command will be saved to cache as previous menu array at  index 1
+        $this->data["message"]["text"] = ResNewUsersEnum::SELECT_RESTRICTION_TIME->value;
+        $this->prepareDependencies();
+        new PrivateChatCommandCore();
+        $this->assertCount(2, $this->getBackMenuArray());
+
+        // Fake that a back button was pressed
+        $this->data["message"]["text"] = MainMenuCmd::BACK->value;
+        $this->prepareDependencies();
+        new PrivateChatCommandCore();
+        //Asserting that the menu pointer moved to the previous position and command was removed from cache
+        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
+        $this->assertStringContainsString(ResNewUsersEnum::SETTINGS->replyMessage(), $this->getTestLogFile());
+    }
+
+
+    public function getAccessToProtectedMethod($method)
+    {
+        $myClass = new BackMenuButton();
         $reflection = new ReflectionClass($myClass);
         // Getting a protected method
         $method = $reflection->getMethod($method);
@@ -154,6 +189,20 @@ class BackMenuButtonTraitTest extends TestCase
     public function getCacheKey(): string
     {
         return "back_menu_" . $this->botService->getAdmin()->admin_id;
+    }
+
+    public function prepareDependencies()
+    {
+        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+        $this->botService = new TelegramBotService($requestModel);
+        app()->singleton("botService", fn() => $this->botService);
+        app()->singleton("requestModel", fn() => $requestModel);
+    }
+
+    public function forgetBackMenuArray()
+    {
+        $cacheKey = $this->getCacheKey();
+        Cache::forget($cacheKey);
     }
 
 }

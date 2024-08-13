@@ -2,46 +2,46 @@
 
 namespace App\Classes;
 
-use App\Enums\ResNewUsersCmd;
+use App\Enums\ResNewUsersEnum;
 use App\Enums\ResTime;
 use App\Models\Chat;
 use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
-use App\Traits\BackMenuButton;
+use App\Models\Admin;
+use App\Classes\BackMenuButton;
 
 class RestrictNewUsersCommand extends BaseCommand
 {
-    use BackMenuButton;
-    public function __construct(private string $command)
+    public function __construct(protected string $command, protected string $enum)
     {
-        parent::__construct($command);
+        parent::__construct($command, $enum);
     }
 
     protected function handle(): static
     {
         switch ($this->command) {
-            case ResNewUsersCmd::SETTINGS->value:
+            case ResNewUsersEnum::SETTINGS->value:
                 $this->send();
                 break;
-            case ResNewUsersCmd::SELECT_TIME->value:
+            case ResNewUsersEnum::SELECT_RESTRICTION_TIME->value:
                 $this->sendRestrictionTimeButtons();
                 break;
-            case ResNewUsersCmd::SET_TIME_MONTH->value:
-            case ResNewUsersCmd::SET_TIME_WEEK->value:
-            case ResNewUsersCmd::SET_TIME_DAY->value:
-            case ResNewUsersCmd::SET_TIME_TWO_HOURS->value:
+            case ResNewUsersEnum::SET_TIME_MONTH->value:
+            case ResNewUsersEnum::SET_TIME_WEEK->value:
+            case ResNewUsersEnum::SET_TIME_DAY->value:
+            case ResNewUsersEnum::SET_TIME_TWO_HOURS->value:
                 $this->setNewUsersRestrictionTime();
                 break;
-            case ResNewUsersCmd::ENABLE_ALL->value:
-            case ResNewUsersCmd::DISABLE_ALL->value:
+            case ResNewUsersEnum::ENABLE_ALL->value:
+            case ResNewUsersEnum::DISABLE_ALL->value:
                 $this->toggleAllRestrictions();
                 break;
-            case ResNewUsersCmd::ENABLE_SEND_MEDIA->value:
-            case ResNewUsersCmd::DISABLE_SEND_MEDIA->value:
+            case ResNewUsersEnum::ENABLE_SEND_MEDIA->value:
+            case ResNewUsersEnum::DISABLE_SEND_MEDIA->value:
                 $this->toggleSendMedia();
                 break;
-            case ResNewUsersCmd::ENABLE_SEND_MESSAGES->value:
-            case ResNewUsersCmd::DISABLE_SEND_MESSAGES->value:
+            case ResNewUsersEnum::ENABLE_SEND_MESSAGES->value:
+            case ResNewUsersEnum::DISABLE_SEND_MESSAGES->value:
                 $this->toggleSendMessages();
                 break;
         }
@@ -60,9 +60,9 @@ class RestrictNewUsersCommand extends BaseCommand
             $restrictionsStatus
         );
 
-        $this->rememberBackMenu();
-        app("botService")->sendMessage(
-            ResNewUsersCmd::SETTINGS->replyMessage(),
+        BackMenuButton::rememberBackMenu($this->command);
+        $this->botService->sendMessage(
+            ResNewUsersEnum::SETTINGS->replyMessage(),
             $keyBoard
         );
     }
@@ -71,21 +71,22 @@ class RestrictNewUsersCommand extends BaseCommand
     {
         $keyBoard = (new Buttons())->getNewUsersRestrictionsTimeButtons();
 
-        app("botService")->sendMessage(
-            ResNewUsersCmd::SELECT_TIME->replyMessage(),
+        BackMenuButton::rememberBackMenu($this->command);
+        $this->botService->sendMessage(
+            ResNewUsersEnum::SELECT_RESTRICTION_TIME->replyMessage(),
             $keyBoard
         );
     }
 
     protected function setNewUsersRestrictionTime()
     {
-        $setTimeCase = ResNewUsersCmd::from($this->command);
+        $setTimeCase = ResNewUsersEnum::from($this->command);
 
         $this->botService->getChat()->newUserRestrictions()->update([
             'restrict_new_users' => 1,
             'restriction_time' => ResTime::getTime($setTimeCase)
         ]);
-        $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
+        $this->botService->sendMessage(ResNewUsersEnum::from($this->command)->replyMessage());
         return $this;
     }
 
@@ -94,10 +95,10 @@ class RestrictNewUsersCommand extends BaseCommand
     {
         // BotErrorNotificationService::send($this->command);
         return match ($this->command) {
-            ResNewUsersCmd::SET_TIME_MONTH->value => ResTime::MONTH,
-            ResNewUsersCmd::SET_TIME_WEEK->value => ResTime::WEEK,
-            ResNewUsersCmd::SET_TIME_DAY->value => ResTime::DAY,
-            ResNewUsersCmd::SET_TIME_TWO_HOURS->value => ResTime::TWO_HOURS,
+            ResNewUsersEnum::SET_TIME_MONTH->value => ResTime::MONTH,
+            ResNewUsersEnum::SET_TIME_WEEK->value => ResTime::WEEK,
+            ResNewUsersEnum::SET_TIME_DAY->value => ResTime::DAY,
+            ResNewUsersEnum::SET_TIME_TWO_HOURS->value => ResTime::TWO_HOURS,
         };
     }
 
@@ -108,18 +109,18 @@ class RestrictNewUsersCommand extends BaseCommand
      */
     protected function toggleAllRestrictions()
     {
-        $enabled = $this->command === ResNewUsersCmd::ENABLE_ALL->value;
+        $enabled = $this->command === ResNewUsersEnum::ENABLE_ALL->value;
         $this->chat->newUserRestrictions()->update([
             'restrict_new_users' => $enabled ? 1 : 0,
             'can_send_messages' => $enabled ? 0 : $this->chat->newUserRestrictions->can_send_messages,
             'can_send_media' => $enabled ? 0 : $this->chat->newUserRestrictions->can_send_media
         ]);
-        $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
+        $this->botService->sendMessage(ResNewUsersEnum::from($this->command)->replyMessage());
     }
 
     protected function toggleSendMedia()
     {
-        $isEnableCommand = $this->command === ResNewUsersCmd::ENABLE_SEND_MEDIA->value;
+        $isEnableCommand = $this->command === ResNewUsersEnum::ENABLE_SEND_MEDIA->value;
         $oldRestrictStatus = $this->chat->newUserRestrictions->restrict_new_users;
 
         $this->chat->newUserRestrictions()->update([
@@ -127,19 +128,19 @@ class RestrictNewUsersCommand extends BaseCommand
             'can_send_media' => $isEnableCommand ? 1 : 0
         ]);
 
-        $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
+        $this->botService->sendMessage(ResNewUsersEnum::from($this->command)->replyMessage());
     }
 
     protected function toggleSendMessages()
     {
-        $isEnableCommand = $this->command === ResNewUsersCmd::ENABLE_SEND_MESSAGES->value;
+        $isEnableCommand = $this->command === ResNewUsersEnum::ENABLE_SEND_MESSAGES->value;
         $oldRestrictStatus = $this->chat->newUserRestrictions->restrict_new_users;
 
         $this->chat->newUserRestrictions()->update([
             'restrict_new_users' => $isEnableCommand ? $oldRestrictStatus : 1,
             'can_send_messages' => $isEnableCommand ? 1 : 0
         ]);
-        $this->botService->sendMessage(ResNewUsersCmd::from($this->command)->replyMessage());
+        $this->botService->sendMessage(ResNewUsersEnum::from($this->command)->replyMessage());
     }
 
 }

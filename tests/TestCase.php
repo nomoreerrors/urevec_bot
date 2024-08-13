@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Models\ForwardMessageModel;
 use App\Models\Admin;
+use App\Enums\MainMenuCmd;
 use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -442,12 +443,69 @@ abstract class TestCase extends BaseTestCase
      * @param int $chatId Id of selected chat - one of his multiple groups
      * @return bool
      */
-    protected function fakeChatSelected(int $adminId, int $chatId)
+    protected function fakeThatChatWasSelected(int $adminId, int $chatId)
     {
         return Cache::put(
             "last_selected_chat_" . $adminId,
             $chatId,
         );
+    }
+
+    protected function deleteSelectedChatFromCache(int $adminId)
+    {
+        return Cache::forget("last_selected_chat_" . $adminId);
+    }
+
+    public function getBackMenuJsonArrayFromCache(): string
+    {
+        return Cache::get("back_menu_" . $this->botService->getAdmin()->admin_id);
+    }
+
+    public function assertBackToPreviousMenuButtonWasSent()
+    {
+        $this->assertStringContainsString(MainMenuCmd::BACK->value, $this->getTestLogFile());
+    }
+
+    /**
+     * Expecting array of button names
+     * @param array $buttons
+     * @return void
+     */
+    public function assertButtonsWereSent(array $buttons)
+    {
+        foreach ($buttons as $key => $value) {
+            $this->assertStringContainsString($value, $this->getTestLogFile());
+        }
+    }
+
+    public function assertBackMenuArrayContains($command)
+    {
+        $this->assertStringContainsString($command, $this->getBackMenuJsonArrayFromCache());
+    }
+
+    public function setCommand($command)
+    {
+        $this->data["message"]["text"] = $command;
+    }
+
+    public function assertReplyMessageSent($message)
+    {
+        $this->assertStringContainsString($message, $this->getTestLogFile());
+    }
+
+    public function putLastCommandToCache(int $adminId, string $lastCommand)
+    {
+        Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $this->admin->admin_id, $lastCommand);
+    }
+
+    public function getLastCommandFromCache(int $adminId)
+    {
+        return Cache::get(CONSTANTS::CACHE_LAST_COMMAND . $adminId);
+    }
+
+    public function deleteLastCommandFromCache(int $adminId)
+    {
+        Cache::forget(CONSTANTS::CACHE_LAST_COMMAND . $adminId);
     }
 }
 
