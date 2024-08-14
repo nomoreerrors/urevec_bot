@@ -47,7 +47,6 @@ class TelegramApiMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $data = $request->all();
-        // return response(Response::$statusTexts[500], Response::HTTP_OK);
 
         try {
             $this->saveRawRequestData($data);

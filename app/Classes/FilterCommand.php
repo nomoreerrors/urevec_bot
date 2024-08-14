@@ -6,67 +6,50 @@ use App\Interfaces\CommandEnumInterface;
 use App\Enums\ResTime;
 use App\Interfaces\FilterCmdEnumInterface;
 use App\Models\FilterModel;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Traits\RestrictionsTimeCases;
+use App\Traits\RestrictionsCases;
+use App\Traits\RestrictUsers;
 
 class FilterCommand extends BaseCommand
 {
+    use RestrictionsTimeCases;
+    use RestrictionsCases;
+    use RestrictUsers;
     /**
      * Summary of __construct
      * @param string $command
-     * @param \App\Models\FilterModel $filter
+     * @param \App\Models\FilterModel $model
      * @param string $enum Enum::class
      */
-    public function __construct(protected string $command, protected FilterModel $filter, protected string $enum)
+    public function __construct(protected string $command, protected FilterModel $model, protected string $enum)
     {
         parent::__construct($command, $enum);
     }
 
-    protected function handle()
+
+    protected function handle(): void
     {
+        parent::handle();
+        $this->getRestrictionsCases();
+        $this->getRestrictionTimeCases();
+
         switch ($this->command) {
-            case $this->enum::SETTINGS->value:
-                $this->send();
-                break;
-            case $this->enum::DISABLE->value:
             case $this->enum::ENABLE->value:
+            case $this->enum::DISABLE->value:
                 $this->toggleFilter();
                 break;
-            case $this->enum::DELETE_MESSAGES_DISABLE->value:
             case $this->enum::DELETE_MESSAGES_ENABLE->value:
+            case $this->enum::DELETE_MESSAGES_DISABLE->value:
                 $this->toggleDeleteMessages();
-                break;
-            case $this->enum::RESTRICT_USERS_DISABLE->value:
-            case $this->enum::RESTRICT_USERS_ENABLE->value:
-                $this->toggleRestrictUser();
-                break;
-            case $this->enum::SELECT_RESTRICTION_TIME->value:
-                $this->sendRestrictionTimeButtons();
-                break;
-            case $this->enum::SET_TIME_MONTH->value:
-            case $this->enum::SET_TIME_WEEK->value:
-            case $this->enum::SET_TIME_DAY->value:
-            case $this->enum::SET_TIME_TWO_HOURS->value:
-                $this->setRestrictionTime();
                 break;
         }
     }
 
-    public function send(): void
-    {
-        BackMenuButton::rememberBackMenu($this->command);
-        $keyBoard = $this->getSettingsButtons();
-        app("botService")->sendMessage($this->enum::SETTINGS->replyMessage(), $keyBoard);
-    }
-
-    protected function getMenuButtons(): array
-    {
-        return [];
-    }
 
     protected function toggleFilter(): void
     {
-        $this->filter->update([
-            "filter_enabled" => $this->command === $this->enum::ENABLE->value ? 1 : 0
+        $this->model->update([
+            "enabled" => $this->model->enabled ? 0 : 1
         ]);
 
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
@@ -74,46 +57,27 @@ class FilterCommand extends BaseCommand
 
     protected function toggleDeleteMessages(): void
     {
-        $this->filter->update([
-            "delete_message" => $this->command === $this->enum::DELETE_MESSAGES_ENABLE->value ? 1 : 0
+        $this->model->update([
+            "delete_message" => $this->model->delete_message ? 0 : 1
         ]);
 
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
     }
 
-    protected function toggleRestrictUser(): void
+
+    protected function getSettingsTitles(): array
     {
-        $this->filter->update([
-            "restrict_user" => $this->command === $this->enum::RESTRICT_USERS_ENABLE->value ? 1 : 0
-        ]);
+        return [
+            $this->model->enabled ?
+            $this->enum::DISABLE->value :
+            $this->enum::ENABLE->value,
 
-        $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
-    }
+            $this->model->delete_message ?
+            $this->enum::DELETE_MESSAGES_DISABLE->value :
+            $this->enum::DELETE_MESSAGES_ENABLE->value,
 
-    protected function setRestrictionTime(): void
-    {
-        $case = $this->enum::from($this->command);
-        $this->filter->update([
-            "restrict_user" => 1,
-            "restriction_time" => ResTime::getTime($case)
-        ]);
-        $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
-    }
-
-    protected function sendRestrictionTimeButtons(): void
-    {
-        $keyBoard = (new Buttons())->getRestrictionsTimeButtons($this->enum);
-        BackMenuButton::rememberBackMenu($this->command);
-        $this->botService->sendMessage(
-            $this->enum::SELECT_RESTRICTION_TIME->replyMessage(),
-            $keyBoard
-        );
-    }
-
-
-    protected function getSettingsButtons(): array
-    {
-        return (new Buttons())->getFilterSettingsButtons($this->filter, $this->enum);
+            $this->enum::EDIT_RESTRICTIONS->value
+        ];
     }
 }
 

@@ -13,7 +13,7 @@ class NewUserRestriction extends Model
 
     protected $fillable = [
         'chat_id',
-        'restrict_new_users',
+        'enabled',
         'can_send_messages',
         'can_send_media',
         'restriction_time',

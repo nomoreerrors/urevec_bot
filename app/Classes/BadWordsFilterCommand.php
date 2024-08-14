@@ -12,12 +12,23 @@ use App\Models\FilterModel;
 
 class BadWordsFilterCommand extends FilterCommand
 {
-    protected function handle(): static
+    protected function handle(): void
     {
         parent::handle();
         switch ($this->command) {
             //ADD SPECIFIC CASES
         }
-        return $this;
+    }
+
+    protected function getSettingsTitles(): array
+    {
+        $titles = parent::getSettingsTitles();
+        $addTitles = [
+            $this->enum::ADD_WORDS->value,
+            $this->enum::DELETE_WORDS->value,
+            $this->enum::GET_WORDS->value,
+        ];
+
+        return array_merge($titles, $addTitles);
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Classes;
 
-use App\Enums\MainMenuCmd;
+use App\Enums\ModerationSettingsEnum;
 use App\Models\Admin;
+use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use App\Models\MessageModels\TextMessageModel;
 use App\Exceptions\BaseTelegramBotException;
@@ -15,11 +16,15 @@ class ChatSelector
 {
     private TelegramBotService $botService;
 
-    private TextMessageModel $requestModel;
+    private $requestModel;
 
     private $admin = null;
 
     private Buttons $buttons;
+
+    private bool $updated = false;
+
+    private string $command;
 
     private bool $buttonsSended = false;
 
@@ -31,9 +36,10 @@ class ChatSelector
     public function __construct()
     {
         $this->botService = app("botService");
-        $this->requestModel = app("requestModel");
+        $this->requestModel = $this->botService->getRequestModel();
         $this->admin = $this->botService->getAdmin();
         $this->buttons = new Buttons();
+        $this->command = $this->botService->getPrivateChatCommand();
         $this->setGroupsTitles();
         $this->select();
     }
@@ -43,15 +49,24 @@ class ChatSelector
         if ($this->hasOnlyOneChat())
             return $this->setDefaultChat();
 
-        if ($this->isSelectChatCommand()) {
+
+        if ($this->command === ModerationSettingsEnum::SELECT_CHAT->value) {
+            $this->sendSelectChatButtons();
+            return;
+        }
+
+        if ($this->isSelectedChatCommand()) {
             $this->setSelectedChatAndNotice();
+            $this->rememberSelectedChatId();
             $this->restorePreviousCommandIfExists();
             return;
 
         } elseif (!$this->tryToGetLastChatFromCache()) {
             $this->sendSelectChatButtons();
             $this->rememberLastCommand();
+            return;
         }
+        return;
     }
 
     public function getLastSelectedChatIdFromCache()
@@ -76,7 +91,7 @@ class ChatSelector
      * which means that a select certain chat button was pressed by user 
      * @return bool
      */
-    public function isSelectChatCommand(): bool
+    public function isSelectedChatCommand(): bool
     {
         return in_array($this->botService->getPrivateChatCommand(), $this->groupsTitles);
     }
@@ -106,20 +121,6 @@ class ChatSelector
         return $this->groupsTitles;
     }
 
-    private function findSelectedChatId(): int
-    {
-        $selectedChat = array_filter($this->groupsTitles, function ($value) {
-            return $value === $this->botService->getPrivateChatCommand();
-        });
-
-        if (empty($selectedChat)) {
-            throw new BaseTelegramBotException(CONSTANTS::SELECTED_CHAT_NOT_SET, __METHOD__);
-        }
-
-        $chatId = $this->admin->chats->where('chat_title', $selectedChat[0])->first()->chat_id;
-        return $chatId;
-    }
-
     /**
      * Set the chat that was selected by the user as an active chat and send a message to the user
      * about which chat was selected
@@ -127,16 +128,18 @@ class ChatSelector
      */
     public function setSelectedChatAndNotice(): void
     {
-        $chatId = $this->findSelectedChatId();
-        $this->botService->setChat($chatId);
+        $id = $this->admin->chats->where('chat_title', $this->command)->first()->chat_id;
+        $this->botService->setChat($id);
         $this->botService->sendMessage("Selected chat: " . $this->botService->getChat()->chat_title);
-        $this->rememberSelectedChatId();
+        $this->updated = true;
+        BackMenuButton::back();
     }
 
     public function sendSelectChatButtons(): void
     {
-        $keyBoard = $this->buttons->getSelectChatButtons($this->groupsTitles);
-        app("botService")->sendMessage(MainMenuCmd::SELECT_CHAT->replyMessage(), $keyBoard);
+        BackMenuButton::rememberBackMenu(ModerationSettingsEnum::SELECT_CHAT->value);
+        $keyBoard = $this->buttons->createButtons($this->groupsTitles, 1, true);
+        app("botService")->sendMessage(ModerationSettingsEnum::SELECT_CHAT->replyMessage(), $keyBoard);
         $this->buttonsSended = true;
         return;
     }
@@ -172,6 +175,16 @@ class ChatSelector
     private function setDefaultChat(): void
     {
         $this->botService->setChat($this->admin->chats->first()->chat_id);
+    }
+
+    public function updated(): bool
+    {
+        return $this->updated;
+    }
+
+    public function buttonsSended(): bool
+    {
+        return $this->buttonsSended;
     }
 
 }

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Enums\MainMenuCmd;
+use App\Enums\ModerationSettingsEnum;
 use App\Enums\UnusualCharsFilterEnum;
 use App\Enums\ResNewUsersEnum;
 use App\Enums\BadWordsFilterEnum;
@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Http;
 use App\Services\CONSTANTS;
 use Tests\TestCase;
 
-class PrivateChatCommandCoreTest extends TestCase
+class ModerationSettingsCommandTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -48,7 +48,7 @@ class PrivateChatCommandCoreTest extends TestCase
     public function testChatIsSetAndLastCommandRememberedAndSelectModerationSettingsRepliesWithButtons(): void
     {
         $this->deleteSelectedChatFromCache($this->admin->admin_id);
-        $this->putLastCommandToCache($this->admin->admin_id, MainMenuCmd::MODERATION_SETTINGS->value);
+        $this->putLastCommandToCache($this->admin->admin_id, ModerationSettingsEnum::MODERATION_SETTINGS->value);
         // Mock that user is pressed select chat button with one of the titles from his chats in database
         $title = $this->admin->chats->first()->chat_title;
         $this->setCommand($title);
@@ -57,27 +57,29 @@ class PrivateChatCommandCoreTest extends TestCase
         new PrivateChatCommandCore();
 
         $this->assertReplyMessageSent("Selected chat: " . $title);
-        $this->assertReplyMessageSent(MainMenuCmd::MODERATION_SETTINGS->replyMessage());
+        $this->assertReplyMessageSent(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage());
         // Assert that buttons were sent and previously saved command was executed
         $this->assertButtonsWereSent([
             ResNewUsersEnum::SETTINGS->value,
-            MainMenuCmd::FILTERS_SETTINGS->value
+            ModerationSettingsEnum::FILTERS_SETTINGS->value,
         ]);
+        $this->assertBackMenuArrayContains(ModerationSettingsEnum::MODERATION_SETTINGS->value);
     }
 
 
     public function testSelectFiltersSettingsReplyWithButtons()
     {
-        $this->setCommand(MainMenuCmd::FILTERS_SETTINGS->value);
+        $this->setCommand(ModerationSettingsEnum::FILTERS_SETTINGS->value);
         $this->prepareDependencies();
 
         (new PrivateChatCommandCore());
 
-        $this->assertReplyMessageSent(MainMenuCmd::FILTERS_SETTINGS->replyMessage());
+        $this->assertReplyMessageSent(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage());
         $this->assertButtonsWereSent([
             UnusualCharsFilterEnum::SETTINGS->value,
             BadWordsFilterEnum::SETTINGS->value
         ]);
+        $this->assertBackMenuArrayContains(ModerationSettingsEnum::FILTERS_SETTINGS->value);
     }
 
 

@@ -7,18 +7,20 @@ use App\Enums\Traits\Exists;
 enum BadWordsFilterEnum: string implements EnumHasRestrictionTimeInterface
 {
     use Exists;
-
-    /**
-     * Bad words
-     */
+    /** * Bad words */
     case SETTINGS = "Фильтр запрещенных слов";
     case DISABLE = "Отключить фильтр слов";
     case ENABLE = "Включить фильтр слов";
     case ADD_WORDS = "Добавить запрещенные слова";
     case DELETE_WORDS = "Удалить запрещенные слова";
     case GET_WORDS = "Посмотреть мой список запрещенных слов";
-    case DISABLE_MESSAGES = "Фильтр слов: Запретить отправку сообщений нарушителям";
-    case ENABLE_MESSAGES = "Фильтр слов: Разрешить отправку сообщений нарушителям";
+    case SEND_MESSAGES_DISABLE = "Фильтр слов: Запретить отправку сообщений нарушителям";
+    case SEND_MESSAGES_ENABLE = "Фильтр слов: Разрешить отправку сообщений нарушителям";
+    case SEND_MEDIA_DISABLE = "Фильтр слов: Запретить отправку медиа-сообщений нарушителям";
+    case SEND_MEDIA_ENABLE = "Фильтр слов: Разрешить отправку медиа-сообщений нарушителям";
+    case EDIT_RESTRICTIONS = "Фильтр слов: Редактировать ограничения нарушителей";
+    case RESTRICTIONS_DISABLE_ALL = "Фильтр слов: отключить все ограничения";
+    case RESTRICTIONS_ENABLE_ALL = "Фильтр слов: включить все ограничения";
     case DELETE_MESSAGES_ENABLE = "Фильтр слов: Удалить сообщение нарушителя";
     case DELETE_MESSAGES_DISABLE = "Фильтр слов: Не удалять сообщение нарушителя";
     case RESTRICT_USERS_ENABLE = "Фильтр слов: Включить временные ограничения нарушителей";
@@ -50,6 +52,13 @@ enum BadWordsFilterEnum: string implements EnumHasRestrictionTimeInterface
             self::SET_TIME_WEEK => 'Установлено ограничение нарушителей на неделю',
             self::SET_TIME_DAY => 'Установлено ограничение нарушителей на 24 часа',
             self::SET_TIME_TWO_HOURS => 'Установлено ограничение нарушителей на 2 часа',
+            self::EDIT_RESTRICTIONS => 'Выберите ограничения для пользователей, попавших под фильтр',
+            self::RESTRICTIONS_ENABLE_ALL => 'Все ограничения включены',
+            self::RESTRICTIONS_DISABLE_ALL => 'Все ограничения отключены',
+            self::SEND_MESSAGES_DISABLE => 'Фильтр символов: Отправка сообщений нарушителям запрещена',
+            self::SEND_MESSAGES_ENABLE => 'Фильтр символов: Отправка сообщений нарушителям запрещена',
+            self::SEND_MEDIA_DISABLE => 'Фильтр символов: Отправка медиа-сообщений нарушителям запрещена',
+            self::SEND_MEDIA_ENABLE => 'Фильтр символов: Отправка медиа-сообщений нарушителям запрещена',
         };
     }
 

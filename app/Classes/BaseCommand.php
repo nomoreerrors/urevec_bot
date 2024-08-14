@@ -2,15 +2,18 @@
 
 namespace App\Classes;
 
-use App\Interfaces\CommandEnumInterface;
 use App\Models\Chat;
-use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
-use App\Enums\MainMenuCmd;
-use Illuminate\Support\Facades\Cache;
+use App\Traits\RestrictUsers;
+use App\Traits\RestrictionsTimeCases;
+use App\Traits\RestrictionsCases;
 
 abstract class BaseCommand
 {
+    use RestrictionsTimeCases;
+    use RestrictionsCases;
+    use RestrictUsers;
+
     protected TelegramBotService $botService;
     protected Chat $chat;
 
@@ -21,8 +24,33 @@ abstract class BaseCommand
         $this->handle();        //
     }
 
-    abstract protected function handle();
+    protected function handle(): void
+    {
+        $this->getBaseMenuCases();
+    }
 
-    abstract public function send(): void;
+    public function send(): void
+    {
+        BackMenuButton::rememberBackMenu($this->command);
+        $keyBoard = $this->getSettingsButtons();
+        app("botService")->sendMessage($this->enum::SETTINGS->replyMessage(), $keyBoard);
+    }
+
+
+    protected function getSettingsButtons(): array
+    {
+        return (new Buttons())->createButtons($this->getSettingsTitles(), 1, true);
+    }
+
+    protected function getBaseMenuCases()
+    {
+        switch ($this->command) {
+            case $this->enum::SETTINGS->value:
+                $this->send();
+                break;
+        }
+    }
+
+    protected abstract function getSettingsTitles(): array;
 
 }

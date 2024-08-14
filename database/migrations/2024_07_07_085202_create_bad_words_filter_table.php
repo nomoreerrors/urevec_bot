@@ -14,11 +14,12 @@ return new class extends Migration {
         Schema::create('bad_words_filter', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger("chat_id");
-            $table->boolean("filter_enabled")->default(1);
+            $table->boolean("enabled")->default(1);
             $table->boolean("delete_user")->default(0);
             $table->boolean("restrict_user")->default(1);
             $table->boolean("delete_message")->default(1);
-            $table->boolean("dasable_send_messages")->default(1);
+            $table->boolean("can_send_messages")->default(0);
+            $table->boolean("can_send_media")->default(0);
             $table->tinyInteger("restriction_time")->default(ResTime::TWO_HOURS->value);
             $table->text("bad_words")->nullable();
             $table->text("bad_phrases")->nullable();

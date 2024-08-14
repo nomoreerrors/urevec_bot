@@ -35,11 +35,12 @@ class UnusualCharsFilterFactory extends Factory
 
         return [
             'chat_id' => $chatId,
-            'filter_enabled' => $this->faker->boolean(),
+            'enabled' => $this->faker->boolean(),
             'delete_user' => $this->faker->boolean(),
             'restrict_user' => $this->faker->boolean(),
             'delete_message' => $this->faker->boolean(),
-            'dasable_send_messages' => $this->faker->boolean(),
+            'can_send_messages' => $this->faker->boolean(),
+            'can_send_media' => $this->faker->boolean(),
             'restriction_time' => $this->faker->numberBetween(0, 4),
         ];
     }

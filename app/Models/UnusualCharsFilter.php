@@ -15,10 +15,12 @@ class UnusualCharsFilter extends FilterModel
 
     protected $fillable = [
         'chat_id',
-        'filter_enabled',
+        'enabled',
         'delete_user',
         'restrict_user',
         'delete_message',
+        'can_send_messages',
+        'can_send_media',
         'disable_send_messages',
         'restriction_time'
     ];

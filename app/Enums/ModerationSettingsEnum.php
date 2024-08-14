@@ -4,7 +4,7 @@ namespace App\Enums;
 
 use App\Enums\Traits\Exists;
 
-enum MainMenuCmd: string
+enum ModerationSettingsEnum: string
 {
     use Exists;
 

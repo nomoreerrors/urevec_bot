@@ -3,14 +3,16 @@
 namespace App\Classes;
 
 use App\Enums\UnusualCharsFilterEnum;
+use App\Models\NewUserRestriction;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Enums\MainMenuCmd;
+use App\Enums\ModerationSettingsEnum;
 use App\Exceptions\BaseTelegramBotException;
 use App\Enums\BadWordsFilterEnum;
 use App\Models\FilterModel;
 use App\Models\UnusualCharsFilter;
 use App\Services\CONSTANTS;
 use App\Enums\ResNewUsersEnum;
+use Nette\ArgumentOutOfRangeException;
 use PHPUnit\Util\Filter;
 
 class Buttons
@@ -34,42 +36,70 @@ class Buttons
         return $replyMarkup->get();
     }
 
-    /**
-     * Define buttons names according to whether the value of setting in database disabled or not
-     * @param bool $sendMessages
-     * @param bool $sendMedia
-     * @param bool $settings
-     * @return array
-     */
-    public function getNewUsersRestrictionsButtons(bool $canSendMessages, bool $canSendMedia, bool $settings): array
+    public function createButtons(array $titles, int $eachRowHas = 2, bool $withBackButton = false): array
     {
-        $toggleSendMessages = $canSendMessages ?
-            ResNewUsersEnum::DISABLE_SEND_MESSAGES->value :
-            ResNewUsersEnum::ENABLE_SEND_MESSAGES->value;
+        if (empty($titles)) {
+            throw new ArgumentOutOfRangeException("Buttons titles not set");
+        }
 
-        $toggleSendMedia = $canSendMedia ?
-            ResNewUsersEnum::DISABLE_SEND_MEDIA->value :
-            ResNewUsersEnum::ENABLE_SEND_MEDIA->value;
+        $replyMarkup = new ReplyKeyboardMarkup();
+        $i = 0;
+        $buttonsPerRow = 0;
+        foreach ($titles as $title) {
+            if ($buttonsPerRow == 0) {
+                $replyMarkup->addRow();
+            }
+            $replyMarkup->addButton($title);
+            $buttonsPerRow++;
 
-        $toggleRestrictNewUsers = $settings ?
-            ResNewUsersEnum::DISABLE_ALL->value :
-            ResNewUsersEnum::ENABLE_ALL->value;
-
-        $keyBoard = (new ReplyKeyboardMarkup())
-            ->addRow()
-            ->addButton($toggleSendMessages)
-            ->addRow()
-            ->addButton($toggleSendMedia)
-            ->addRow()
-            ->addButton($toggleRestrictNewUsers)
-            ->addRow()
-            ->addButton(ResNewUsersEnum::SELECT_RESTRICTION_TIME->value)
-            ->addRow()
-            ->addButton(MainMenuCmd::BACK->value)
-            ->get();
-
-        return $keyBoard;
+            if ($buttonsPerRow == $eachRowHas) {
+                $buttonsPerRow = 0;
+            }
+            $i++;
+        }
+        if ($withBackButton) {
+            $replyMarkup->addRow()
+                ->addButton(ModerationSettingsEnum::BACK->value);
+        }
+        return $replyMarkup->get();
     }
+
+    // /**
+    //  * Define buttons names according to whether the value of setting in database disabled or not
+    //  * @param bool $sendMessages
+    //  * @param bool $sendMedia
+    //  * @param bool $settings
+    //  * @return array
+    //  */
+    // public function getRestrictUsersButtons(NewUserRestriction $model, string $enum): array
+    // {
+    //     $canSendMedia = $model->can_send_media ?
+    //             $model::SEND_MEDIA_DISABLE->value :
+    //             $model::SEND_MEDIA_ENABLE->value;
+
+    //     $canSendMessages = $model->can_send_messages ?
+    //             $model::SEND_MESSAGES_DISABLE->value :
+    //             $model::SEND_MESSAGES_ENABLE->value;
+
+    //     $restrictNewUsers = $model->restrict_user ?
+    //             $model::RESTRICTIONS_DISABLE_ALL->value :
+    //             $model::RESTRICTIONS_ENABLE_ALL->value;
+
+    //     $keyBoard = (new ReplyKeyboardMarkup())
+    //         ->addRow()
+    //         ->addButton($canSendMedia)
+    //         ->addRow()
+    //         ->addButton($canSendMessages)
+    //         ->addRow()
+    //         ->addButton($restrictNewUsers)
+    //         ->addRow()
+    //         ->addButton($enum::SELECT_RESTRICTION_TIME->value)
+    //         ->addRow()
+    //         ->addButton(MainMenuCmd::BACK->value)
+    //         ->get();
+
+    //     return $keyBoard;
+    // }
 
     /**
      * Summary of getRestrictionsTimeButtons
@@ -88,7 +118,7 @@ class Buttons
             ->addRow()
             ->addButton($enum::SET_TIME_MONTH->value)
             ->addRow()
-            ->addButton(MainMenuCmd::BACK->value)
+            ->addButton(ModerationSettingsEnum::BACK->value)
             ->get();
         // getBadWordsRestrictionTimeButtons
         return $keyBoard;
@@ -101,7 +131,7 @@ class Buttons
             ->addRow()
             ->addButton(ResNewUsersEnum::SETTINGS->value)
             ->addRow()
-            ->addButton(MainMenuCmd::FILTERS_SETTINGS->value) //TODO change to enum
+            ->addButton(ModerationSettingsEnum::FILTERS_SETTINGS->value) //TODO change to enum
             ->get();
 
         return $keyBoard;
@@ -115,7 +145,7 @@ class Buttons
             ->addRow()
             ->addButton(UnusualCharsFilterEnum::SETTINGS->value)
             ->addRow()
-            ->addButton(MainMenuCmd::BACK->value)
+            ->addButton(ModerationSettingsEnum::BACK->value)
             ->get();
 
         return $keyBoard;
@@ -129,24 +159,19 @@ class Buttons
      */
     public function getFilterSettingsButtons(FilterModel $filter, string $enum): array
     {
-        $lol = $filter->filter_enabled;
-        $toggleFIlter = $filter->filter_enabled === 1;
-        $toggleDeleteMessage = $filter->delete_message === 1;
-        $toggleRestrictUser = $filter->restrict_user === 1;
-
-        $toggleFIlter = $toggleFIlter ?
+        $toggleFIlter = $filter->enabled ?
                 $enum::DISABLE->value :
                 $enum::ENABLE->value;
 
-        $toggleDeleteMessage = $toggleDeleteMessage ?
+        $toggleDeleteMessage = $filter->delete_message ?
                 $enum::DELETE_MESSAGES_DISABLE->value :
                 $enum::DELETE_MESSAGES_ENABLE->value;
 
-        $toggleRestrictUser = $toggleRestrictUser ?
+        $toggleRestrictUser = $filter->restrict_user ?
                 $enum::RESTRICT_USERS_DISABLE->value :
                 $enum::RESTRICT_USERS_ENABLE->value;
 
-        $restrictTime = $enum::SELECT_RESTRICTION_TIME->value;
+        $selectTime = $enum::SELECT_RESTRICTION_TIME->value;
 
 
         $keyBoard = (new ReplyKeyboardMarkup())
@@ -157,9 +182,9 @@ class Buttons
             ->addRow()
             ->addButton($toggleRestrictUser)
             ->addRow()
-            ->addButton($restrictTime)
+            ->addButton($selectTime)
             ->addRow()
-            ->addButton(MainMenuCmd::BACK->value)
+            ->addButton(ModerationSettingsEnum::BACK->value)
             ->get();
 
         return $keyBoard;

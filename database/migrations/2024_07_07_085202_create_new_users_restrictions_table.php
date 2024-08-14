@@ -14,7 +14,7 @@ return new class extends Migration {
         Schema::create('new_users_restrictions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger("chat_id");
-            $table->boolean("restrict_new_users")->default(1);
+            $table->boolean("enabled")->default(1);
             $table->boolean("can_send_messages")->default(0);
             $table->boolean("can_send_media")->default(0);
             $table->tinyInteger("restriction_time")->default(ResTime::DAY->value);

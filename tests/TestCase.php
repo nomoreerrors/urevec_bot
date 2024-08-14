@@ -4,7 +4,8 @@ namespace Tests;
 
 use App\Models\ForwardMessageModel;
 use App\Models\Admin;
-use App\Enums\MainMenuCmd;
+use Illuminate\Database\Eloquent\Model;
+use App\Enums\ModerationSettingsEnum;
 use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +25,8 @@ use App\Services\CONSTANTS;
 abstract class TestCase extends BaseTestCase
 {
     protected array $testObjects;
+
+    protected $restrictions;
 
     protected $service;
 
@@ -403,28 +406,53 @@ abstract class TestCase extends BaseTestCase
     public function setAllRestrictionsToFalse(Chat $chat)
     {
         $chat->newUserRestrictions()->update([
-            'restrict_new_users' => 0,
+            'enabled' => 0,
             'restriction_time' => 0,
             'can_send_messages' => 0,
             'can_send_media' => 0
         ]);
+
+        if (
+            $chat->newUserRestrictions->first()->enabled ||
+            $chat->newUserRestrictions->first()->restriction_time !== 0 ||
+            $chat->newUserRestrictions->first()->can_send_messages ||
+            $chat->newUserRestrictions->first()->can_send_media !== 0
+        ) {
+
+            throw new \Exception("Restrictions are not disabled");
+        }
     }
 
     public function setAllRestrictionsDisabled(Chat $chat)
     {
         $chat->newUserRestrictions()->update([
-            'restrict_new_users' => 0,
+            'enabled' => 0,
         ]);
+
+        if (
+            $chat->newUserRestrictions->first()->enabled
+        ) {
+            throw new \Exception("Restrictions are not disabled");
+        }
     }
 
     public function setAllRestrictionsEnabled(Chat $chat)
     {
         $chat->newUserRestrictions()->update([
-            'restrict_new_users' => 1,
+            'enabled' => 1,
             'restriction_time' => 2, // Last restriction time is always stored in DB even if restrictions are disabled
             'can_send_messages' => 0,
             'can_send_media' => 0
         ]);
+
+        if (
+            !$chat->newUserRestrictions->first()->enabled ||
+            $chat->newUserRestrictions->first()->restriction_time !== 2 ||
+            $chat->newUserRestrictions->first()->can_send_messages ||
+            $chat->newUserRestrictions->first()->can_send_media
+        ) {
+            throw new \Exception("Restrictions are not enabled");
+        }
     }
 
     protected function getPrivateChatMessage(int $fromId, string $command = null): array
@@ -463,7 +491,7 @@ abstract class TestCase extends BaseTestCase
 
     public function assertBackToPreviousMenuButtonWasSent()
     {
-        $this->assertStringContainsString(MainMenuCmd::BACK->value, $this->getTestLogFile());
+        $this->assertStringContainsString(ModerationSettingsEnum::BACK->value, $this->getTestLogFile());
     }
 
     /**
@@ -507,6 +535,67 @@ abstract class TestCase extends BaseTestCase
     {
         Cache::forget(CONSTANTS::CACHE_LAST_COMMAND . $adminId);
     }
+
+    public function getEditRestrictionsButtons(Model $model, string $enum): array
+    {
+        return [
+            $model->can_send_media ?
+                $enum::SEND_MEDIA_DISABLE->value :
+                $enum::SEND_MEDIA_ENABLE->value,
+
+            $model->can_send_messages ?
+                $enum::SEND_MESSAGES_DISABLE->value :
+                $enum::SEND_MESSAGES_ENABLE->value,
+
+            $model->enabled ?
+                $enum::RESTRICTIONS_DISABLE_ALL->value :
+                $enum::RESTRICTIONS_ENABLE_ALL->value,
+
+                $enum::SELECT_RESTRICTION_TIME->value,
+        ];
+    }
+
+    public function getFilterSettingsButtons(Model $model, string $enum): array
+    {
+        return [
+            $model->enabled ?
+                $enum::DISABLE->value :
+                $enum::ENABLE->value,
+
+            $model->delete_message ?
+                $enum::DELETE_MESSAGES_DISABLE->value :
+                $enum::DELETE_MESSAGES_ENABLE->value,
+
+                $enum::EDIT_RESTRICTIONS->value
+        ];
+    }
+
+    public function getRestrictionsTimeButtons(Model $model, string $enum): array
+    {
+        return [
+                $enum::SET_TIME_MONTH->value,
+                $enum::SET_TIME_WEEK->value,
+                $enum::SET_TIME_DAY->value,
+                $enum::SET_TIME_TWO_HOURS->value,
+        ];
+    }
+
+    // public function getRestrictionsButtons(Model $model, string $enum): array
+    // {
+    //     return [
+    //         $model->can_send_messages ?
+    //             $enum::SEND_MESSAGES_DISABLE->value :
+    //             $enum::SEND_MESSAGES_ENABLE->value,
+    //         $model->can_send_media ?
+    //             $enum::SEND_MEDIA_DISABLE->value :
+    //             $enum::SEND_MEDIA_ENABLE->value,
+    //         $model->enabled ?
+    //             $enum::RESTRICTIONS_DISABLE_ALL->value :
+    //             $enum::RESTRICTIONS_ENABLE_ALL->value,
+
+    //             $enum::SELECT_RESTRICTION_TIME->value
+    //     ];
+    // }
 }
 
 

@@ -13,11 +13,13 @@ class BadWordsFilter extends FilterModel
 
     protected $fillable = [
         'chat_id',
-        'filter_enabled',
+        'enabled',
         'delete_user',
         'restrict_user',
         'delete_message',
         'dasable_send_messages',
+        'can_send_messages',
+        'can_send_media',
         'restriction_time',
         'bad_words',
         'bad_phrases',

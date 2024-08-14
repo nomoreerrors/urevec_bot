@@ -39,6 +39,8 @@ class TelegramBotService
 
     private ?string $privateChatCommand = null;
 
+
+
     public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
         $this->setAdmin()
@@ -359,6 +361,11 @@ class TelegramBotService
     public function getPrivateChatCommand()
     {
         return $this->privateChatCommand;
+    }
+
+    public function getRequestModel(): TelegramRequestModelBuilder
+    {
+        return $this->requestModel;
     }
 }
 

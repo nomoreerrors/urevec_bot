@@ -40,9 +40,9 @@ class NewSupergroupChatAddedTest extends TestCase
     private function createBadWordsFilterTable($chat)
     {
         $this->assertEquals($chat->id, $chat->badWordsFilter->chat_id);
-        $this->assertEquals(1, $chat->badWordsFilter->filter_enabled);
+        $this->assertEquals(1, $chat->badWordsFilter->enabled);
         $this->assertEquals(0, $chat->badWordsFilter->delete_user);
-        $this->assertEquals(1, $chat->badWordsFilter->restrict_user);
+        $this->assertEquals(1, $chat->badWordsFilter->enabled);
         $this->assertEquals(1, $chat->badWordsFilter->delete_message);
         $this->assertEquals(1, $chat->badWordsFilter->dasable_send_messages);
         $this->assertEquals(ResTime::TWO_HOURS->value, $chat->badWordsFilter->restriction_time);
@@ -51,7 +51,7 @@ class NewSupergroupChatAddedTest extends TestCase
     private function createNewUsersRestrictionsTable($chat)
     {
         $this->assertEquals($chat->id, $chat->newUserRestrictions->chat_id);
-        $this->assertEquals(1, $chat->newUserRestrictions->restrict_new_users);
+        $this->assertEquals(1, $chat->newUserRestrictions->enabled);
         $this->assertEquals(0, $chat->newUserRestrictions->can_send_messages);
         $this->assertEquals(0, $chat->newUserRestrictions->can_send_media);
         $this->assertEquals(ResTime::DAY->value, $chat->newUserRestrictions->restriction_time);
@@ -73,9 +73,9 @@ class NewSupergroupChatAddedTest extends TestCase
     private function createUnusualCharsFilterTable($chat)
     {
         $this->assertEquals($chat->id, $chat->unusualCharsFilter->chat_id);
-        $this->assertEquals(1, $chat->unusualCharsFilter->filter_enabled);
+        $this->assertEquals(1, $chat->unusualCharsFilter->enabled);
         $this->assertEquals(0, $chat->unusualCharsFilter->delete_user);
-        $this->assertEquals(1, $chat->unusualCharsFilter->restrict_user);
+        $this->assertEquals(1, $chat->unusualCharsFilter->enabled);
         $this->assertEquals(1, $chat->unusualCharsFilter->delete_message);
         $this->assertEquals(1, $chat->unusualCharsFilter->dasable_send_messages);
         $this->assertEquals(ResTime::TWO_HOURS->value, $chat->unusualCharsFilter->restriction_time);

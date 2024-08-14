@@ -34,7 +34,7 @@ abstract class BaseBotCommandCore
 
     abstract protected function checkUserAccess(): static;
 
-    abstract protected function handle(): static;
+    abstract protected function handle(): void;
 
 
 

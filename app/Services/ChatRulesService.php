@@ -42,7 +42,7 @@ class ChatRulesService
             return false;
         }
 
-        if ($this->botService->getChat()->newUserRestrictions->restrict_new_users == 0) {
+        if ($this->botService->getChat()->newUserRestrictions->enabled == 0) {
             return false;
         }
 

@@ -5,10 +5,11 @@ namespace App\Classes;
 use App\Classes\CommandChatSelector;
 use App\Classes\BadWordsFilterCommand;
 use App\Enums\BadWordsFilterEnum;
-use App\Classes\MainMenuCommand;
-use App\Enums\MainMenuCmd;
+use App\Classes\ModerationSettingsCommand;
+use App\Enums\ModerationSettingsEnum;
 use App\Enums\ResNewUsersEnum;
 use App\Enums\UnusualCharsFilterEnum;
+use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use App\Models\Chat;
 use App\Classes\ModerationSettings;
@@ -43,42 +44,43 @@ class PrivateChatCommandCore extends BaseBotCommandCore
     }
 
 
-    protected function handle(): static
+    protected function handle(): void
     {
-        if ($this->chatSelector->selectChatButtonsSended()) {
-            return $this;
+        if (
+            $this->chatSelector->buttonsSended() ||
+            $this->chatSelector->updated()
+        ) {
+            return;
         }
 
-        if (MainMenuCmd::exists($this->command)) {
-            new MainMenuCommand($this->command);
-            return $this;
+        if (ModerationSettingsEnum::exists($this->command)) {
+            new ModerationSettingsCommand($this->command, ModerationSettingsEnum::class);
+            return;
         }
-
 
         if (ResNewUsersEnum::exists($this->command)) {
-            new RestrictNewUsersCommand($this->command, ResNewUsersEnum::class);
-            return $this;
+            $restrictions = $this->botService->getChat()->newUserRestrictions;
+            new RestrictNewUsersCommand($this->command, $restrictions, ResNewUsersEnum::class);
+            return;
         }
 
-        if (
-            BadWordsFilterEnum::exists($this->command) ||
-            UnusualCharsFilterEnum::exists($this->command)
-        ) {
+        if (BadWordsFilterEnum::exists($this->command)) {
             $filter = $this->botService->getChat()->badWordsFilter;
-
-            new BadWordsFilterCommand(
-                $this->command,
-                $filter,
-                BadWordsFilterEnum::class
-            );
-            return $this;
+            new BadWordsFilterCommand($this->command, $filter, BadWordsFilterEnum::class);
+            return;
         }
 
+        if (UnusualCharsFilterEnum::exists($this->command)) {
+            $filter = $this->botService->getChat()->unusualCharsFilter;
+            new UnusualCharsFilterCommand($this->command, $filter, UnusualCharsFilterEnum::class);
+            return;
+        }
 
+        // BotErrorNotificationService::send("Неизвестная команда в приватном чате" . $this->command);
         app("botService")->sendMessage("Неизвестная команда");
         log::info("Неизвестная команда в приватном чате" . $this->command);
         response(CONSTANTS::UNKNOWN_CMD, 200);
-        return $this;
+        return;
     }
 
 

@@ -35,7 +35,7 @@ class NewUserRestrictionFactory extends Factory
 
         return [
             'chat_id' => $chatId,
-            'restrict_new_users' => $this->faker->boolean(),
+            'enabled' => $this->faker->boolean(),
             'can_send_messages' => $this->faker->boolean(),
             'can_send_media' => $this->faker->boolean(),
             'restriction_time' => $this->faker->numberBetween(0, 4),

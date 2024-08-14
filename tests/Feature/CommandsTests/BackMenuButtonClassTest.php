@@ -4,7 +4,7 @@ namespace Feature\CommandsTests;
 
 use App\Classes\PrivateChatCommandCore;
 use App\Classes\RestrictNewUsersCommand;
-use App\Enums\MainMenuCmd;
+use App\Enums\ModerationSettingsEnum;
 use App\Enums\ResNewUsersEnum;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Database\Console\Migrations\BaseCommand;
@@ -164,7 +164,7 @@ class BackMenuButtonClassTest extends TestCase
         $this->assertCount(2, $this->getBackMenuArray());
 
         // Fake that a back button was pressed
-        $this->data["message"]["text"] = MainMenuCmd::BACK->value;
+        $this->data["message"]["text"] = ModerationSettingsEnum::BACK->value;
         $this->prepareDependencies();
         new PrivateChatCommandCore();
         //Asserting that the menu pointer moved to the previous position and command was removed from cache
