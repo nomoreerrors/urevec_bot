@@ -31,7 +31,7 @@ abstract class BaseCommand
 
     public function send(): void
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = $this->getSettingsButtons();
         app("botService")->sendMessage($this->enum::SETTINGS->replyMessage(), $keyBoard);
     }

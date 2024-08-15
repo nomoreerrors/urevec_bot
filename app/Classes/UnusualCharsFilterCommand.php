@@ -9,7 +9,7 @@ use App\Enums\BadWordsFilterEnum;
 use App\Models\UnusualCharsFilter;
 use App\Services\TelegramBotService;
 use PHPUnit\Util\Filter;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 
 class UnusualCharsFilterCommand extends FilterCommand
 {

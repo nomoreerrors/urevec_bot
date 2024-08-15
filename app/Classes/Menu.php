@@ -3,17 +3,24 @@
 namespace App\Classes;
 
 use App\Classes\PrivateChatCommandCore;
+use App\Services\CONSTANTS;
 use App\Services\BotErrorNotificationService;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Save previous selected menu in private chat with bot as an array to cache and them 
+ * Save previous selected menu in private chat with bot as an array to cache and then 
  * get it from cache in order to return it in reverse order 
  */
-class BackMenuButton
+class Menu
 {
     private static ?string $command = null;
+
     private static ?int $adminId = null;
+
+    /**
+     * @var bool  Indicates that menu title should be refreshed after making changes in private chat
+     */
+    private static bool $isMenuRefresh = false;
 
     /**
      * Use to remember last menu in private chat. Use back() method to jump back to previous menu.
@@ -21,8 +28,12 @@ class BackMenuButton
      * @param int $adminId
      * @return void
      */
-    public static function rememberBackMenu(string $command)
+    public static function save(string $command)
     {
+        if (self::$isMenuRefresh) {
+            return;
+        }
+
         self::$command = $command;
         self::$adminId = app("botService")->getAdmin()->admin_id;
 
@@ -67,7 +78,6 @@ class BackMenuButton
     private static function getBackMenuFromCache()
     {
         $cacheKey = self::getBackMenuCacheKey();
-        // BotErrorNotificationService::send($cacheKey);
         return json_decode(Cache::get($cacheKey), true);
     }
 
@@ -91,6 +101,7 @@ class BackMenuButton
      */
     private static function moveUpBackMenuPointer()
     {
+        // BotErrorNotificationService::send("moveUpBackMenuPointer");
         $backMenuArray = self::getBackMenuFromCache();
         $cacheKey = self::getBackMenuCacheKey();
         array_pop($backMenuArray);
@@ -100,5 +111,24 @@ class BackMenuButton
     private static function getBackMenuCacheKey(): string
     {
         return "back_menu_" . self::$adminId;
+    }
+
+    /**
+     * Refresh menu that was saved in rememberBackMenu() method after making changes in private chat
+     * returning the same menu but with different titles according to an updated status in database
+     * @return void
+     */
+    public static function refresh()
+    {
+        self::$adminId = app("botService")->getAdmin()->admin_id;
+        self::$isMenuRefresh = true;
+
+        $menu = self::getBackMenuFromCache();
+
+        if (empty($menu)) {
+            throw new \Exception(CONSTANTS::REFRESH_BACK_MENU_FAILED);
+        }
+        app("botService")->setPrivateChatCommand(end($menu));
+        new PrivateChatCommandCore();
     }
 }

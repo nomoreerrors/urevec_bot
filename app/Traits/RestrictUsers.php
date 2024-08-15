@@ -4,7 +4,7 @@ namespace App\Traits;
 
 use App\Classes\Buttons;
 use App\Enums\ResTime;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 
 trait RestrictUsers
 {
@@ -16,12 +16,13 @@ trait RestrictUsers
             "restriction_time" => ResTime::getTime($case)
         ]);
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
+        Menu::refresh();
     }
 
 
     protected function sendRestrictionTimeButtons(): void
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = (new Buttons())->createButtons($this->getRestrictionsTimeTitles(), 1, true);
         $this->botService->sendMessage(
             $this->enum::SELECT_RESTRICTION_TIME->replyMessage(),
@@ -41,6 +42,7 @@ trait RestrictUsers
         ]);
 
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
+        Menu::refresh();
     }
 
     protected function toggleSendMedia()
@@ -50,15 +52,18 @@ trait RestrictUsers
         ]);
 
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
+        Menu::refresh();
     }
 
 
     protected function toggleSendMessages()
     {
         $this->chat->newUserRestrictions()->update([
-            'can_send_messages' => $this->model->can_send_media ? 0 : 1
+            'can_send_messages' => $this->model->can_send_messages ? 0 : 1
+            // 'can_send_messages' => $this->model->can_send_messages ? 0 : 1
         ]);
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
+        Menu::refresh();
     }
 
 
@@ -75,7 +80,7 @@ trait RestrictUsers
 
     public function sendEditRestrictionsButtons()
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = (new Buttons())->createButtons($this->getEditRestrictionsTitles(), 1, true);
         app("botService")->sendMessage($this->enum::EDIT_RESTRICTIONS->replyMessage(), $keyBoard);
     }
@@ -102,7 +107,7 @@ trait RestrictUsers
 
     public function sendRestrictionsTimeButtons()
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = (new Buttons())->createButtons($this->getRestrictionsTimeTitles(), 1, true);
         app("botService")->sendMessage($this->enum::SELECT_RESTRICTION_TIME->replyMessage(), $keyBoard);
     }

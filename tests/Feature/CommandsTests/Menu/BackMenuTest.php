@@ -8,7 +8,7 @@ use App\Enums\ModerationSettingsEnum;
 use App\Enums\ResNewUsersEnum;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Database\Console\Migrations\BaseCommand;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 use App\Services\TelegramBotService;
 use App\Models\TelegramRequestModelBuilder;
 use Tests\TestCase;
@@ -16,14 +16,12 @@ use App\Models\Admin;
 use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 
-class BackMenuButtonClassTest extends TestCase
+class BackMenuTest extends TestCase
 {
     public function setUp(): void
     {
         parent::setUp();
-        (new SimpleSeeder())->run(1, 1);
-        $this->admin = Admin::first();
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
+        $this->setPrivateChatBotService(1, 1);
         $this->clearTestLogFile();
     }
 
@@ -31,8 +29,8 @@ class BackMenuButtonClassTest extends TestCase
      * Adding back menu to cache and asserting that it is added
      * Than asserting that menu pointer is moved by analogy with stack pointer
      * And values removed from cache in reverse order.
-     * Back menu is that is saving when user is selecting one the menu's buttons in straight order
-     * and then menu's returning in reverse order one by one as user pressed back button.
+     * Back menu is that is saving when user is pressed one of the menu's buttons 
+     * and then menus returning in reverse order one by one as user press back button.
      * @param mixed $cacheKey
      * @param mixed $menuPointer
      * @return void
@@ -40,22 +38,21 @@ class BackMenuButtonClassTest extends TestCase
     public function testGeneral()
     {
         $this->prepareDependencies();
-        $cacheKey = $this->getCacheKey();
         $this->forgetBackMenuArray();
 
-        $this->rememberBackMenuTest($cacheKey);
+        $this->rememberBackMenuTest();
         $this->getLastBackMenuFromCacheTest();
-        $this->moveBackMenuPointerTest($cacheKey);
-        $this->avoidBackMenuOverflowTest($cacheKey);
+        $this->moveBackMenuPointerTest();
+        $this->avoidBackMenuOverflowTest();
     }
 
 
-    public function rememberBackMenuTest(string $cacheKey)
+    public function rememberBackMenuTest()
     {
-        BackMenuButton::rememberBackMenu("first text");
-        BackMenuButton::rememberBackMenu("second text");
-        BackMenuButton::rememberBackMenu("third text");
-        BackMenuButton::rememberBackMenu("fourth text");
+        Menu::save("first text");
+        Menu::save("second text");
+        Menu::save("third text");
+        Menu::save("fourth text");
 
         $backMenuArray = $this->getBackMenuArray();
 
@@ -74,7 +71,7 @@ class BackMenuButtonClassTest extends TestCase
      */
     public function getLastBackMenuFromCacheTest()
     {
-        $menuPointer = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $menuPointer = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
         $this->assertEquals("third text", $menuPointer);
     }
 
@@ -84,24 +81,24 @@ class BackMenuButtonClassTest extends TestCase
      * @param mixed $cacheKey
      * @return void
      */
-    public function moveBackMenuPointerTest($cacheKey)
+    public function moveBackMenuPointerTest()
     {
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(3, $backMenuArray);
         $this->assertEquals("third text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(2, $backMenuArray);
         $this->assertEquals("second text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(1, $backMenuArray);
         $this->assertEquals("first text", end($backMenuArray));
 
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer');
+        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
         $backMenuArray = $this->getBackMenuArray();
         $this->assertCount(0, $backMenuArray);
     }
@@ -113,29 +110,15 @@ class BackMenuButtonClassTest extends TestCase
      * @param string $cacheKey
      * @return void
      */
-    public function avoidBackMenuOverflowTest(string $cacheKey)
+    public function avoidBackMenuOverflowTest()
     {
         $backMenuArray = ["first text", "second text", "third text", "fourth text"];
-        $this->setBackMenuArrayToCache($backMenuArray, $cacheKey);
+        $this->setBackMenuArrayToCache($backMenuArray);
 
-        BackMenuButton::rememberBackMenu("fourth text");
+        Menu::save("fourth text");
         $this->assertCount(3, $this->getBackMenuArray());
     }
 
-    /**
-     * Get array from cache
-     * @return array
-     */
-    protected function getBackMenuArray(): array
-    {
-        $cacheKey = "back_menu_" . $this->botService->getAdmin()->admin_id;
-        return json_decode(Cache::get($cacheKey), true);
-    }
-
-    protected function setBackMenuArrayToCache(array $backMenuArray, string $cacheKey)
-    {
-        Cache::put($cacheKey, json_encode($backMenuArray));
-    }
 
 
     /**
@@ -153,7 +136,7 @@ class BackMenuButtonClassTest extends TestCase
         $this->forgetBackMenuArray(); //Clear cache before test 
         new PrivateChatCommandCore();
 
-        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
         $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
 
 
@@ -168,28 +151,14 @@ class BackMenuButtonClassTest extends TestCase
         $this->prepareDependencies();
         new PrivateChatCommandCore();
         //Asserting that the menu pointer moved to the previous position and command was removed from cache
-        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache');
+        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
         $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
         $this->assertStringContainsString(ResNewUsersEnum::SETTINGS->replyMessage(), $this->getTestLogFile());
     }
 
 
-    public function getAccessToProtectedMethod($method)
-    {
-        $myClass = new BackMenuButton();
-        $reflection = new ReflectionClass($myClass);
-        // Getting a protected method
-        $method = $reflection->getMethod($method);
 
-        $method->setAccessible(true);
-        $result = $method->invoke($myClass);
-        return $result;
-    }
 
-    public function getCacheKey(): string
-    {
-        return "back_menu_" . $this->botService->getAdmin()->admin_id;
-    }
 
     public function prepareDependencies()
     {
@@ -199,10 +168,24 @@ class BackMenuButtonClassTest extends TestCase
         app()->singleton("requestModel", fn() => $requestModel);
     }
 
-    public function forgetBackMenuArray()
+
+    /**
+     * Testcase where menu is currently refreshing but there's also save() method getting executed during the command execution
+     * that is saving previous menu to cache, but in this case menu was saved in back menu array when the user has entered menu 
+     *  and we test that menu is not saved to cache again when the same command arrived.
+     *  Also test  that it won't move a stack pointer and delete previous menu from cache like it works when the back() method is called
+     * @return void
+     */
+    public function testBackMenuNotSavingIfMenuIsCurrentlyRefreshing()
     {
-        $cacheKey = $this->getCacheKey();
-        Cache::forget($cacheKey);
+        $this->setBackMenuArrayToCache([]);
+        $this->getAccessToProtectedProperty('isMenuRefresh', Menu::class, true);
+
+        Menu::save("first text");
+        Menu::save("second text");
+        Menu::save("third text");
+        Menu::save("fourth text");
+        $this->assertCount(0, $this->getBackMenuArray());
     }
 
 }

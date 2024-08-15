@@ -3,6 +3,9 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use ReflectionProperty;
+use ReflectionClass;
+use Database\Seeders\SimpleSeeder;
 use App\Models\Admin;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\ModerationSettingsEnum;
@@ -580,22 +583,89 @@ abstract class TestCase extends BaseTestCase
         ];
     }
 
-    // public function getRestrictionsButtons(Model $model, string $enum): array
-    // {
-    //     return [
-    //         $model->can_send_messages ?
-    //             $enum::SEND_MESSAGES_DISABLE->value :
-    //             $enum::SEND_MESSAGES_ENABLE->value,
-    //         $model->can_send_media ?
-    //             $enum::SEND_MEDIA_DISABLE->value :
-    //             $enum::SEND_MEDIA_ENABLE->value,
-    //         $model->enabled ?
-    //             $enum::RESTRICTIONS_DISABLE_ALL->value :
-    //             $enum::RESTRICTIONS_ENABLE_ALL->value,
+    public function getAccessToProtectedMethod(string $method, string $className)
+    {
+        $myClass = app($className);
+        $reflection = new ReflectionClass($myClass);
+        // Getting a protected method
+        $method = $reflection->getMethod($method);
 
-    //             $enum::SELECT_RESTRICTION_TIME->value
-    //     ];
-    // }
+        $method->setAccessible(true);
+        $result = $method->invoke($myClass);
+        return $result;
+    }
+
+    public function getAccessToProtectedProperty(string $getProperty, string $className, $value = null)
+    {
+        $myClass = app($className);
+        $reflection = new ReflectionClass($myClass);
+        $property = $reflection->getProperty($getProperty);
+        $property->setAccessible(true);
+
+        if ($value !== null) {
+            $property->setValue($myClass, $value);
+            if (gettype($value) !== gettype($property->getValue($myClass))) {
+                throw new \BadMethodCallException("Property " . $property . "тип свойства не соответствует типу аргумента");
+            }
+        }
+
+        return $property->getValue($myClass);
+    }
+
+    /**
+     * Get array from cache
+     * @return array
+     */
+    protected function getBackMenuArray(): array
+    {
+        if (empty($this->admin)) {
+            throw new \Exception("Admin not found");
+        }
+        $cacheKey = "back_menu_" . $this->admin->admin_id;
+        return json_decode(Cache::get($cacheKey), true);
+    }
+
+
+    public function getBackMenuCacheKey(): string
+    {
+        if (empty($this->admin)) {
+            throw new \Exception("Admin not found");
+        }
+        return "back_menu_" . $this->admin->admin_id;
+    }
+
+    public function forgetBackMenuArray()
+    {
+        $cacheKey = $this->getBackMenuCacheKey();
+        Cache::forget($cacheKey);
+    }
+
+    protected function setBackMenuArrayToCache(array $backMenuArray)
+    {
+        $cacheKey = $this->getBackMenuCacheKey();
+        Cache::put($cacheKey, json_encode($backMenuArray));
+    }
+
+    /**
+     * Get private chat bot service that build based on a request data with admin id from database
+     * and pass it to the container
+     * @param int $adminsCount
+     * @param int $chatsCount
+     * @return void
+     */
+    protected function setPrivateChatBotService(int $adminsCount = 1, int $chatsCount = 1): void
+    {
+        $this->fakeSendMessageSucceedResponse(); // for fake request for admins 
+        (new SimpleSeeder())->run($adminsCount, $chatsCount);
+        $this->admin = Admin::first();
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
+        $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
+        $this->botService = new TelegramBotService(($this->requestModel)->create());
+
+        app()->singleton("botService", fn() => $this->botService);
+        app()->singleton("requestModel", fn() => $this->requestModel);
+    }
+
 }
 
 

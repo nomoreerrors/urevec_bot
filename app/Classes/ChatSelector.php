@@ -132,12 +132,12 @@ class ChatSelector
         $this->botService->setChat($id);
         $this->botService->sendMessage("Selected chat: " . $this->botService->getChat()->chat_title);
         $this->updated = true;
-        BackMenuButton::back();
+        Menu::back();
     }
 
     public function sendSelectChatButtons(): void
     {
-        BackMenuButton::rememberBackMenu(ModerationSettingsEnum::SELECT_CHAT->value);
+        Menu::save(ModerationSettingsEnum::SELECT_CHAT->value);
         $keyBoard = $this->buttons->createButtons($this->groupsTitles, 1, true);
         app("botService")->sendMessage(ModerationSettingsEnum::SELECT_CHAT->replyMessage(), $keyBoard);
         $this->buttonsSended = true;

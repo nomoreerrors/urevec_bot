@@ -72,6 +72,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testUpdateNewUsersRestrictionsTimeChangesValuesInDatabase()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SET_TIME_MONTH->value);
         $this->prepareDependencies();
 
@@ -93,6 +94,7 @@ class RestrictNewUsersCommandTest extends TestCase
      */
     public function testEnableNewUsersAllRestrictions()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]); // so that the refresh() method works correctly
         $this->setCommand(ResNewUsersEnum::RESTRICTIONS_ENABLE_ALL->value);
         $this->prepareDependencies();
         $this->setAllRestrictionsDisabled($this->chat);
@@ -112,6 +114,7 @@ class RestrictNewUsersCommandTest extends TestCase
      */
     public function testDisableNewUsersAllRestrictions()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::RESTRICTIONS_DISABLE_ALL->value);
         $this->prepareDependencies();
         //Setting everything to 0 before test
@@ -136,6 +139,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testNewUsersEnableSendMedia()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MEDIA_ENABLE->value);
         $this->prepareDependencies();
 
@@ -150,6 +154,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testNewUsersDisableSendMedia()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MEDIA_DISABLE->value);
         $this->prepareDependencies();
 
@@ -164,6 +169,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testNewUsersEnableSendMessages()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MESSAGES_ENABLE->value);
         $this->prepareDependencies();
 
@@ -178,6 +184,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testNewUsersDisableSendMessages()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MESSAGES_DISABLE->value);
         $this->prepareDependencies();
         $this->restrictions->update([

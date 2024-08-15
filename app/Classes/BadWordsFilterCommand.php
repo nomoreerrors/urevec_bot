@@ -7,7 +7,7 @@ use App\Enums\ResTime;
 use App\Enums\BadWordsFilterEnum;
 use App\Services\TelegramBotService;
 use PHPUnit\Util\Filter;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 use App\Models\FilterModel;
 
 class BadWordsFilterCommand extends FilterCommand

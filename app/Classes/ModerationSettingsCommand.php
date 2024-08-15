@@ -7,7 +7,7 @@ use App\Enums\ResNewUsersEnum;
 use App\Enums\UnusualCharsFilterEnum;
 use App\Models\Chat;
 use App\Enums\ModerationSettingsEnum;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 use App\Services\BotErrorNotificationService;
 
 class ModerationSettingsCommand extends BaseCommand
@@ -31,7 +31,7 @@ class ModerationSettingsCommand extends BaseCommand
 
 
             case $this->enum::BACK->value:
-                BackMenuButton::back();
+                Menu::back();
                 break;
         }
     }
@@ -43,14 +43,14 @@ class ModerationSettingsCommand extends BaseCommand
 
     public function sendModerationSettings(): void
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = (new Buttons())->createButtons($this->getSettingsTitles(), 1, false);
         app("botService")->sendMessage(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage(), $keyBoard);
     }
 
     public function sendFiltersMainSettings(): void
     {
-        BackMenuButton::rememberBackMenu($this->command);
+        Menu::save($this->command);
         $keyBoard = (new Buttons())->createButtons($this->getFiltersSettingsTitles(), 1, true);
         app("botService")->sendMessage(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(), $keyBoard);
     }

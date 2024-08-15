@@ -8,7 +8,7 @@ use App\Models\NewUserRestriction;
 use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
 use App\Models\Admin;
-use App\Classes\BackMenuButton;
+use App\Classes\Menu;
 use App\Traits\RestrictionsTimeCases;
 use App\Traits\RestrictionsCases;
 use App\Traits\RestrictUsers;
