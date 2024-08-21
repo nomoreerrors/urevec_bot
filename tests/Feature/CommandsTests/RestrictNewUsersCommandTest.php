@@ -30,11 +30,8 @@ class RestrictNewUsersCommandTest extends TestCase
     {
         parent::setUp();
         $this->fakeSendMessageSucceedResponse();
-        (new SimpleSeeder())->run(1, 5);
-        $this->admin = Admin::first();
-        $this->chat = Chat::first();
+        $this->setPrivateChatBotService(1, 2);
         $this->restrictions = $this->chat->newUserRestrictions;
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
         $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
         $this->clearTestLogFile();
     }
@@ -130,14 +127,14 @@ class RestrictNewUsersCommandTest extends TestCase
     {
         $this->model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->botService = new TelegramBotService($this->model);
-        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->chat->chat_id);
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
 
-        app()->instance("requestModel", $this->model);
-        app()->instance("botService", $this->botService);
+        app()->singleton("requestModel", fn() => $this->model);
+        app()->singleton("botService", fn() => $this->botService);
     }
 
 
-    public function testNewUsersEnableSendMedia()
+    public function testToggleNewUsersEnableSendMedia()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MEDIA_ENABLE->value);
@@ -185,16 +182,45 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testNewUsersDisableSendMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setCommand(ResNewUsersEnum::SEND_MESSAGES_DISABLE->value);
         $this->prepareDependencies();
         $this->restrictions->update([
             "can_send_messages" => 1
         ]);
-        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->chat->chat_id);
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
 
         (new PrivateChatCommandCore());
         $this->assertEquals(0, $this->restrictions->first()->can_send_messages);
         $this->assertReplyMessageSent(ResNewUsersEnum::SEND_MESSAGES_DISABLE->replyMessage());
+    }
+
+    public function testChangesAppliesToCurrentlySelectedChat()
+    {
+        $this->setBackMenuArrayToCache(["one", "two"]);
+        $this->setAllRestrictionsToFalse($this->chat);
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
+
+        app("botService")->setPrivateChatCommand(ResNewUsersEnum::RESTRICTIONS_ENABLE_ALL->value);
+
+
+        new PrivateChatCommandCore();
+        $this->assertEquals(1, app("botService")->getChat()->newUserRestrictions()->first()->fresh()->enabled);
+        $this->assertEquals($this->chat->chat_id, app("botService")->getChat()->chat_id);
+
+
+
+        $secondChat = $this->admin->chats->where("chat_id", "!=", $this->chat->chat_id)->first();
+        $this->selectChatAndAssert($secondChat->chat_title, $secondChat->chat_id);
+        $this->assertLastChatIdWasCached($this->admin->admin_id, $secondChat->chat_id);
+        $this->setAllRestrictionsToFalse($secondChat);
+
+        app("botService")->setPrivateChatCommand(ResNewUsersEnum::SEND_MEDIA_ENABLE->value);
+
+        new PrivateChatCommandCore();
+        $this->assertEquals(1, app("botService")->getChat()->newUserRestrictions()->first()->fresh()->can_send_media);
+
+        $this->deleteSelectedChatFromCache($this->admin->admin_id);
     }
 
 }

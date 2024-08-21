@@ -31,18 +31,18 @@ class TelegramBotController extends Controller
 
     public function __construct()
     {
-        $this->requestModel = app("requestModel");
         $this->botService = app("botService");
+        $this->requestModel = $this->botService->getRequestModel();
     }
-    /**
-     * Summary of webhookHandler
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
-     */
+
+
     public function webhookHandler(Request $request)
     {
         try {
-            $this->privateChatCommandHandler();
+            switch ($this->requestModel->getChatType()) {
+                case "private":
+                    (new PrivateChatCommandCore())->handle();
+            }
 
         } catch (BaseTelegramBotException $e) {
             FailedRequestJob::dispatch($this->requestModel->getData());
@@ -68,35 +68,5 @@ class TelegramBotController extends Controller
     public function setWebhook()
     {
         WebhookService::setWebhook();
-    }
-
-    // /**
-    //  * Summary of checkIfIsCommand
-    //  * @param \App\Models\TelegramRequestModelBuilder $requestModel
-    //  * @return bool
-    //  */
-    // private function checkIfIsCommand(): bool
-    // {
-    //     if (
-    //         $this->requestModel instanceof TextMessageModel &&
-    //         $this->requestModel->getIsCommand()
-    //     ) {
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
-
-    /**
-     * Summary of commandHandler
-     * @param mixed $requestModel
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
-     */
-    private function privateChatCommandHandler(): void
-    {
-        if ($this->requestModel->getChatType() !== "private") {
-            return;
-        }
-        (new PrivateChatCommandCore());
     }
 }

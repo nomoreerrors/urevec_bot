@@ -12,8 +12,6 @@ use App\Traits\RestrictUsers;
 
 class FilterCommand extends BaseCommand
 {
-    use RestrictionsTimeCases;
-    use RestrictionsCases;
     use RestrictUsers;
     /**
      * Summary of __construct
@@ -36,34 +34,14 @@ class FilterCommand extends BaseCommand
         switch ($this->command) {
             case $this->enum::ENABLE->value:
             case $this->enum::DISABLE->value:
-                $this->toggleFilter();
+                $this->toggleColumn('enabled');
                 break;
             case $this->enum::DELETE_MESSAGES_ENABLE->value:
             case $this->enum::DELETE_MESSAGES_DISABLE->value:
-                $this->toggleDeleteMessages();
+                $this->toggleColumn('delete_message');
                 break;
         }
     }
-
-
-    protected function toggleFilter(): void
-    {
-        $this->model->update([
-            "enabled" => $this->model->enabled ? 0 : 1
-        ]);
-
-        $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
-    }
-
-    protected function toggleDeleteMessages(): void
-    {
-        $this->model->update([
-            "delete_message" => $this->model->delete_message ? 0 : 1
-        ]);
-
-        $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
-    }
-
 
     protected function getSettingsTitles(): array
     {

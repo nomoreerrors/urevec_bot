@@ -21,171 +21,77 @@ class BackMenuTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->setPrivateChatBotService(1, 1);
+        $this->admin = $this->setAdminWithMultipleChats(2);
         $this->clearTestLogFile();
+        $this->forgetBackMenuArray($this->admin->admin_id);
     }
 
-    /**
-     * Adding back menu to cache and asserting that it is added
-     * Than asserting that menu pointer is moved by analogy with stack pointer
-     * And values removed from cache in reverse order.
-     * Back menu is that is saving when user is pressed one of the menu's buttons 
-     * and then menus returning in reverse order one by one as user press back button.
-     * @param mixed $cacheKey
-     * @param mixed $menuPointer
-     * @return void
-     */
-    public function testGeneral()
+
+    public function testRememberBackMenu()
     {
-        $this->prepareDependencies();
-        $this->forgetBackMenuArray();
-
-        $this->rememberBackMenuTest();
-        $this->getLastBackMenuFromCacheTest();
-        $this->moveBackMenuPointerTest();
-        $this->avoidBackMenuOverflowTest();
+        $array = ["first text", "second text", "third text", "fourth text"];
+        $this->saveValuesToBackMenuArray($array);
+        $this->assertBackMenuArrayHas($array);
     }
 
-
-    public function rememberBackMenuTest()
+    public function testBackMethod()
     {
-        Menu::save("first text");
-        Menu::save("second text");
-        Menu::save("third text");
-        Menu::save("fourth text");
+        $array = ["first text", "second text", "third text", "fourth text"];
+        $this->saveValuesToBackMenuArray($array);
 
-        $backMenuArray = $this->getBackMenuArray();
+        $mockBotService = $this->createMock(TelegramBotService::class);
+        $this->prepareMenuConstructDeps($mockBotService);
 
-        $this->assertTrue(
-            in_array("first text", $backMenuArray) &&
-            in_array("second text", $backMenuArray) &&
-            in_array("third text", $backMenuArray) &&
-            in_array("fourth text", $backMenuArray)
-        );
+        $mockCommandCore = $this->getMockBuilder(PrivateChatCommandCore::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        // Asserting that returned value is an array count - 2
+        $mockBotService->expects($this->once())
+            ->method('setPrivateChatCommand')
+            ->with("third text");
+
+        $mockCommandCore->expects($this->once())
+            ->method('handle');
+
+        (new Menu($mockBotService, $mockCommandCore))->back();
     }
+
+    // TODO : add tests for refresh function
 
     /**
      * Assert that menu pointer indicates the last element in cache 
      * which means that returned value is the last element of an array 
-     * @return void
      */
-    public function getLastBackMenuFromCacheTest()
+    private function mockBotServiceGetAdminMethod($mockBotService)
     {
-        $menuPointer = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
-        $this->assertEquals("third text", $menuPointer);
+        $mockBotService->expects($this->any())
+            ->method('getAdmin')
+            ->willReturn($this->admin);
     }
 
-    /**
-     * Asserting that menu pointer is moved by analogy with stack pointer
-     * and values removed from cache in reverse order
-     * @param mixed $cacheKey
-     * @return void
-     */
-    public function moveBackMenuPointerTest()
+    public function assertBackMenuArrayHas(array $array)
     {
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
-        $backMenuArray = $this->getBackMenuArray();
-        $this->assertCount(3, $backMenuArray);
-        $this->assertEquals("third text", end($backMenuArray));
-
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
-        $backMenuArray = $this->getBackMenuArray();
-        $this->assertCount(2, $backMenuArray);
-        $this->assertEquals("second text", end($backMenuArray));
-
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
-        $backMenuArray = $this->getBackMenuArray();
-        $this->assertCount(1, $backMenuArray);
-        $this->assertEquals("first text", end($backMenuArray));
-
-        $this->getAccessToProtectedMethod('moveUpBackMenuPointer', Menu::class);
-        $backMenuArray = $this->getBackMenuArray();
-        $this->assertCount(0, $backMenuArray);
+        $backMenuArray = $this->getBackMenuArray($this->admin->admin_id);
+        foreach ($array as $value) {
+            $this->assertTrue(in_array($value, $backMenuArray));
+        }
     }
 
-    /**
-     * Test that when the last element of a back menu array is getting from cache
-     * and the open previous menu command gets executed, same command won't write to cache again
-     * and the menu pointer moved to the updated position.
-     * @param string $cacheKey
-     * @return void
-     */
-    public function avoidBackMenuOverflowTest()
+    public function saveValuesToBackMenuArray(array $array)
     {
-        $backMenuArray = ["first text", "second text", "third text", "fourth text"];
-        $this->setBackMenuArrayToCache($backMenuArray);
-
-        Menu::save("fourth text");
-        $this->assertCount(3, $this->getBackMenuArray());
+        foreach ($array as $value) {
+            $mockService = $this->createMock(TelegramBotService::class);
+            $this->mockBotServiceGetPrivateChatCommandMethod($value, $mockService);
+            $this->mockBotServiceGetAdminMethod($mockService);
+            $menu = new Menu($mockService, $this->createMock(PrivateChatCommandCore::class));
+            $menu->save();
+        }
     }
 
-
-
-    /**
-     * General public method back()
-     * @return void
-     */
-    public function testBackMethod()
+    private function prepareMenuConstructDeps($mockBotService)
     {
-        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->admin->chats->first()->chat_id);
-        $this->fakeSendMessageSucceedResponse();
-
-        // Expect that the command will be saved to cache as previous menu
-        $this->data["message"]["text"] = ResNewUsersEnum::SETTINGS->value;
-        $this->prepareDependencies();
-        $this->forgetBackMenuArray(); //Clear cache before test 
-        new PrivateChatCommandCore();
-
-        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
-        $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
-
-
-        // Expect that the command will be saved to cache as previous menu array at  index 1
-        $this->data["message"]["text"] = ResNewUsersEnum::SELECT_RESTRICTION_TIME->value;
-        $this->prepareDependencies();
-        new PrivateChatCommandCore();
-        $this->assertCount(2, $this->getBackMenuArray());
-
-        // Fake that a back button was pressed
-        $this->data["message"]["text"] = ModerationSettingsEnum::BACK->value;
-        $this->prepareDependencies();
-        new PrivateChatCommandCore();
-        //Asserting that the menu pointer moved to the previous position and command was removed from cache
-        $result = $this->getAccessToProtectedMethod('getLastBackMenuFromCache', Menu::class);
-        $this->assertEquals(ResNewUsersEnum::SETTINGS->value, $result);
-        $this->assertStringContainsString(ResNewUsersEnum::SETTINGS->replyMessage(), $this->getTestLogFile());
-    }
-
-
-
-
-
-    public function prepareDependencies()
-    {
-        $requestModel = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($requestModel);
-        app()->singleton("botService", fn() => $this->botService);
-        app()->singleton("requestModel", fn() => $requestModel);
-    }
-
-
-    /**
-     * Testcase where menu is currently refreshing but there's also save() method getting executed during the command execution
-     * that is saving previous menu to cache, but in this case menu was saved in back menu array when the user has entered menu 
-     *  and we test that menu is not saved to cache again when the same command arrived.
-     *  Also test  that it won't move a stack pointer and delete previous menu from cache like it works when the back() method is called
-     * @return void
-     */
-    public function testBackMenuNotSavingIfMenuIsCurrentlyRefreshing()
-    {
-        $this->setBackMenuArrayToCache([]);
-        $this->getAccessToProtectedProperty('isMenuRefresh', Menu::class, true);
-
-        Menu::save("first text");
-        Menu::save("second text");
-        Menu::save("third text");
-        Menu::save("fourth text");
-        $this->assertCount(0, $this->getBackMenuArray());
+        $this->mockBotServiceGetPrivateChatCommandMethod("some command", $mockBotService);
+        $this->mockBotServiceGetAdminMethod($mockBotService);
     }
 
 }

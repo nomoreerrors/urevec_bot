@@ -17,7 +17,7 @@ class ButtonsTest extends TestCase
     {
         $buttons = new Buttons();
         $titles = ['Button 1', 'Button 2', 'Button 3'];
-        $result = $buttons->createButtons($titles);
+        $result = $buttons->create($titles);
 
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
@@ -34,7 +34,7 @@ class ButtonsTest extends TestCase
     {
         $buttons = new Buttons();
         $titles = ['Button 1', 'Button 2', 'Button 3'];
-        $result = $buttons->createButtons($titles, 3, true);
+        $result = $buttons->create($titles, 3, true);
 
         $this->assertIsArray($result);
         $this->assertCount(2, $result);
@@ -53,7 +53,7 @@ class ButtonsTest extends TestCase
         $buttons = new Buttons();
         $titles = [];
         $this->expectException(ArgumentOutOfRangeException::class);
-        $buttons->createButtons($titles);
+        $buttons->create($titles);
     }
 
     /**
@@ -64,6 +64,6 @@ class ButtonsTest extends TestCase
         $buttons = new Buttons();
         $titles = 'Button 1';
         $this->expectException(\TypeError::class);
-        $buttons->createButtons($titles);
+        $buttons->create($titles);
     }
 }

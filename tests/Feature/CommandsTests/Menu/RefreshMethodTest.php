@@ -22,10 +22,10 @@ class RefreshMethodTest extends TestCase
      */
     public function testRefreshSetsAdminId()
     {
-        $result = $this->getAccessToProtectedProperty("adminId", Menu::class);
+        $result = $this->setValueToProtectedProperty("adminId", Menu::class);
         $this->assertNull($result);
         Menu::refresh();
-        $result = $this->getAccessToProtectedProperty("adminId", Menu::class);
+        $result = $this->setValueToProtectedProperty("adminId", Menu::class);
         $this->assertEquals($this->admin->admin_id, $result);
     }
 
@@ -36,12 +36,12 @@ class RefreshMethodTest extends TestCase
      */
     public function testRefreshSetsIsMenuRefresh()
     {
-        $result = $this->getAccessToProtectedProperty("isMenuRefresh", Menu::class);
+        $result = $this->setValueToProtectedProperty("isMenuRefresh", Menu::class);
         $this->assertFalse($result);
 
         Menu::refresh();
 
-        $result = $this->getAccessToProtectedProperty("isMenuRefresh", Menu::class);
+        $result = $this->setValueToProtectedProperty("isMenuRefresh", Menu::class);
         $this->assertTrue($result);
     }
 

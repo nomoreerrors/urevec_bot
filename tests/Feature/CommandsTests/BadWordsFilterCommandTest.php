@@ -61,7 +61,7 @@ class BadWordsFilterCommandTest extends TestCase
 
     public function testDisableBadWordsFilter()
     {
-        //DISABLE
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DISABLE->value);
         $this->filter->update(['enabled' => 1]); //set to enabled before test
         $this->prepareDependencies();
@@ -74,6 +74,7 @@ class BadWordsFilterCommandTest extends TestCase
 
     public function testEnableBadWordsFilter()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLE->value);
         $this->filter->update(['enabled' => 0]); //set to disabled before test
         $this->prepareDependencies();
@@ -86,6 +87,7 @@ class BadWordsFilterCommandTest extends TestCase
 
     public function testDisableBadWordsFilterDeleteMessages()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGES_DISABLE->value);
         $this->filter->update(['delete_message' => 1]); //set to enabled before test
         $this->prepareDependencies();
@@ -98,6 +100,7 @@ class BadWordsFilterCommandTest extends TestCase
 
     public function testEnableBadWordsFilterDeleteMessages()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGES_ENABLE->value);
         $this->filter->update(['delete_message' => 0]); //set to disabled before test
 
@@ -111,6 +114,7 @@ class BadWordsFilterCommandTest extends TestCase
 
     public function testEnableBadWordsFilterRestrictions()
     {
+        $this->setBackMenuArrayToCache(["one", "two"]);
         $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICTIONS_ENABLE_ALL->value);
         $this->filter->update(['enabled' => 0]); //set to disabled before test
 
@@ -187,7 +191,7 @@ class BadWordsFilterCommandTest extends TestCase
         app()->singleton("requestModel", fn() => $this->requestModel);
         app()->singleton("botService", fn() => $this->botService);
         // fake that chat was previously selected
-        $this->fakeThatChatWasSelected(
+        $this->putSelectedChatIdToCache(
             $this->admin->admin_id,
             $this->admin->chats->first()->chat_id
         );

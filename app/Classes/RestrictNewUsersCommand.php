@@ -12,13 +12,10 @@ use App\Classes\Menu;
 use App\Traits\RestrictionsTimeCases;
 use App\Traits\RestrictionsCases;
 use App\Traits\RestrictUsers;
+use App\Traits\Toggle;
 
 class RestrictNewUsersCommand extends BaseCommand
 {
-    use RestrictionsTimeCases;
-    use RestrictionsCases;
-    use RestrictUsers;
-
     /**
      * Summary of __construct
      * @param string $command

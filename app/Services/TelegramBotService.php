@@ -90,9 +90,7 @@ class TelegramBotService
             throw new BaseTelegramBotException(CONSTANTS::DELETE_MESSAGE_FAILED .
                 CONSTANTS::WRONG_INSTANCE_TYPE, __METHOD__);
         }
-        $http = app(Http::class);
-        $http;
-        $response = $http::post(
+        $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
             [
                 "chat_id" => $this->requestModel->getChatId(),
@@ -115,7 +113,7 @@ class TelegramBotService
      * @return void
      * @throws BaseTelegramBotException
      */
-    public function sendMessage(string $text_message, $reply_markup = null): void
+    public function sendMessage(string $text_message, ?array $reply_markup = null): void
     {
         $params = [
             "chat_id" => $this->requestModel->getChatId(),
@@ -132,7 +130,7 @@ class TelegramBotService
         );
         // dd("here");
         if ($response->ok()) {
-            log::info($text_message . json_encode($params, JSON_UNESCAPED_UNICODE)); //для отладки
+            log::info($text_message . json_encode($params, JSON_UNESCAPED_UNICODE));
             return;
         }
         throw new BaseTelegramBotException(CONSTANTS::SEND_MESSAGE_FAILED, __METHOD__);
@@ -157,9 +155,8 @@ class TelegramBotService
         throw new BanUserFailedException(CONSTANTS::BAN_USER_FAILED, __METHOD__);
     }
 
-    public function createChat(): Chat
+    public function createChat(): void
     {
-        // Create chat in bot_chats table
         $this->chat = Chat::create([
             "chat_id" => $this->requestModel->getChatId(),
             "chat_title" => $this->requestModel->getChatTitle(),
@@ -177,11 +174,11 @@ class TelegramBotService
             $adminModel->chats()->attach($this->chat->id);
         }
 
-        return $this->chat;
+        $this->setChat($this->chat->chat_id);
     }
 
     /**
-     * Set menu commands for the bot in private and group chats.
+     * Setting menu commands for the bot in private and group chats.
      *
      * @return void
      * @throws BaseTelegramBotException
@@ -196,6 +193,7 @@ class TelegramBotService
             $admin->pivot->update(['my_commands_set' => 1]);
         }
     }
+
 
     public function getMyCommands(string $type, int $chatId): array
     {
@@ -317,7 +315,7 @@ class TelegramBotService
 
     public function setChat(int $chatId): void
     {
-        $this->chat = Chat::where("chat_id", $chatId)->first();
+        $this->chat = Chat::with("newUserRestrictions", "badWordsFilter", "unusualCharsFilter", "admins")->where("chat_id", $chatId)->first();
         $this->setChatRestrictionTime();
     }
 

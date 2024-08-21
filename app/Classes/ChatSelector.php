@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Cache;
 
 class ChatSelector
 {
-    private TelegramBotService $botService;
-
     private $requestModel;
 
     private $admin = null;
@@ -33,9 +31,8 @@ class ChatSelector
     /**
      * Selecting an active chat to work with in bot private chat if an admin attached to multiple chats in database
      */
-    public function __construct()
+    public function __construct(private TelegramBotService $botService, private Menu $menu)
     {
-        $this->botService = app("botService");
         $this->requestModel = $this->botService->getRequestModel();
         $this->admin = $this->botService->getAdmin();
         $this->buttons = new Buttons();
@@ -46,11 +43,12 @@ class ChatSelector
 
     private function select()
     {
-        if ($this->hasOnlyOneChat())
-            return $this->setDefaultChat();
+        if ($this->hasOnlyOneChat()) {
+            $this->setDefaultChat();
+            return;
+        }
 
-
-        if ($this->command === ModerationSettingsEnum::SELECT_CHAT->value) {
+        if ($this->isSelectChatMenuRequest()) {
             $this->sendSelectChatButtons();
             return;
         }
@@ -59,19 +57,23 @@ class ChatSelector
             $this->setSelectedChatAndNotice();
             $this->rememberSelectedChatId();
             $this->restorePreviousCommandIfExists();
-            return;
-
-        } elseif (!$this->tryToGetLastChatFromCache()) {
-            $this->sendSelectChatButtons();
-            $this->rememberLastCommand();
+            $this->menu->back();
             return;
         }
+
+        if ($this->tryToGetLastChatFromCache()) {
+            return;
+        }
+
+        $this->sendSelectChatButtons();
+        $this->rememberLastCommand();
         return;
     }
 
     public function getLastSelectedChatIdFromCache()
     {
-        return Cache::get("last_selected_chat_" . $this->requestModel->getChatId());
+        $stop = Cache::get("last_selected_chat_" . $this->admin->admin_id);
+        return Cache::get("last_selected_chat_" . $this->admin->admin_id);
     }
 
     /**
@@ -81,7 +83,7 @@ class ChatSelector
     public function rememberSelectedChatId()
     {
         return Cache::put(
-            "last_selected_chat_" . $this->requestModel->getChatId(),
+            "last_selected_chat_" . $this->requestModel->getFromId(), //private chat admin's id
             $this->botService->getChat()->chat_id
         );
     }
@@ -98,11 +100,13 @@ class ChatSelector
 
     public function rememberLastCommand(): void
     {
-        Cache::put("last_command_" . $this->requestModel->getChatId(), $this->botService->getPrivateChatCommand());
+        Cache::put("last_command_" . $this->admin->admin_id, $this->botService->getPrivateChatCommand());
     }
 
     public function getLastCommandFromCache()
     {
+        $o = $this->requestModel->getChatId();
+        $j = Cache::get("last_command_" . $this->requestModel->getChatId());
         return Cache::get("last_command_" . $this->requestModel->getChatId());
     }
 
@@ -124,22 +128,27 @@ class ChatSelector
     /**
      * Set the chat that was selected by the user as an active chat and send a message to the user
      * about which chat was selected
-     * @return void
      */
     public function setSelectedChatAndNotice(): void
     {
-        $id = $this->admin->chats->where('chat_title', $this->command)->first()->chat_id;
-        $this->botService->setChat($id);
-        $this->botService->sendMessage("Selected chat: " . $this->botService->getChat()->chat_title);
+        $selectedChatId = $this->admin
+            ->chats()
+            ->where('chat_title', $this->command)
+            ->first()->chat_id;
+
+        $this->botService->setChat($selectedChatId);
+        $this->botService->sendMessage(
+            "Selected chat: " . $this->botService->getChat()->chat_title
+        );
+
         $this->updated = true;
-        Menu::back();
     }
 
     public function sendSelectChatButtons(): void
     {
-        Menu::save(ModerationSettingsEnum::SELECT_CHAT->value);
-        $keyBoard = $this->buttons->createButtons($this->groupsTitles, 1, true);
-        app("botService")->sendMessage(ModerationSettingsEnum::SELECT_CHAT->replyMessage(), $keyBoard);
+        $this->menu->save();
+        $keyBoard = $this->buttons->create($this->groupsTitles, 1, true);
+        $this->botService->sendMessage(ModerationSettingsEnum::SELECT_CHAT->replyMessage(), $keyBoard);
         $this->buttonsSended = true;
         return;
     }
@@ -156,12 +165,14 @@ class ChatSelector
 
     private function tryToGetLastChatFromCache(): bool
     {
-        if (!empty($this->getLastSelectedChatIdFromCache())) {
-            $this->botService->setChat($this->getLastSelectedChatIdFromCache());
+        $chatId = $this->getLastSelectedChatIdFromCache();
+        if ($chatId) {
+            $this->botService->setChat($chatId);
             return true;
         }
         return false;
     }
+
 
     private function restorePreviousCommandIfExists()
     {
@@ -177,14 +188,19 @@ class ChatSelector
         $this->botService->setChat($this->admin->chats->first()->chat_id);
     }
 
-    public function updated(): bool
+    public function hasBeenUpdated(): bool
     {
         return $this->updated;
     }
 
-    public function buttonsSended(): bool
+    public function buttonsHaveBeenSent(): bool
     {
         return $this->buttonsSended;
+    }
+
+    private function isSelectChatMenuRequest(): bool
+    {
+        return $this->command === ModerationSettingsEnum::SELECT_CHAT->value;
     }
 
 }

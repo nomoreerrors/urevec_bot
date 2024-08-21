@@ -22,13 +22,10 @@ abstract class BaseBotCommandCore
 
     protected $selectedChat = null;
 
-    protected TextMessageModel $requestModel;
+    protected $requestModel;
 
     public function __construct()
     {
-        $this->requestModel = app("requestModel");
-        $this->botService = app("botService");
-        $this->admin = $this->botService->getAdmin();
         $this->buttons = new Buttons();
     }
 

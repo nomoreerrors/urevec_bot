@@ -44,14 +44,14 @@ class ModerationSettingsCommand extends BaseCommand
     public function sendModerationSettings(): void
     {
         Menu::save($this->command);
-        $keyBoard = (new Buttons())->createButtons($this->getSettingsTitles(), 1, false);
+        $keyBoard = (new Buttons())->create($this->getSettingsTitles(), 1, false);
         app("botService")->sendMessage(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage(), $keyBoard);
     }
 
     public function sendFiltersMainSettings(): void
     {
         Menu::save($this->command);
-        $keyBoard = (new Buttons())->createButtons($this->getFiltersSettingsTitles(), 1, true);
+        $keyBoard = (new Buttons())->create($this->getFiltersSettingsTitles(), 1, true);
         app("botService")->sendMessage(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(), $keyBoard);
     }
 

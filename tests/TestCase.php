@@ -3,6 +3,8 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use App\Classes\PrivateChatCommandCore;
+use ReflectionMethod;
 use ReflectionProperty;
 use ReflectionClass;
 use Database\Seeders\SimpleSeeder;
@@ -12,11 +14,6 @@ use App\Enums\ModerationSettingsEnum;
 use App\Models\Chat;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use App\Models\InvitedUserUpdateModel;
-use App\Models\MessageModel;
-use App\Models\MultiMediaModel;
-use App\Models\TextMessageModel;
-use App\Services\FilterService;
 use App\Services\ChatSettingsService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use App\Services\TelegramBotService;
@@ -408,23 +405,18 @@ abstract class TestCase extends BaseTestCase
 
     public function setAllRestrictionsToFalse(Chat $chat)
     {
-        $chat->newUserRestrictions()->update([
+        $restrictions = $chat->newUserRestrictions;
+        $result = $restrictions->update([
             'enabled' => 0,
             'restriction_time' => 0,
             'can_send_messages' => 0,
             'can_send_media' => 0
         ]);
-
-        if (
-            $chat->newUserRestrictions->first()->enabled ||
-            $chat->newUserRestrictions->first()->restriction_time !== 0 ||
-            $chat->newUserRestrictions->first()->can_send_messages ||
-            $chat->newUserRestrictions->first()->can_send_media !== 0
-        ) {
-
-            throw new \Exception("Restrictions are not disabled");
+        if (!$result) {
+            throw new \Exception("Failed to update restrictions");
         }
     }
+
 
     public function setAllRestrictionsDisabled(Chat $chat)
     {
@@ -474,11 +466,18 @@ abstract class TestCase extends BaseTestCase
      * @param int $chatId Id of selected chat - one of his multiple groups
      * @return bool
      */
-    protected function fakeThatChatWasSelected(int $adminId, int $chatId)
+    protected function putSelectedChatIdToCache(int $adminId, int $chatId)
     {
         return Cache::put(
             "last_selected_chat_" . $adminId,
             $chatId,
+        );
+    }
+
+    protected function getLastSelectedChatIdFromCache(int $adminId)
+    {
+        return Cache::get(
+            "last_selected_chat_" . $adminId
         );
     }
 
@@ -583,66 +582,70 @@ abstract class TestCase extends BaseTestCase
         ];
     }
 
-    public function getAccessToProtectedMethod(string $method, string $className)
+    public function getAccessToProtectedMethodAndInvoke(string $method, object $mockClass)
     {
-        $myClass = app($className);
-        $reflection = new ReflectionClass($myClass);
-        // Getting a protected method
-        $method = $reflection->getMethod($method);
-
-        $method->setAccessible(true);
-        $result = $method->invoke($myClass);
+        $reflection = new ReflectionClass($mockClass);
+        $reflectionMethod = $reflection->getMethod($method);
+        $reflectionMethod->setAccessible(true);
+        $result = $reflectionMethod->invoke($mockClass);
         return $result;
     }
 
-    public function getAccessToProtectedProperty(string $getProperty, string $className, $value = null)
+    public function getValueOfProtectedProperty(string $getProperty, object $class)
     {
-        $myClass = app($className);
-        $reflection = new ReflectionClass($myClass);
+        $reflection = new ReflectionClass($class);
+        $property = $reflection->getProperty($getProperty);
+        $property->setAccessible(true);
+        return $property->getValue($class);
+    }
+
+    public function setValueToProtectedProperty(string $getProperty, object $class, $value = null)
+    {
+        $reflection = new ReflectionClass($class);
         $property = $reflection->getProperty($getProperty);
         $property->setAccessible(true);
 
         if ($value !== null) {
-            $property->setValue($myClass, $value);
-            if (gettype($value) !== gettype($property->getValue($myClass))) {
+            $property->setValue($class, $value);
+            if (gettype($value) !== gettype($property->getValue($class))) {
                 throw new \BadMethodCallException("Property " . $property . "тип свойства не соответствует типу аргумента");
             }
         }
 
-        return $property->getValue($myClass);
+        return $property->getValue($class);
     }
 
     /**
      * Get array from cache
      * @return array
      */
-    protected function getBackMenuArray(): array
+    protected function getBackMenuArray(int $adminId): ?array
     {
         if (empty($this->admin)) {
             throw new \Exception("Admin not found");
         }
-        $cacheKey = "back_menu_" . $this->admin->admin_id;
+        $cacheKey = "back_menu_" . $adminId;
         return json_decode(Cache::get($cacheKey), true);
     }
 
 
-    public function getBackMenuCacheKey(): string
+    public function getBackMenuCacheKey(int $adminId): string
     {
         if (empty($this->admin)) {
             throw new \Exception("Admin not found");
         }
-        return "back_menu_" . $this->admin->admin_id;
+        return "back_menu_" . $adminId;
     }
 
-    public function forgetBackMenuArray()
+    public function forgetBackMenuArray(int $adminId)
     {
-        $cacheKey = $this->getBackMenuCacheKey();
+        $cacheKey = $this->getBackMenuCacheKey($adminId);
         Cache::forget($cacheKey);
     }
 
-    protected function setBackMenuArrayToCache(array $backMenuArray)
+    protected function setBackMenuArrayToCache(array $backMenuArray, int $adminId)
     {
-        $cacheKey = $this->getBackMenuCacheKey();
+        $cacheKey = $this->getBackMenuCacheKey($adminId);
         Cache::put($cacheKey, json_encode($backMenuArray));
     }
 
@@ -653,12 +656,16 @@ abstract class TestCase extends BaseTestCase
      * @param int $chatsCount
      * @return void
      */
-    protected function setPrivateChatBotService(int $adminsCount = 1, int $chatsCount = 1): void
+    protected function setPrivateChatBotService(int $adminsCount = 1, int $chatsCount = 1, int $admin = null): void
     {
         $this->fakeSendMessageSucceedResponse(); // for fake request for admins 
         (new SimpleSeeder())->run($adminsCount, $chatsCount);
         $this->admin = Admin::first();
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
+        $this->chat = Chat::first();
+
+
+        $adminId = $admin ?? $this->admin->admin_id;
+        $this->data = $this->getPrivateChatMessage($adminId);
         $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
         $this->botService = new TelegramBotService(($this->requestModel)->create());
 
@@ -666,6 +673,50 @@ abstract class TestCase extends BaseTestCase
         app()->singleton("requestModel", fn() => $this->requestModel);
     }
 
+    protected function assertLastChatIdWasCached(int $adminId, int $chatId): void
+    {
+        $this->assertSame($chatId, $this->getLastSelectedChatIdFromCache($adminId));
+    }
+
+    protected function selectChatAndAssert(string $chat_title, int $chat_id): void
+    {
+        app("botService")->setPrivateChatCommand($chat_title);
+        new PrivateChatCommandCore();
+        $this->assertEquals($chat_id, app("botService")->getChat()->chat_id);
+    }
+
+    /**
+     * Seed admin to database with attached chats
+     * @param mixed $adminsCount
+     * @param mixed $chatsCount
+     * @return \App\Models\Admin
+     */
+    protected function setAdminWithMultipleChats($chatsCount = 1): Admin
+    {
+        (new SimpleSeeder())->run(1, $chatsCount);
+        return Admin::first();
+    }
+
+    protected function assertMessageWasSent($mockBotService, mixed $message, ?array $values = null): void
+    {
+        $mockBotService->expects($this->once())
+            ->method('sendMessage')
+            ->with($message, $values);
+    }
+
+    protected function assertBotServiceChatWasSet($mockBotService, int $chatId): void
+    {
+        $mockBotService->expects($this->once())
+            ->method('setChat')
+            ->with($chatId);
+    }
+
+    protected function mockBotServiceGetPrivateChatCommandMethod(string $command, $mockBotService): void
+    {
+        $mockBotService->expects($this->any())
+            ->method('getPrivateChatCommand')
+            ->willReturn($command);
+    }
 }
 
 

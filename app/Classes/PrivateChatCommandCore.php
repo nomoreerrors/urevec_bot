@@ -21,6 +21,7 @@ use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
 use App\Models\MessageModels\TextMessageModel;
 use App\Models\TelegramRequestModelBuilder;
+use App\Services\TelegramBotService;
 use App\Traits\BackMenuButton;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
@@ -32,26 +33,28 @@ class PrivateChatCommandCore extends BaseBotCommandCore
 {
     private ChatSelector $chatSelector;
 
-    // protected TextMessageModel $requestModel;
+    private Menu $menu;
 
     public function __construct()
     {
         parent::__construct();
-        $this->checkUserAccess();
-        $this->chatSelector = new ChatSelector();
+        $this->botService = app(TelegramBotService::class);
         $this->command = $this->botService->getPrivateChatCommand();
-        $this->handle();
+        $this->admin = $this->botService->getAdmin();
+        $this->checkUserAccess();
+        $this->requestModel = $this->botService->getRequestModel();
+        $this->chatSelector = new ChatSelector($this->botService, app(Menu::class));
     }
 
 
-    protected function handle(): void
+    public function handle(): void
     {
-        if (
-            $this->chatSelector->buttonsSended() ||
-            $this->chatSelector->updated()
-        ) {
+        if ($this->chatSelector->buttonsHaveBeenSent() || $this->chatSelector->hasBeenUpdated()) {
             return;
         }
+
+        $this->updateCommandIfChanged();
+        $chat = $this->botService->getChat();
 
         if (ModerationSettingsEnum::exists($this->command)) {
             new ModerationSettingsCommand($this->command, ModerationSettingsEnum::class);
@@ -59,41 +62,56 @@ class PrivateChatCommandCore extends BaseBotCommandCore
         }
 
         if (ResNewUsersEnum::exists($this->command)) {
-            $restrictions = $this->botService->getChat()->newUserRestrictions;
-            new RestrictNewUsersCommand($this->command, $restrictions, ResNewUsersEnum::class);
+            new RestrictNewUsersCommand($this->command, $chat->newUserRestrictions, ResNewUsersEnum::class);
             return;
         }
 
         if (BadWordsFilterEnum::exists($this->command)) {
-            $filter = $this->botService->getChat()->badWordsFilter;
-            new BadWordsFilterCommand($this->command, $filter, BadWordsFilterEnum::class);
+            new BadWordsFilterCommand($this->command, $chat->badWordsFilter, BadWordsFilterEnum::class);
             return;
         }
 
         if (UnusualCharsFilterEnum::exists($this->command)) {
-            $filter = $this->botService->getChat()->unusualCharsFilter;
-            new UnusualCharsFilterCommand($this->command, $filter, UnusualCharsFilterEnum::class);
+            new UnusualCharsFilterCommand($this->command, $chat->unusualCharsFilter, UnusualCharsFilterEnum::class);
             return;
         }
 
-        // BotErrorNotificationService::send("Неизвестная команда в приватном чате" . $this->command);
-        app("botService")->sendMessage("Неизвестная команда");
-        log::info("Неизвестная команда в приватном чате" . $this->command);
         response(CONSTANTS::UNKNOWN_CMD, 200);
-        return;
     }
 
 
     protected function checkUserAccess(): static
     {
         if (empty($this->admin)) {
-            $error = CONSTANTS::USER_NOT_ALLOWED . " " . $this->requestModel->getChatId();
+            $error = CONSTANTS::USER_NOT_ALLOWED . " " . $this->admin->admin_id;
             log::info($error);
 
             app("botService")->sendMessage(CONSTANTS::ADD_BOT_TO_GROUP);
             throw new UnknownChatException($error, __METHOD__);
         }
         return $this;
+    }
+
+    // protected function setMenu()
+    // {
+    //     // app()->singleton(PrivateChatCommandCore::class, fn() => new PrivateChatCommandCore());
+    //     app()->singleton(PrivateChatCommandCore::class, function ($app) {
+    //         return new PrivateChatCommandCore();
+    //     });
+
+    //     app()->singleton(Menu::class, function ($app) {
+    //         return new Menu($this->botService, app(PrivateChatCommandCore::class));
+    //     });
+    //     $this->menu = app(Menu::class);
+    // }
+
+    /**
+     * Update the command if it has been resotred from cache after a chat was selected
+     * @return void
+     */
+    protected function updateCommandIfChanged()
+    {
+        $this->command = $this->botService->getPrivateChatCommand();
     }
 
 }

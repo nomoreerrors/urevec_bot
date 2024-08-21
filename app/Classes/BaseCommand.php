@@ -7,11 +7,10 @@ use App\Services\TelegramBotService;
 use App\Traits\RestrictUsers;
 use App\Traits\RestrictionsTimeCases;
 use App\Traits\RestrictionsCases;
+use App\Traits\Toggle;
 
 abstract class BaseCommand
 {
-    use RestrictionsTimeCases;
-    use RestrictionsCases;
     use RestrictUsers;
 
     protected TelegramBotService $botService;
@@ -39,7 +38,7 @@ abstract class BaseCommand
 
     protected function getSettingsButtons(): array
     {
-        return (new Buttons())->createButtons($this->getSettingsTitles(), 1, true);
+        return (new Buttons())->create($this->getSettingsTitles(), 1, true);
     }
 
     protected function getBaseMenuCases()

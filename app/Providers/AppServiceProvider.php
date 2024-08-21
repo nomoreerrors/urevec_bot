@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Classes\ModerationSettings;
+use App\Services\TelegramBotService;
 use App\Classes\BaseCommand;
 use App\Models\TelegramRequestModelBuilder;
 use App\Services\BaseBotCommandCore;
-use App\Services\PrivateChatCommandCore;
 use App\Services\TelegramMiddlewareService;
+use App\Classes\PrivateChatCommandCore;
+use App\Classes\Menu;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\HttpClientException;
 use GuzzleHttp\Client;
@@ -20,21 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // $this->app->when(PrivateChatCommandService::class)
-        //     ->needs(ReplyInterface::class)
-        //     ->give(
-        //         function (Application $app) {
-        //             return $app->make(ModerationSettings::class);
-        //         }
-        //     );
-
-        // $this->app->when(BotCommandService::class)
-        //     ->needs(ReplyInterface::class)
-        //     ->give(
-        //         function (Application $app) {
-        //             return $app->make(ModerationSettings::class);
-        //         }
-        //     );
     }
 
     /**

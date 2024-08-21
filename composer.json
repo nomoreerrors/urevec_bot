@@ -11,6 +11,7 @@
         "php": "^8.2",
         "illuminate/database": "*",
         "laravel/framework": "^11.9",
+        "laravel/pail": "^1.1",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9"
     },

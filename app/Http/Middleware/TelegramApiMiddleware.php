@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Exceptions\EnvironmentVariablesException;
 use App\Models\Admin;
+use App\Classes\Menu;
+use App\Classes\PrivateChatCommandCore;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnexpectedRequestException;
 use App\Jobs\FailedRequestJob;
@@ -47,6 +49,8 @@ class TelegramApiMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $data = $request->all();
+        // info("TGMA!!!");
+        // throw new Exception("TERMINATOR2");
 
         try {
             $this->saveRawRequestData($data);
@@ -55,16 +59,12 @@ class TelegramApiMiddleware
             $this->middlewareService->checkIfIpAllowed(request()->ip());
             $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
 
-            app()->singleton("botService", fn() => new TelegramBotService($this->requestModel));
+            app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->requestModel));
             app()->singleton("commandsList", fn() => new CommandsList());
-            app()->singleton('requestModel', fn() => $this->requestModel);
 
-            if ($this->requestModel->getChatType() === "private") {
-                return $next($request);
+            if ($this->requestModel->getChatType() !== "private") {
+                $this->setChat();
             }
-
-            $this->setChat();
-
 
         } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
             return $this->handleException($data, $e);
@@ -80,6 +80,21 @@ class TelegramApiMiddleware
         return $next($request);
     }
 
+    /**
+     * Set or create a new chat by groupchat Id
+     */
+    private function setChat(): void
+    {
+        $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
+
+        if (!$chatExists) {
+            app("botService")->createChat();
+            app("botService")->setMyCommands();
+        } else {
+            app("botService")->setChat($this->requestModel->getChatId());
+        }
+        return;
+    }
 
     private function handleException(array $requestData, \Throwable $e): Response
     {
@@ -101,24 +116,6 @@ class TelegramApiMiddleware
         $requestLogData[] = array_merge($requestData, ['Moscow_time' => date("F j, Y, g:i a")]);
         Storage::put("rawrequest.json", json_encode($requestLogData, JSON_UNESCAPED_UNICODE));
     }
-
-
-    private function setChat(): void
-    {
-        $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
-
-        if (
-            !$chatExists &&
-            $this->requestModel->getChatType() !== "private"
-        ) {
-            app("botService")->createChat();
-            app("botService")->setMyCommands();
-        } else {
-            app("botService")->setChat($this->requestModel->getChatId());
-        }
-        return;
-    }
-
 }
 
 

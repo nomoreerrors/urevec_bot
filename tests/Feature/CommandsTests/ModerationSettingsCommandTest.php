@@ -54,7 +54,7 @@ class ModerationSettingsCommandTest extends TestCase
         $this->setCommand($title);
         $this->prepareDependencies();
 
-        new PrivateChatCommandCore();
+        (new PrivateChatCommandCore())->handle();
 
         $this->assertReplyMessageSent("Selected chat: " . $title);
         $this->assertReplyMessageSent(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage());
@@ -89,9 +89,10 @@ class ModerationSettingsCommandTest extends TestCase
         $this->model = (new TelegramRequestModelBuilder($this->data))->create();
         $this->botService = new TelegramBotService($this->model);
 
-        app()->instance("requestModel", $this->model);
-        app()->instance("botService", $this->botService);
-        $this->fakeThatChatWasSelected($this->admin->admin_id, $this->chat->chat_id);
+        // app()->instance("requestModel", $this->model);
+        app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->model));
+        // app()->instance("botService", $this->botService);
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
     }
 }
 

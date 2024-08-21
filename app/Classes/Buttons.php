@@ -36,7 +36,7 @@ class Buttons
         return $replyMarkup->get();
     }
 
-    public function createButtons(array $titles, int $eachRowHas = 2, bool $withBackButton = false): array
+    public function create(array $titles, int $eachRowHas = 2, bool $withBackButton = false): array
     {
         if (empty($titles)) {
             throw new ArgumentOutOfRangeException("Buttons titles not set");

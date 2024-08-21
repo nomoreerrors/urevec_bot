@@ -20,13 +20,15 @@ class ChatRulesMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $requestModel = app("requestModel");
-        $data = $requestModel->getData();
-        $ruleService = new ChatRulesService($requestModel);
+        $requestModel = app("botService")->getRequestModel();
 
-        if ($requestModel->getChatType() === "private") {
+        if ($requestModel->getChatType() !== "private") {
+            $data = $requestModel->getData();
+            $ruleService = new ChatRulesService($requestModel);
+        } else {
             return $next($request);
         }
+
 
         try {
             if ($ruleService->blockNewVisitor()) {
