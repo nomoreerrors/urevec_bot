@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ModerationSettingsEnum;
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use App\Models\NewUserRestriction;
 use App\Models\TelegramRequestModelBuilder;
 use App\Enums\ResTime;
@@ -39,30 +39,30 @@ class RestrictNewUsersCommandTest extends TestCase
 
     public function testSelectNewUsersRestrictionsReplyWithButtons()
     {
-        $this->setCommand(ResNewUsersEnum::EDIT_RESTRICTIONS->value);
+        $this->setCommand(NewUserRestrictionsEnum::EDIT_RESTRICTIONS->value);
         $this->prepareDependencies();
         (new PrivateChatCommandCore());
 
-        $buttons = $this->getEditRestrictionsButtons($this->restrictions, ResNewUsersEnum::class);
+        $buttons = $this->getEditRestrictionsButtons($this->restrictions, NewUserRestrictionsEnum::class);
         $this->assertButtonsWereSent($buttons);
         $this->assertBackToPreviousMenuButtonWasSent();
-        $this->assertBackMenuArrayContains(ResNewUsersEnum::EDIT_RESTRICTIONS->value);
+        $this->assertJsonBackMenuArrayContains(NewUserRestrictionsEnum::EDIT_RESTRICTIONS->value);
     }
 
     public function testSelectSetRestrictNewUsersTimeReplyWithButtons()
     {
-        $this->setCommand(ResNewUsersEnum::SELECT_RESTRICTION_TIME->value);
+        $this->setCommand(NewUserRestrictionsEnum::SELECT_RESTRICTION_TIME->value);
         $this->prepareDependencies();
 
         (new PrivateChatCommandCore());
 
         $buttons = [
-            ResNewUsersEnum::SET_TIME_DAY->value,
-            ResNewUsersEnum::SET_TIME_TWO_HOURS->value,
-            ResNewUsersEnum::SET_TIME_WEEK->value,
-            ResNewUsersEnum::SET_TIME_MONTH->value
+            NewUserRestrictionsEnum::SET_TIME_DAY->value,
+            NewUserRestrictionsEnum::SET_TIME_TWO_HOURS->value,
+            NewUserRestrictionsEnum::SET_TIME_WEEK->value,
+            NewUserRestrictionsEnum::SET_TIME_MONTH->value
         ];
-        $this->assertBackMenuArrayContains(ResNewUsersEnum::SELECT_RESTRICTION_TIME->value);
+        $this->assertJsonBackMenuArrayContains(NewUserRestrictionsEnum::SELECT_RESTRICTION_TIME->value);
         $this->assertButtonsWereSent($buttons);
     }
 
@@ -70,7 +70,7 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testUpdateNewUsersRestrictionsTimeChangesValuesInDatabase()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::SET_TIME_MONTH->value);
+        $this->setCommand(NewUserRestrictionsEnum::SET_TIME_MONTH->value);
         $this->prepareDependencies();
 
         $this->setAllRestrictionsToFalse($this->chat);
@@ -82,7 +82,7 @@ class RestrictNewUsersCommandTest extends TestCase
         $this->restrictions->refresh();
         $this->assertEquals(1, $this->restrictions->enabled);
         $this->assertEquals(ResTime::MONTH->value, $this->restrictions->first()->restriction_time);
-        $this->assertReplyMessageSent(ResNewUsersEnum::SET_TIME_MONTH->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SET_TIME_MONTH->replyMessage());
     }
 
     /**
@@ -92,7 +92,7 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testEnableNewUsersAllRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]); // so that the refresh() method works correctly
-        $this->setCommand(ResNewUsersEnum::RESTRICTIONS_ENABLE_ALL->value);
+        $this->setCommand(NewUserRestrictionsEnum::ENABLE->value);
         $this->prepareDependencies();
         $this->setAllRestrictionsDisabled($this->chat);
         $lastRestrictionTime = $this->chat->newUserRestrictions->restriction_time;
@@ -102,7 +102,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
         $this->assertEquals(1, $this->restrictions->first()->enabled);
         $this->assertEquals($lastRestrictionTime, $this->restrictions->first()->restriction_time);
-        $this->assertReplyMessageSent(ResNewUsersEnum::RESTRICTIONS_ENABLE_ALL->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::ENABLE->replyMessage());
     }
 
     /**
@@ -112,14 +112,14 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testDisableNewUsersAllRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::RESTRICTIONS_DISABLE_ALL->value);
+        $this->setCommand(NewUserRestrictionsEnum::DISABLE->value);
         $this->prepareDependencies();
         //Setting everything to 0 before test
         $this->setAllRestrictionsEnabled($this->chat);
 
         (new PrivateChatCommandCore());
         $this->assertEquals(0, $this->restrictions->first()->enabled);
-        $this->assertReplyMessageSent(ResNewUsersEnum::RESTRICTIONS_DISABLE_ALL->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::DISABLE->replyMessage());
     }
 
 
@@ -137,7 +137,7 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testToggleNewUsersEnableSendMedia()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::SEND_MEDIA_ENABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -146,13 +146,13 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(1, $this->restrictions->first()->can_send_media);
-        $this->assertReplyMessageSent(ResNewUsersEnum::SEND_MEDIA_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->replyMessage());
     }
 
     public function testNewUsersDisableSendMedia()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::SEND_MEDIA_DISABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::SEND_MEDIA_DISABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -161,13 +161,13 @@ class RestrictNewUsersCommandTest extends TestCase
         (new PrivateChatCommandCore());
 
         $this->assertEquals(0, $this->restrictions->first()->can_send_media);
-        $this->assertReplyMessageSent(ResNewUsersEnum::SEND_MEDIA_DISABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MEDIA_DISABLE->replyMessage());
     }
 
     public function testNewUsersEnableSendMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::SEND_MESSAGES_ENABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::SEND_MESSAGES_ENABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -176,14 +176,14 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(1, $this->restrictions->first()->can_send_messages);
-        $this->assertReplyMessageSent(ResNewUsersEnum::SEND_MESSAGES_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MESSAGES_ENABLE->replyMessage());
     }
 
     public function testNewUsersDisableSendMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(ResNewUsersEnum::SEND_MESSAGES_DISABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::SEND_MESSAGES_DISABLE->value);
         $this->prepareDependencies();
         $this->restrictions->update([
             "can_send_messages" => 1
@@ -192,7 +192,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(0, $this->restrictions->first()->can_send_messages);
-        $this->assertReplyMessageSent(ResNewUsersEnum::SEND_MESSAGES_DISABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MESSAGES_DISABLE->replyMessage());
     }
 
     public function testChangesAppliesToCurrentlySelectedChat()
@@ -201,7 +201,7 @@ class RestrictNewUsersCommandTest extends TestCase
         $this->setAllRestrictionsToFalse($this->chat);
         $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
 
-        app("botService")->setPrivateChatCommand(ResNewUsersEnum::RESTRICTIONS_ENABLE_ALL->value);
+        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::ENABLE->value);
 
 
         new PrivateChatCommandCore();
@@ -215,7 +215,7 @@ class RestrictNewUsersCommandTest extends TestCase
         $this->assertLastChatIdWasCached($this->admin->admin_id, $secondChat->chat_id);
         $this->setAllRestrictionsToFalse($secondChat);
 
-        app("botService")->setPrivateChatCommand(ResNewUsersEnum::SEND_MEDIA_ENABLE->value);
+        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->value);
 
         new PrivateChatCommandCore();
         $this->assertEquals(1, app("botService")->getChat()->newUserRestrictions()->first()->fresh()->can_send_media);

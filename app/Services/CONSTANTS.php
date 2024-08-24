@@ -21,6 +21,7 @@ class CONSTANTS
      * @var string
      */
     public const EMPTY_PROPERTY = "ERROR: СВОЙСТВО КЛАССА НЕ УСТАНОВЛЕНО. " . PHP_EOL;
+    public const BACK_TO_MAIN_MENU_FAILED = "ERROR: НЕ УДАЛОСЬ ВЫЙТИ ИЗ ГЛАВНОГО МЕНЮ. МАССИВ BACKMENU ПУСТ. " . PHP_EOL;
     public const REQUEST_IP_NOT_ALLOWED = "ERROR: ЗАПРОС К СЕРВЕРУ С НЕИЗВЕСТНОГО IP ИЛИ СПИСОК РАЗРЕШЕННЫХ АДРЕСОВ НЕ УСТАНОВЛЕН. " . PHP_EOL;
     public const EMPTY_ARRAY_KEY = "ERROR: КЛЮЧ МАССИВА НЕ СУЩЕСТВУЕТ ИЛИ ИСПОЛЬЗУЕМОЕ СВОЙСТВО МОДЕЛИ НЕ УСТАНОВЛЕНО. " . PHP_EOL;
     public const UNKNOWN_OBJECT_TYPE = "ERROR: НЕИЗВЕСТНЫЙ ТИП ВХОДЯЩЕГО СООБЩЕНИЯ ИЛИ СВОЙСТВО MESSAGE_TYPE МОДЕЛИ НЕ УСТАНОВЛЕНО. " . PHP_EOL;

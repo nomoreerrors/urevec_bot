@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Classes\PrivateChatCommandCore;
+use App\Exceptions\BaseTelegramBotException;
 use App\Services\TelegramBotService;
 use Illuminate\Support\Facades\Log;
 use App\Services\CONSTANTS;
@@ -15,6 +16,8 @@ class Menu
 
     private string $command;
 
+    private string $cacheKey;
+
     /**
      * @var bool  Indicates that menu title should be refreshed after making changes in private chat
      */
@@ -25,6 +28,7 @@ class Menu
     {
         $this->command = $this->botService->getPrivateChatCommand();
         $this->adminId = $this->botService->getAdmin()->admin_id;
+        $this->cacheKey = "back_menu_" . $this->adminId;
     }
 
     /**
@@ -37,20 +41,26 @@ class Menu
             return;
         }
 
-        $cacheKey = $this->getBackMenuCacheKey();
-        $backMenuArray = $this->getBackMenuFromCache();
+        try {
+            $backMenuArray = $this->getBackMenuFromCache();
 
-        if (empty($backMenuArray)) {
-            $backMenuArray = [$this->command];
-            $this->saveBackMenuToCache($backMenuArray, $cacheKey);
+            if (empty($backMenuArray)) {
+                $backMenuArray = [$this->command];
+                $this->saveBackMenuToCache($backMenuArray);
+                return;
+            }
 
-        } elseif (in_array($this->command, $backMenuArray)) {
-            $this->moveUpBackMenuPointer();
-            return;
+            if (in_array("back", $backMenuArray)) {
+                array_pop($backMenuArray);
+                $this->saveBackMenuToCache($backMenuArray);
+                return;
+            }
 
-        } else {
             array_push($backMenuArray, $this->command);
-            $this->saveBackMenuToCache($backMenuArray, $cacheKey);
+            $this->saveBackMenuToCache($backMenuArray);
+        } catch (\Exception $e) {
+            Log::error("Error saving menu: " . $e->getMessage());
+            throw new BaseTelegramBotException("Error saving menu", $e->getMessage());
         }
     }
 
@@ -60,66 +70,61 @@ class Menu
      */
     public function back()
     {
-        $lastBackMenuCommand = $this->getLastBackMenuFromCache();
-
-        if (empty($lastBackMenuCommand)) {
-            return;
-        }
-        $this->botService->setPrivateChatCommand($lastBackMenuCommand);
-        (new PrivateChatCommandCore())->handle();
-    }
-
-    private function saveBackMenuToCache(array $backMenuArray, string $cacheKey)
-    {
-        Cache::put($cacheKey, json_encode($backMenuArray, JSON_UNESCAPED_UNICODE));
-    }
-
-    private function getBackMenuFromCache()
-    {
-        $cacheKey = $this->getBackMenuCacheKey();
-        return json_decode(Cache::get($cacheKey), true);
-    }
-
-    private function getLastBackMenuFromCache()
-    {
         $backMenuArray = $this->getBackMenuFromCache();
 
-        if (!empty($backMenuArray)) {
-            if (count($backMenuArray) === 1) {
-                return $backMenuArray[0];
-            }
-            $index = count($backMenuArray) - 2;
-            return $backMenuArray[$index];
+        if (
+            empty($backMenuArray) ||
+            count($backMenuArray) == 1
+        ) {
+            throw new \Exception('No previous menu to go back to');
         }
-    }
 
-    /**
-     * Decrease menu pointer by analogy with stack pointer
-     * (remove last element from back menu array in cache)
-     * @return void
-     */
-    private function moveUpBackMenuPointer()
-    {
-        $backMenuArray = $this->getBackMenuFromCache();
-        $cacheKey = $this->getBackMenuCacheKey();
+        $lastBackMenuCommand = $this->getLastBackMenu($backMenuArray);
+
+        if (!$lastBackMenuCommand) {
+            throw new \Exception('Failed to retrieve last back menu command');
+        }
+
         array_pop($backMenuArray);
-        $this->saveBackMenuToCache($backMenuArray, $cacheKey);
+        array_push($backMenuArray, "back");
+
+        // $result = $this->saveBackMenuToCache($backMenuArray);
+        // $j = $this->getBackMenuFromCache();
+        if (!$this->saveBackMenuToCache($backMenuArray)) {
+            throw new \Exception('Failed to save back menu to cache');
+        }
+
+        $this->botService->setPrivateChatCommand($lastBackMenuCommand);
+        $this->botService->commandHandler()->handle();
     }
 
-    private function getBackMenuCacheKey(): string
+    protected function saveBackMenuToCache(array $backMenuArray): bool
     {
-        return "back_menu_" . $this->adminId;
+        return Cache::put($this->cacheKey, json_encode($backMenuArray, JSON_UNESCAPED_UNICODE));
     }
+
+    protected function getBackMenuFromCache()
+    {
+        return json_decode(Cache::get($this->cacheKey), true);
+    }
+
+    protected function getLastBackMenu(array $backMenuArray): string
+    {
+        $index = count($backMenuArray) - 2;
+        return $backMenuArray[$index];
+    }
+
 
     /**
-     * Refresh menu that was saved in rememberBackMenu() method after making changes in private chat
-     * returning the same menu but with different titles according to an updated status in database
+     * Update private chat menu button title with the new status
+     * simply rerunning the open menu command and load buttons with new titles
+     * after toggle filter for example. Titles should be updated in certain command classes.
+     *
      * @return void
      */
     public function refresh()
     {
         $this->isMenuRefresh = true;
-
         $menu = $this->getBackMenuFromCache();
 
         if (empty($menu)) {
@@ -127,7 +132,13 @@ class Menu
             throw new \Exception(CONSTANTS::REFRESH_BACK_MENU_FAILED);
         }
         $this->botService->setPrivateChatCommand(end($menu));
-        (new PrivateChatCommandCore())->handle();
+        $this->botService->commandHandler()->handle();
+    }
+
+    public function getIsMenuRefresh()
+    {
+        return $this->isMenuRefresh;
     }
 }
+
 

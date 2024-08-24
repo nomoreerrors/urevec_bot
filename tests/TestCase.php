@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Models\ForwardMessageModel;
 use App\Classes\PrivateChatCommandCore;
+use App\Classes\Buttons;
 use ReflectionMethod;
 use ReflectionProperty;
 use ReflectionClass;
@@ -83,6 +84,7 @@ abstract class TestCase extends BaseTestCase
         $this->adminId = 754429643;
         $this->testUserId = 850434834; //bot id
         $this->secondTestUserId = 1087968824; //bot id
+        $this->clearTestLogFile();
     }
 
     public function fakeSucceedResponse()
@@ -486,9 +488,9 @@ abstract class TestCase extends BaseTestCase
         return Cache::forget("last_selected_chat_" . $adminId);
     }
 
-    public function getBackMenuJsonArrayFromCache(): string
+    public function getBackMenuJsonArrayFromCache(int $adminId): string
     {
-        return Cache::get("back_menu_" . $this->botService->getAdmin()->admin_id);
+        return Cache::get("back_menu_" . $adminId);
     }
 
     public function assertBackToPreviousMenuButtonWasSent()
@@ -508,9 +510,9 @@ abstract class TestCase extends BaseTestCase
         }
     }
 
-    public function assertBackMenuArrayContains($command)
+    public function assertJsonBackMenuArrayContains(string $command, int $adminId)
     {
-        $this->assertStringContainsString($command, $this->getBackMenuJsonArrayFromCache());
+        $this->assertStringContainsString($command, $this->getBackMenuJsonArrayFromCache($adminId));
     }
 
     public function setCommand($command)
@@ -525,7 +527,7 @@ abstract class TestCase extends BaseTestCase
 
     public function putLastCommandToCache(int $adminId, string $lastCommand)
     {
-        Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $this->admin->admin_id, $lastCommand);
+        Cache::put(CONSTANTS::CACHE_LAST_COMMAND . $adminId, $lastCommand);
     }
 
     public function getLastCommandFromCache(int $adminId)
@@ -550,8 +552,8 @@ abstract class TestCase extends BaseTestCase
                 $enum::SEND_MESSAGES_ENABLE->value,
 
             $model->enabled ?
-                $enum::RESTRICTIONS_DISABLE_ALL->value :
-                $enum::RESTRICTIONS_ENABLE_ALL->value,
+                $enum::DISABLE->value :
+                $enum::ENABLE->value,
 
                 $enum::SELECT_RESTRICTION_TIME->value,
         ];
@@ -678,12 +680,6 @@ abstract class TestCase extends BaseTestCase
         $this->assertSame($chatId, $this->getLastSelectedChatIdFromCache($adminId));
     }
 
-    protected function selectChatAndAssert(string $chat_title, int $chat_id): void
-    {
-        app("botService")->setPrivateChatCommand($chat_title);
-        new PrivateChatCommandCore();
-        $this->assertEquals($chat_id, app("botService")->getChat()->chat_id);
-    }
 
     /**
      * Seed admin to database with attached chats
@@ -697,19 +693,7 @@ abstract class TestCase extends BaseTestCase
         return Admin::first();
     }
 
-    protected function assertMessageWasSent($mockBotService, mixed $message, ?array $values = null): void
-    {
-        $mockBotService->expects($this->once())
-            ->method('sendMessage')
-            ->with($message, $values);
-    }
 
-    protected function assertBotServiceChatWasSet($mockBotService, int $chatId): void
-    {
-        $mockBotService->expects($this->once())
-            ->method('setChat')
-            ->with($chatId);
-    }
 
     protected function mockBotServiceGetPrivateChatCommandMethod(string $command, $mockBotService): void
     {
@@ -717,7 +701,37 @@ abstract class TestCase extends BaseTestCase
             ->method('getPrivateChatCommand')
             ->willReturn($command);
     }
+
+
+    protected function getAdminChatsButtons(Admin $admin): array
+    {
+        return (new Buttons())->getSelectChatButtons(
+            $admin->chats()->pluck("chat_title")->toArray(),
+        );
+    }
+
+    protected function getFiltersSettingsButtons(): array
+    {
+        return (new Buttons())->getFiltersMenuSettingsButtons();
+    }
+
+    protected function assertBackMenuArrayContains(int $adminId, array $array)
+    {
+        $backMenuArray = $this->getBackMenuArray($adminId);
+        foreach ($array as $value) {
+            $this->assertTrue(in_array($value, $backMenuArray));
+        }
+    }
+
+    protected function assertBackMenuArrayNotContains(int $adminId, string $value)
+    {
+        $backMenuArray = $this->getBackMenuArray($adminId);
+        $this->assertFalse(in_array($value, $backMenuArray));
+    }
 }
+
+
+
 
 
 

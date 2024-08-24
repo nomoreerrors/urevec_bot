@@ -8,7 +8,7 @@ use App\Enums\EnumHasRestrictionTimeInterface;
 /**
  * Users restrictions commands
  */
-enum ResNewUsersEnum: string implements EnumHasRestrictionTimeInterface
+enum NewUserRestrictionsEnum: string implements EnumHasRestrictionTimeInterface
 {
     use Exists;
 
@@ -18,8 +18,8 @@ enum ResNewUsersEnum: string implements EnumHasRestrictionTimeInterface
     case EDIT_RESTRICTIONS = "Выбрать ограничения новых пользователей";
     case SEND_MESSAGES_ENABLE = "Разрешить отправку сообщений для новых пользователей";
     case SEND_MESSAGES_DISABLE = "Запретить отправку сообщений для новых пользователей";
-    case RESTRICTIONS_DISABLE_ALL = "Отключить все ограничения для новых пользователей";
-    case RESTRICTIONS_ENABLE_ALL = "Включить все ограничения для новых пользователей";
+    case RESTRICTIONS_DISABLE = "Отключить все ограничения для новых пользователей";
+    case RESTRICTIONS_ENABLE = "Включить все ограничения для новых пользователей";
     case SELECT_RESTRICTION_TIME = "Выбрать время ограничения для новых пользователей";
     case SET_TIME_TWO_HOURS = "Ограничивать новых пользователей на 2 часа";
     case SET_TIME_DAY = "Ограничивать новых пользователей на 24 часа";
@@ -34,8 +34,8 @@ enum ResNewUsersEnum: string implements EnumHasRestrictionTimeInterface
             self::SEND_MEDIA_DISABLE => 'Возможность отправки медиа-сообщений для новых участников отключена',
             self::SEND_MESSAGES_ENABLE => 'Возможность отправки сообщений для новых участников включена',
             self::SEND_MESSAGES_DISABLE => 'Возможность отправки сообщений для новых участников отключена',
-            self::RESTRICTIONS_DISABLE_ALL => 'Все ограничения для новых участников отключены',
-            self::RESTRICTIONS_ENABLE_ALL => 'Все ограничения для новых участников включены',
+            self::DISABLE => 'Все ограничения для новых участников отключены',
+            self::ENABLE => 'Все ограничения для новых участников включены',
             self::SELECT_RESTRICTION_TIME => 'Выберите время ограничения для новых пользователей',
             self::SET_TIME_TWO_HOURS => 'Установлено ограничение новых пользователей на 2 часа',
             self::SET_TIME_DAY => 'Установлено ограничение новых пользователей на 24 часа',

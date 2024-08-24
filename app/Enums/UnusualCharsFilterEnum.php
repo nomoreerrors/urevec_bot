@@ -15,8 +15,8 @@ enum UnusualCharsFilterEnum: string implements EnumHasRestrictionTimeInterface
     case DISABLE = "Отключить фильтр подозрительных символов";
     case ENABLE = "Включить фильтр подозрительных символов";
     case EDIT_RESTRICTIONS = "Фильтр символов: Редактировать ограничения нарушителей";
-    case RESTRICTIONS_DISABLE_ALL = "Фильтр символов: отключить все ограничения";
-    case RESTRICTIONS_ENABLE_ALL = "Фильтр символов: включить все ограничения";
+    case RESTRICTIONS_DISABLE = "Фильтр символов: отключить все ограничения";
+    case RESTRICTIONS_ENABLE = "Фильтр символов: включить все ограничения";
     case SEND_MESSAGES_DISABLE = "Фильтр символов: Запретить отправку сообщений нарушителям";
     case SEND_MESSAGES_ENABLE = "Фильтр символов: Разрешить отправку сообщений нарушителям";
     case SEND_MEDIA_DISABLE = "Фильтр символов: Запретить отправку медиа-сообщений нарушителям";
@@ -57,8 +57,8 @@ enum UnusualCharsFilterEnum: string implements EnumHasRestrictionTimeInterface
             self::RESTRICT_USERS_ENABLE => 'Фильтр символов: Включить временные ограничения нарушителей',
             self::RESTRICT_USERS_DISABLE => 'Фильтр символов: Отключить временные ограничения нарушителей',
             self::EDIT_RESTRICTIONS => 'Выберите ограничения для пользователей, попавших под фильтр',
-            self::RESTRICTIONS_ENABLE_ALL => 'Все ограничения включены',
-            self::RESTRICTIONS_DISABLE_ALL => 'Все ограничения отключены',
+            self::RESTRICTIONS_ENABLE => 'Все ограничения включены',
+            self::RESTRICTIONS_DISABLE => 'Все ограничения отключены',
         };
     }
 

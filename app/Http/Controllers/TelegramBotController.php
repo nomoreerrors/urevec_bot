@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Classes\CommandBuilder;
 use App\Classes\CommandsList;
+use App\Classes\Menu;
+use App\Classes\ChatSelector;
 use App\Classes\ModerationSettings;
 use App\Exceptions\BaseTelegramBotException;
 use App\Jobs\FailedRequestJob;
@@ -31,22 +33,16 @@ class TelegramBotController extends Controller
 
     public function __construct()
     {
-        $this->botService = app("botService");
+        $this->botService = app(TelegramBotService::class);
         $this->requestModel = $this->botService->getRequestModel();
     }
 
 
     public function webhookHandler(Request $request)
     {
-        try {
-            switch ($this->requestModel->getChatType()) {
-                case "private":
-                    (new PrivateChatCommandCore())->handle();
-            }
-
-        } catch (BaseTelegramBotException $e) {
-            FailedRequestJob::dispatch($this->requestModel->getData());
-            return response(Response::$statusTexts[500], Response::HTTP_OK);
+        switch ($this->requestModel->getChatType()) {
+            case "private":
+                $this->botService->commandHandler()->handle();
         }
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);

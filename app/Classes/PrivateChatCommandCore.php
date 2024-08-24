@@ -7,7 +7,7 @@ use App\Classes\BadWordsFilterCommand;
 use App\Enums\BadWordsFilterEnum;
 use App\Classes\ModerationSettingsCommand;
 use App\Enums\ModerationSettingsEnum;
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use App\Enums\UnusualCharsFilterEnum;
 use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
@@ -15,7 +15,7 @@ use App\Models\Chat;
 use App\Classes\ModerationSettings;
 use App\Classes\BaseCommand;
 use App\Classes\ReplyKeyboardMarkup;
-use App\Classes\RestrictNewUsersCommand;
+use App\Classes\NewUserRestrictionsCommand;
 use App\Exceptions\BaseTelegramBotException;
 use App\Exceptions\UnknownChatException;
 use App\Models\Admin;
@@ -31,48 +31,42 @@ use App\Enums\COMMAND;
 
 class PrivateChatCommandCore extends BaseBotCommandCore
 {
-    private ChatSelector $chatSelector;
-
-    private Menu $menu;
-
-    public function __construct()
+    public function __construct(protected TelegramBotService $botService)
     {
-        parent::__construct();
-        $this->botService = app(TelegramBotService::class);
+        parent::__construct($botService);
         $this->command = $this->botService->getPrivateChatCommand();
-        $this->admin = $this->botService->getAdmin();
-        $this->checkUserAccess();
-        $this->requestModel = $this->botService->getRequestModel();
-        $this->chatSelector = new ChatSelector($this->botService, app(Menu::class));
     }
 
 
     public function handle(): void
     {
-        if ($this->chatSelector->buttonsHaveBeenSent() || $this->chatSelector->hasBeenUpdated()) {
+        $this->botService->chatSelector()->select();
+        if (
+            $this->botService->chatSelector()->hasBeenUpdated() ||
+            $this->botService->chatSelector()->buttonsHaveBeenSent()
+        ) {
             return;
         }
 
         $this->updateCommandIfChanged();
-        $chat = $this->botService->getChat();
 
         if (ModerationSettingsEnum::exists($this->command)) {
-            new ModerationSettingsCommand($this->command, ModerationSettingsEnum::class);
+            new ModerationSettingsCommand($this->botService);
             return;
         }
 
-        if (ResNewUsersEnum::exists($this->command)) {
-            new RestrictNewUsersCommand($this->command, $chat->newUserRestrictions, ResNewUsersEnum::class);
+        if (NewUserRestrictionsEnum::exists($this->command)) {
+            new NewUserRestrictionsCommand($this->botService);
             return;
         }
 
         if (BadWordsFilterEnum::exists($this->command)) {
-            new BadWordsFilterCommand($this->command, $chat->badWordsFilter, BadWordsFilterEnum::class);
+            new BadWordsFilterCommand($this->botService);
             return;
         }
 
         if (UnusualCharsFilterEnum::exists($this->command)) {
-            new UnusualCharsFilterCommand($this->command, $chat->unusualCharsFilter, UnusualCharsFilterEnum::class);
+            new UnusualCharsFilterCommand($this->botService);
             return;
         }
 
@@ -82,11 +76,13 @@ class PrivateChatCommandCore extends BaseBotCommandCore
 
     protected function checkUserAccess(): static
     {
-        if (empty($this->admin)) {
-            $error = CONSTANTS::USER_NOT_ALLOWED . " " . $this->admin->admin_id;
+        $admin = $this->botService->getAdmin();
+
+        if (empty($admin)) {
+            $error = CONSTANTS::USER_NOT_ALLOWED . " " . $admin->admin_id;
             log::info($error);
 
-            app("botService")->sendMessage(CONSTANTS::ADD_BOT_TO_GROUP);
+            $this->botService->sendMessage(CONSTANTS::ADD_BOT_TO_GROUP);
             throw new UnknownChatException($error, __METHOD__);
         }
         return $this;

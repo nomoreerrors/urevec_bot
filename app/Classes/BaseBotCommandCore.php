@@ -9,6 +9,7 @@ use Illuminate\Container\Container;
 use Illuminate\Http\Response;
 use App\Models\Chat;
 use App\Models\MessageModels\TextMessageModel;
+use App\Services\TelegramBotService;
 
 abstract class BaseBotCommandCore
 {
@@ -16,17 +17,15 @@ abstract class BaseBotCommandCore
 
     protected Buttons $buttons;
 
-    protected $botService;
-
     protected ?Admin $admin;
 
     protected $selectedChat = null;
 
     protected $requestModel;
 
-    public function __construct()
+    public function __construct(protected TelegramBotService $botService)
     {
-        $this->buttons = new Buttons();
+        $this->checkUserAccess();
     }
 
     abstract protected function checkUserAccess(): static;

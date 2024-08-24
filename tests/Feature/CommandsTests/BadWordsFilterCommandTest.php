@@ -115,14 +115,14 @@ class BadWordsFilterCommandTest extends TestCase
     public function testEnableBadWordsFilterRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICTIONS_ENABLE_ALL->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICTIONS_ENABLE->value);
         $this->filter->update(['enabled' => 0]); //set to disabled before test
 
 
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::RESTRICTIONS_ENABLE_ALL->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::RESTRICTIONS_ENABLE->replyMessage());
         $this->assertTrue($this->filter->enabled === 1);
     }
 

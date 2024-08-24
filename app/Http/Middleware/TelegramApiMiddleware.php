@@ -49,32 +49,19 @@ class TelegramApiMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $data = $request->all();
-        // info("TGMA!!!");
-        // throw new Exception("TERMINATOR2");
+        //TODO delete it
+        // return response("OK", Response::HTTP_OK);
+        // throw new BaseTelegramBotException("test", __METHOD__);
 
-        try {
-            $this->saveRawRequestData($data);
-            $this->middlewareService = new TelegramMiddlewareService($data);
-            $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
-            $this->middlewareService->checkIfIpAllowed(request()->ip());
-            $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
+        $this->saveRawRequestData($data);
+        $this->middlewareService = new TelegramMiddlewareService($data);
+        $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
+        $this->middlewareService->checkIfIpAllowed(request()->ip());
+        $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
+        $this->setContainerDeps();
 
-            app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->requestModel));
-            app()->singleton("commandsList", fn() => new CommandsList());
-
-            if ($this->requestModel->getChatType() !== "private") {
-                $this->setChat();
-            }
-
-        } catch (UnexpectedRequestException | EnvironmentVariablesException $e) {
-            return $this->handleException($data, $e);
-        } catch (UnknownChatException | UnknownIpAddressException $e) {
-            return $this->handleException($data, $e);
-        } catch (BaseTelegramBotException $e) {
-            return $this->handleException($data, $e);
-        } catch (\Throwable $e) {
-            BotErrorNotificationService::send($e->getMessage() . "Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
-            return $this->handleException($data, $e);
+        if ($this->requestModel->getChatType() !== "private") {
+            $this->setChat();
         }
 
         return $next($request);
@@ -88,26 +75,19 @@ class TelegramApiMiddleware
         $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
 
         if (!$chatExists) {
-            app("botService")->createChat();
-            app("botService")->setMyCommands();
+            app(TelegramBotService::class)->createChat();
+            app(TelegramBotService::class)->setMyCommands();
         } else {
-            app("botService")->setChat($this->requestModel->getChatId());
+            app(TelegramBotService::class)->setChat($this->requestModel->getChatId());
         }
         return;
     }
 
-    private function handleException(array $requestData, \Throwable $e): Response
+    private function setContainerDeps()
     {
-        Log::error($e->getmessage() . " Line: " . $e->getLine() . PHP_EOL . "Class: " . $e->getFile());
-
-        if (env("APP_DEBUG")) {
-            throw $e;
-        }
-
-        FailedRequestJob::dispatch($requestData);
-        return response(Response::$statusTexts[500], Response::HTTP_OK);
+        app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->requestModel));
+        app()->singleton("commandsList", fn() => new CommandsList());
     }
-
 
     private function saveRawRequestData(array $requestData): void
     {
@@ -116,6 +96,7 @@ class TelegramApiMiddleware
         $requestLogData[] = array_merge($requestData, ['Moscow_time' => date("F j, Y, g:i a")]);
         Storage::put("rawrequest.json", json_encode($requestLogData, JSON_UNESCAPED_UNICODE));
     }
+
 }
 
 

@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Classes\BaseBotCommandCore;
+use App\Classes\PrivateChatCommandCore;
 use App\Enums\ResTime;
+use App\Classes\ChatSelector;
 use App\Exceptions\BanUserFailedException;
-use App\Models\BadWordsFilter;
-use App\Models\UnusualCharsFilter;
 use App\Models\Admin;
+use App\Classes\Menu;
 use App\Exceptions\RestrictMemberFailedException;
 use App\Exceptions\SetCommandsFailedException;
 use App\Models\MessageModels\TextMessageModel;
@@ -27,6 +29,7 @@ use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\TextUI\Configuration\Constant;
 
+
 class TelegramBotService
 {
     private $chat = null;
@@ -39,12 +42,20 @@ class TelegramBotService
 
     private ?string $privateChatCommand = null;
 
+    private ?Menu $menu = null;
+
+    private ?ChatSelector $chatSelector = null;
+
+    private ?BaseBotCommandCore $commandHandler = null;
 
 
     public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
         $this->setAdmin()
             ->setPrivateChatCommand();
+        $this->setChatSelector();
+        $this->setCommandHandler();
+        $this->setPrivateChatMenu();
     }
 
     /**
@@ -303,7 +314,7 @@ class TelegramBotService
      * @param mixed $data
      * @return mixed
      */
-    public function sendPost($method, $data): Response
+    public function sendPost(string $method, array $data): Response
     {
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/{$method}",
@@ -315,7 +326,8 @@ class TelegramBotService
 
     public function setChat(int $chatId): void
     {
-        $this->chat = Chat::with("newUserRestrictions", "badWordsFilter", "unusualCharsFilter", "admins")->where("chat_id", $chatId)->first();
+        $this->chat = Chat::with("newUserRestrictions", "badWordsFilter", "unusualCharsFilter", "admins")
+            ->where("chat_id", $chatId)->first();
         $this->setChatRestrictionTime();
     }
 
@@ -365,5 +377,46 @@ class TelegramBotService
     {
         return $this->requestModel;
     }
+
+    private function setPrivateChatMenu()
+    {
+        if ($this->requestModel->getChatType() === "private") {
+            $this->menu = new Menu($this);
+        }
+    }
+
+    /**
+     * Get bot private chat menu
+     * @return Menu|null
+     */
+    public function menu(): ?Menu
+    {
+        return $this->menu;
+    }
+
+    private function setChatSelector(): void
+    {
+        if ($this->requestModel->getChatType() === "private") {
+            $this->chatSelector = new ChatSelector($this);
+        }
+    }
+
+    public function chatSelector(): ?ChatSelector
+    {
+        return $this->chatSelector;
+    }
+
+    private function setCommandHandler(): void
+    {
+        if ($this->requestModel->getChatType() === "private") {
+            $this->commandHandler = new PrivateChatCommandCore($this);
+        }
+    }
+
+    public function commandHandler(): ?BaseBotCommandCore
+    {
+        return $this->commandHandler;
+    }
 }
+
 

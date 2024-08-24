@@ -6,6 +6,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use App\Jobs\FailedRequestJob;
+use Illuminate\Support\Facades\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,8 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->report(function (\Throwable $e) {
 
+            Log::error($e);
+
             if (!($e instanceof BaseTelegramBotException)) {
                 BotErrorNotificationService::send($e->getMessage() . PHP_EOL . "Class: " . $e->getFile() . " Line: " . $e->getLine());
             }
+
+            FailedRequestJob::dispatch(request()->all());
+
+            return response($e->getMessage(), 200);
         });
     })->create();

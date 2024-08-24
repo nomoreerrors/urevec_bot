@@ -16,19 +16,8 @@ class BadWordsFilterCommand extends FilterCommand
     {
         parent::handle();
         switch ($this->command) {
-            //ADD SPECIFIC CASES
+            //ADD SPECIFIC COMMAND CASES
         }
     }
 
-    protected function getSettingsTitles(): array
-    {
-        $titles = parent::getSettingsTitles();
-        $addTitles = [
-            $this->enum::ADD_WORDS->value,
-            $this->enum::DELETE_WORDS->value,
-            $this->enum::GET_WORDS->value,
-        ];
-
-        return array_merge($titles, $addTitles);
-    }
 }

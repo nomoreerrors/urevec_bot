@@ -3,7 +3,7 @@
 namespace Tests\Feature\Middleware;
 
 use App\Enums\BanMessages;
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use App\Enums\ResTime;
 use App\Models\StatusUpdates\StatusUpdateModel;
 use App\Models\StatusUpdates\InvitedUserUpdateModel;

@@ -2,26 +2,27 @@
 
 namespace App\Classes;
 
-use App\Interfaces\CommandEnumInterface;
-use App\Enums\ResTime;
-use App\Interfaces\FilterCmdEnumInterface;
-use App\Models\FilterModel;
-use App\Traits\RestrictionsTimeCases;
-use App\Traits\RestrictionsCases;
+use App\Services\TelegramBotService;
+use App\Traits\DynamicModel;
 use App\Traits\RestrictUsers;
+use App\Traits\ToggleColumn;
 
-class FilterCommand extends BaseCommand
+abstract class FilterCommand extends BaseCommand
 {
     use RestrictUsers;
+    use ToggleColumn;
+    use DynamicModel;
+
     /**
      * Summary of __construct
      * @param string $command
      * @param \App\Models\FilterModel $model
      * @param string $enum Enum::class
      */
-    public function __construct(protected string $command, protected FilterModel $model, protected string $enum)
+    public function __construct(protected TelegramBotService $botService)
     {
-        parent::__construct($command, $enum);
+        $this->setModelFromClassName();
+        parent::__construct($botService);
     }
 
 
@@ -41,21 +42,6 @@ class FilterCommand extends BaseCommand
                 $this->toggleColumn('delete_message');
                 break;
         }
-    }
-
-    protected function getSettingsTitles(): array
-    {
-        return [
-            $this->model->enabled ?
-            $this->enum::DISABLE->value :
-            $this->enum::ENABLE->value,
-
-            $this->model->delete_message ?
-            $this->enum::DELETE_MESSAGES_DISABLE->value :
-            $this->enum::DELETE_MESSAGES_ENABLE->value,
-
-            $this->enum::EDIT_RESTRICTIONS->value
-        ];
     }
 }
 

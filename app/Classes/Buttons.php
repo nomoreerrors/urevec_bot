@@ -3,6 +3,8 @@
 namespace App\Classes;
 
 use App\Enums\UnusualCharsFilterEnum;
+use App\Models\BadWordsFilter;
+use Illuminate\Database\Eloquent\Model;
 use App\Models\NewUserRestriction;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Enums\ModerationSettingsEnum;
@@ -11,31 +13,13 @@ use App\Enums\BadWordsFilterEnum;
 use App\Models\FilterModel;
 use App\Models\UnusualCharsFilter;
 use App\Services\CONSTANTS;
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use Nette\ArgumentOutOfRangeException;
 use PHPUnit\Util\Filter;
+use App\Classes\ButtonsTitles;
 
 class Buttons
 {
-    public function getSelectChatButtons(array $titles): array
-    {
-        if (empty($titles)) {
-            throw new BaseTelegramBotException("Groups titles not set", __METHOD__);
-        }
-
-        $replyMarkup = new ReplyKeyboardMarkup();
-        $i = 0;
-        foreach ($titles as $title) {
-            $replyMarkup->addRow()
-                ->addButton($title);
-            if (($i + 1) % 2 == 0) {
-                $replyMarkup->addRow();
-            }
-            $i++;
-        }
-        return $replyMarkup->get();
-    }
-
     public function create(array $titles, int $eachRowHas = 2, bool $withBackButton = false): array
     {
         if (empty($titles)) {
@@ -63,44 +47,6 @@ class Buttons
         }
         return $replyMarkup->get();
     }
-
-    // /**
-    //  * Define buttons names according to whether the value of setting in database disabled or not
-    //  * @param bool $sendMessages
-    //  * @param bool $sendMedia
-    //  * @param bool $settings
-    //  * @return array
-    //  */
-    // public function getRestrictUsersButtons(NewUserRestriction $model, string $enum): array
-    // {
-    //     $canSendMedia = $model->can_send_media ?
-    //             $model::SEND_MEDIA_DISABLE->value :
-    //             $model::SEND_MEDIA_ENABLE->value;
-
-    //     $canSendMessages = $model->can_send_messages ?
-    //             $model::SEND_MESSAGES_DISABLE->value :
-    //             $model::SEND_MESSAGES_ENABLE->value;
-
-    //     $restrictNewUsers = $model->restrict_user ?
-    //             $model::RESTRICTIONS_DISABLE_ALL->value :
-    //             $model::RESTRICTIONS_ENABLE_ALL->value;
-
-    //     $keyBoard = (new ReplyKeyboardMarkup())
-    //         ->addRow()
-    //         ->addButton($canSendMedia)
-    //         ->addRow()
-    //         ->addButton($canSendMessages)
-    //         ->addRow()
-    //         ->addButton($restrictNewUsers)
-    //         ->addRow()
-    //         ->addButton($enum::SELECT_RESTRICTION_TIME->value)
-    //         ->addRow()
-    //         ->addButton(MainMenuCmd::BACK->value)
-    //         ->get();
-
-    //     return $keyBoard;
-    // }
-
     /**
      * Summary of getRestrictionsTimeButtons
      * @param string $enum Enum::class implements EnumHasRestrictionTimeInterface
@@ -127,66 +73,96 @@ class Buttons
 
     public function getModerationSettingsButtons(): array
     {
-        $keyBoard = (new ReplyKeyboardMarkup())
-            ->addRow()
-            ->addButton(ResNewUsersEnum::SETTINGS->value)
-            ->addRow()
-            ->addButton(ModerationSettingsEnum::FILTERS_SETTINGS->value) //TODO change to enum
-            ->get();
+        $titles = (new ButtonsTitles(null, ModerationSettingsEnum::class))
+            ->getModerationSettingsTitles();
 
+        $keyBoard = $this->create($titles, 1, true);
         return $keyBoard;
     }
 
-    public function getFiltersMainSettingsButtons(): array
+
+    /**
+     * General menu of all filters handled in ModerationSettingsCommand class
+     * @return array
+     */
+    public function getFiltersMenuSettingsButtons(): array
     {
-        $keyBoard = (new ReplyKeyboardMarkup())
-            ->addRow()
-            ->addButton(BadWordsFilterEnum::SETTINGS->value)
-            ->addRow()
-            ->addButton(UnusualCharsFilterEnum::SETTINGS->value)
-            ->addRow()
-            ->addButton(ModerationSettingsEnum::BACK->value)
-            ->get();
+        $buttons = (new ButtonsTitles())->getFiltersMenuSettingsTitles();
+        $keyBoard = $this->create($buttons, 1, true);
+        return $keyBoard;
+    }
+
+    // public function getRestrictNewUsersButtons(): array
+    // {
+    //     $buttons = [
+    //         $this->model->enabled ?
+    //         $this->enum::RESTRICTIONS_DISABLE_ALL->value :
+    //         $this->enum::RESTRICTIONS_ENABLE_ALL->value,
+
+    //         $this->enum::EDIT_RESTRICTIONS->value
+    //     ];
+    // }
+
+    // /**
+    //  * Summary of getFilterSettingsButtons
+    //  * @param FilterModel $filter
+    //  * @param string $enum Enum::class implements EnumHasRestrictionTimeInterface
+    //  * @return array
+    //  */
+    // public function getFilterSettingsButtons(FilterModel $filter, string $enum): array
+    // {
+    //     $toggleFIlter = $filter->enabled ?
+    //             $enum::DISABLE->value :
+    //             $enum::ENABLE->value;
+
+    //     $toggleDeleteMessage = $filter->delete_message ?
+    //             $enum::DELETE_MESSAGES_DISABLE->value :
+    //             $enum::DELETE_MESSAGES_ENABLE->value;
+
+    //     $toggleRestrictUser = $filter->restrict_user ?
+    //             $enum::RESTRICT_USERS_DISABLE->value :
+    //             $enum::RESTRICT_USERS_ENABLE->value;
+
+    //     $selectTime = $enum::SELECT_RESTRICTION_TIME->value;
+
+
+    //     $keyBoard = (new ReplyKeyboardMarkup())
+    //         ->addRow()
+    //         ->addButton($toggleFIlter)
+    //         ->addRow()
+    //         ->addButton($toggleDeleteMessage)
+    //         ->addRow()
+    //         ->addButton($toggleRestrictUser)
+    //         ->addRow()
+    //         ->addButton($selectTime)
+    //         ->addRow()
+    //         ->addButton(ModerationSettingsEnum::BACK->value)
+    //         ->get();
+
+    //     return $keyBoard;
+    // }
+
+    public function getSelectChatButtons(array $titles): array
+    {
+        $keyBoard = $this->create($titles, 1, true);
 
         return $keyBoard;
     }
 
     /**
-     * Summary of getFilterSettingsButtons
-     * @param FilterModel $filter
-     * @param string $enum Enum::class implements EnumHasRestrictionTimeInterface
-     * @return array
+     * NewUserRestriction base settings menu buttons 
      */
-    public function getFilterSettingsButtons(FilterModel $filter, string $enum): array
+    public function getNewUserRestrictionsButtons(NewUserRestriction $newUsersRestriction): array
     {
-        $toggleFIlter = $filter->enabled ?
-                $enum::DISABLE->value :
-                $enum::ENABLE->value;
+        $titles = (new ButtonsTitles($newUsersRestriction, NewUserRestrictionsEnum::class))->getNewUserRestrictionsTitles();
+        $keyBoard = $this->create($titles, 1, true);
+        return $keyBoard;
+    }
 
-        $toggleDeleteMessage = $filter->delete_message ?
-                $enum::DELETE_MESSAGES_DISABLE->value :
-                $enum::DELETE_MESSAGES_ENABLE->value;
-
-        $toggleRestrictUser = $filter->restrict_user ?
-                $enum::RESTRICT_USERS_DISABLE->value :
-                $enum::RESTRICT_USERS_ENABLE->value;
-
-        $selectTime = $enum::SELECT_RESTRICTION_TIME->value;
-
-
-        $keyBoard = (new ReplyKeyboardMarkup())
-            ->addRow()
-            ->addButton($toggleFIlter)
-            ->addRow()
-            ->addButton($toggleDeleteMessage)
-            ->addRow()
-            ->addButton($toggleRestrictUser)
-            ->addRow()
-            ->addButton($selectTime)
-            ->addRow()
-            ->addButton(ModerationSettingsEnum::BACK->value)
-            ->get();
-
+    public function getBadWordsFilterButtons(BadWordsFilter $filter): array
+    {
+        $titles = (new ButtonsTitles($filter, BadWordsFilterEnum::class))->getBadWordsFilterTitles();
+        $keyBoard = $this->create($titles, 1, true);
         return $keyBoard;
     }
 }

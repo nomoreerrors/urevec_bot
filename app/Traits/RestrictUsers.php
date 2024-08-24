@@ -8,7 +8,7 @@ use App\Classes\Menu;
 
 trait RestrictUsers
 {
-    use Toggle;
+    // use Toggle;
 
     public function getRestrictionsCases()
     {
@@ -16,8 +16,8 @@ trait RestrictUsers
             case $this->enum::EDIT_RESTRICTIONS->value:
                 $this->sendEditRestrictionsButtons();
                 break;
-            case $this->enum::RESTRICTIONS_ENABLE_ALL->value:
-            case $this->enum::RESTRICTIONS_DISABLE_ALL->value:
+            case $this->enum::RESTRICTIONS_ENABLE->value:
+            case $this->enum::RESTRICTIONS_DISABLE->value:
                 $this->toggleColumn('enabled');
                 break;
             case $this->enum::SEND_MEDIA_ENABLE->value:
@@ -59,7 +59,7 @@ trait RestrictUsers
 
     protected function sendRestrictionTimeButtons(): void
     {
-        Menu::save($this->command);
+        $this->botService->menu()->save();
         $keyBoard = (new Buttons())->create($this->getRestrictionsTimeTitles(), 1, true);
         $this->botService->sendMessage(
             $this->enum::SELECT_RESTRICTION_TIME->replyMessage(),
@@ -80,9 +80,9 @@ trait RestrictUsers
 
     public function sendEditRestrictionsButtons()
     {
-        Menu::save($this->command);
+        $this->botService->menu()->save();
         $keyBoard = (new Buttons())->create($this->getEditRestrictionsTitles(), 1, true);
-        app("botService")->sendMessage($this->enum::EDIT_RESTRICTIONS->replyMessage(), $keyBoard);
+        $this->botService->sendMessage($this->enum::EDIT_RESTRICTIONS->replyMessage(), $keyBoard);
     }
 
     protected function getEditRestrictionsTitles(): array
@@ -97,18 +97,29 @@ trait RestrictUsers
             $this->enum::SEND_MESSAGES_ENABLE->value,
 
             $this->model->enabled ?
-            $this->enum::RESTRICTIONS_DISABLE_ALL->value :
-            $this->enum::RESTRICTIONS_ENABLE_ALL->value,
+            $this->enum::DISABLE->value :
+            $this->enum::ENABLE->value,
 
             $this->enum::SELECT_RESTRICTION_TIME->value
+        ];
+    }
+
+    protected function getRestrictionsTitles(): array
+    {
+        return [
+            $this->model->enabled ?
+            $this->enum::RESTRICTIONS_DISABLE->value :
+            $this->enum::RESTRICTIONS_ENABLE->value,
+
+            $this->enum::EDIT_RESTRICTIONS->value
         ];
     }
 
 
     public function sendRestrictionsTimeButtons()
     {
-        Menu::save($this->command);
+        $this->botService->menu()->save();
         $keyBoard = (new Buttons())->create($this->getRestrictionsTimeTitles(), 1, true);
-        app("botService")->sendMessage($this->enum::SELECT_RESTRICTION_TIME->replyMessage(), $keyBoard);
+        $this->botService->sendMessage($this->enum::SELECT_RESTRICTION_TIME->replyMessage(), $keyBoard);
     }
 }

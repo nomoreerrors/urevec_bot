@@ -1,10 +1,14 @@
 <?php
 
 namespace App\Traits;
-use App\Classes\Menu;
 
-trait Toggle
+use App\Classes\Menu;
+use App\Services\BotErrorNotificationService;
+
+trait ToggleColumn
 {
+    protected $model;
+
     protected function toggleColumn(string $column)
     {
         $this->updateColumn($column);
@@ -30,6 +34,12 @@ trait Toggle
      */
     private function refreshMenu()
     {
-        Menu::refresh();
+        (new Menu($this->botService))->refresh();
     }
+
+
 }
+
+
+
+

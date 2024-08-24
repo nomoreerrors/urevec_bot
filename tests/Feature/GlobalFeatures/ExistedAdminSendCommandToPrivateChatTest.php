@@ -44,14 +44,14 @@ class ExistedAdminSendCommandToPrivateChatTest extends TestCase
     public function testAdminAttachedToMultipleChatsAndChatNotSelectedRepliesWithSelectChatButtons()
     {
         $this->deleteLastCommandFromCache($this->admin->admin_id);
-        $this->setCommand(ModerationSettingsEnum::MODERATION_SETTINGS->value);
+        $this->setCommand(ModerationSettingsEnum::SETTINGS->value);
 
         $this->postJson('api/webhook', $this->data);
         $titles = $this->admin->chats->pluck("chat_title")->toArray();
         //Assert that all expected buttons titles were sent  and write in log file inside sendMessages() method
         $this->assertButtonsWereSent($titles);
         //Assert that last command was set in cache so that it can be used after the chat is selected
-        $this->assertEquals(ModerationSettingsEnum::MODERATION_SETTINGS->value, $this->getLastCommandFromCache($this->admin->admin_id));
+        $this->assertEquals(ModerationSettingsEnum::SETTINGS->value, $this->getLastCommandFromCache($this->admin->admin_id));
         $this->clearTestLogFile();
     }
 }

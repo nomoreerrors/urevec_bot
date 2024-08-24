@@ -3,74 +3,57 @@
 namespace App\Classes;
 
 use App\Enums\BadWordsFilterEnum;
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use App\Enums\UnusualCharsFilterEnum;
 use App\Models\Chat;
 use App\Enums\ModerationSettingsEnum;
+use App\Services\TelegramBotService;
 use App\Classes\Menu;
 use App\Services\BotErrorNotificationService;
 
 class ModerationSettingsCommand extends BaseCommand
 {
-    public function __construct(protected string $command, protected string $enum)
+    public function __construct(protected TelegramBotService $botService)
     {
-        parent::__construct($command, $enum);
+        parent::__construct($botService);
     }
 
     protected function handle(): void
     {
         switch ($this->command) {
-            case $this->enum::MODERATION_SETTINGS->value:
-                $this->sendModerationSettings();
+            case $this->enum::SETTINGS->value:
+                $this->send();
                 break;
             case $this->enum::FILTERS_SETTINGS->value:
                 $this->sendFiltersMainSettings();
                 break;
             // case $this->enum::SELECT_CHAT->value:
 
-
-
             case $this->enum::BACK->value:
-                Menu::back();
+                $this->botService->menu()->back();
                 break;
         }
     }
 
-    public function send(): void
-    {
-        //FOR START COMMAND
-    }
-
-    public function sendModerationSettings(): void
-    {
-        Menu::save($this->command);
-        $keyBoard = (new Buttons())->create($this->getSettingsTitles(), 1, false);
-        app("botService")->sendMessage(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage(), $keyBoard);
-    }
-
     public function sendFiltersMainSettings(): void
     {
-        Menu::save($this->command);
-        $keyBoard = (new Buttons())->create($this->getFiltersSettingsTitles(), 1, true);
-        app("botService")->sendMessage(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(), $keyBoard);
+        // Menu::save($this->command);
+        $this->botService->menu()->save();
+        $keyBoard = (new Buttons())->getFiltersMenuSettingsButtons();
+        $this->botService->sendMessage(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(), $keyBoard);
     }
 
-    protected function getSettingsTitles(): array
-    {
-        return [
-            ResNewUsersEnum::SETTINGS->value,
-            $this->enum::FILTERS_SETTINGS->value,
-            $this->enum::SELECT_CHAT->value,
 
-        ];
+    protected function setEnum(): void
+    {
+        $this->enum = ModerationSettingsEnum::class;
     }
 
-    protected function getFiltersSettingsTitles(): array
+
+    protected function getSettingsButtons(): array
     {
-        return [
-            BadWordsFilterEnum::SETTINGS->value,
-            UnusualCharsFilterEnum::SETTINGS->value,
-        ];
+        $keyBoard = (new Buttons())->getModerationSettingsButtons();
+        return $keyBoard;
     }
 }
 

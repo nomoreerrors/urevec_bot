@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use App\Enums\ResNewUsersEnum;
+use App\Enums\NewUserRestrictionsEnum;
 use App\Models\ForwardMessageModel;
 use App\Enums\UnusualCharsFilterEnum;
 use App\Enums\ResTime;
@@ -18,7 +18,7 @@ class ResTimeEnumTest extends BaseTestCase
 {
     public function testGetTime()
     {
-        $time = ResTime::getTime(ResNewUsersEnum::SET_TIME_TWO_HOURS);
+        $time = ResTime::getTime(NewUserRestrictionsEnum::SET_TIME_TWO_HOURS);
         $this->assertEquals(1, $time);
 
         $time = ResTime::getTime(BadWordsFilterEnum::SET_TIME_MONTH);

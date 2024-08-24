@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Classes\ChatSelector;
 use App\Enums\ModerationSettingsEnum;
 use App\Enums\UnusualCharsFilterEnum;
-use App\Enums\ResNewUsersEnum;
+use Tests\Feature\Traits\MockBotService;
+use App\Enums\NewUserRestrictionsEnum;
+use App\Classes\Buttons;
+use App\Classes\Menu;
 use App\Enums\BadWordsFilterEnum;
 use App\Models\TelegramRequestModelBuilder;
 use App\Enums\ResTime;
@@ -21,78 +25,103 @@ use Illuminate\Foundation\Testing\WithFaker;
 use App\Exceptions\BaseTelegramBotException;
 use Illuminate\Support\Facades\Http;
 use App\Services\CONSTANTS;
+use Tests\Feature\Traits\MockMenu;
 use Tests\TestCase;
 
 class ModerationSettingsCommandTest extends TestCase
 {
+    use MockBotService;
     use RefreshDatabase;
+
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->fakeSendMessageSucceedResponse();
-        //Prepare one admin in database that attached to a few chats
         (new SimpleSeeder())->run(1, 5);
         $this->admin = Admin::first();
-        $this->chat = Chat::first();
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id);
-        $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
-        $this->clearTestLogFile();
+        $this->chat = $this->admin->chats->first();
+        $this->mockBotCreate();
+        $this->mockBotGetAdminMethod($this->admin);
+        $this->mockBotCommandHandler("private");
+    }
+
+
+    public function testUserIsSelectedModerationSettingsAfterChatIsSelected(): void
+    {
+        //Mock that the chat is previously selected 
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
+
+        $this->expectReplyMessageWillBeSent(
+            ModerationSettingsEnum::SETTINGS->replyMessage(),
+            (new Buttons())->getModerationSettingsButtons()
+        );
+
+
+        $this->mockBotCommand(ModerationSettingsEnum::SETTINGS->value);
+        $this->mockBotGetChatMethod($this->admin->chats->first());
+        $this->mockBotChatSelector();
+
+        $this->expectMockBotMenuMethodWillBeCalled("save", 1);
+        $this->mockBotMenuCreate();
+
+        $this->mockBotService->commandHandler()->handle();
+    }
+
+    public function testIfChatNotSelectedCommandWillBeSavedToBackMenuArrayAndRepliesWithSelectChatMenuButtons(): void
+    {
+        $this->expectReplyMessageWillBeSent(
+            ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
+            $this->getAdminChatsButtons($this->admin)
+        );
+
+        $this->mockBotCommand(ModerationSettingsEnum::SETTINGS->value);
+        $this->mockBotChatSelector();
+
+        $this->expectMockBotMenuMethodWillBeCalled("save", 1);
+        $this->mockBotMenuCreate();
+        // Run command
+        $this->mockBotService->commandHandler()->handle();
+    }
+
+    public function testSelectingtFiltersSettingsRepliesWithMenuButtons()
+    {
+        //Mock that the chat is previously selected 
+        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
+        $buttons = $this->getFiltersSettingsButtons();
+
+        $this->assertTrue(in_array(BadWordsFilterEnum::SETTINGS->value, $buttons));
+        $this->assertTrue(in_array(UnusualCharsFilterEnum::SETTINGS->value, $buttons));
+
+        $this->expectReplyMessageWillBeSent(
+            ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(),
+            $buttons
+        );
+
+        $this->mockBotCommand(ModerationSettingsEnum::FILTERS_SETTINGS->value);
+        $this->mockBotChatSelector();
+
+        $this->expectMockBotMenuMethodWillBeCalled("save", 1);
+        $this->mockBotMenuCreate();
+        // Run command
+        $this->mockBotService->commandHandler()->handle();
     }
 
     /**
-     * Tescase where user selected one of his chats, chat is set and last  command gets from cache and executed
-     * in this case moderation settings menu buttons are sent
+     * Test that user is noticed which chat is selected
      * @return void
      */
-    public function testChatIsSetAndLastCommandRememberedAndSelectModerationSettingsRepliesWithButtons(): void
+    public function testUserIsSelectedChatRepliesWithSelectedChatTitle()
     {
-        $this->deleteSelectedChatFromCache($this->admin->admin_id);
-        $this->putLastCommandToCache($this->admin->admin_id, ModerationSettingsEnum::MODERATION_SETTINGS->value);
-        // Mock that user is pressed select chat button with one of the titles from his chats in database
         $title = $this->admin->chats->first()->chat_title;
-        $this->setCommand($title);
-        $this->prepareDependencies();
+        $this->mockBotCommand($title);
+        $this->mockBotGetChatMethod($this->admin->chats->first());
+        $this->mockBotChatSelector();
 
-        (new PrivateChatCommandCore())->handle();
+        $this->expectMockBotMenuMethodWillBeCalled("back", 1);
+        $this->mockBotMenuCreate();
 
-        $this->assertReplyMessageSent("Selected chat: " . $title);
-        $this->assertReplyMessageSent(ModerationSettingsEnum::MODERATION_SETTINGS->replyMessage());
-        // Assert that buttons were sent and previously saved command was executed
-        $this->assertButtonsWereSent([
-            ResNewUsersEnum::SETTINGS->value,
-            ModerationSettingsEnum::FILTERS_SETTINGS->value,
-        ]);
-        $this->assertBackMenuArrayContains(ModerationSettingsEnum::MODERATION_SETTINGS->value);
-    }
-
-
-    public function testSelectFiltersSettingsReplyWithButtons()
-    {
-        $this->setCommand(ModerationSettingsEnum::FILTERS_SETTINGS->value);
-        $this->prepareDependencies();
-
-        (new PrivateChatCommandCore());
-
-        $this->assertReplyMessageSent(ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage());
-        $this->assertButtonsWereSent([
-            UnusualCharsFilterEnum::SETTINGS->value,
-            BadWordsFilterEnum::SETTINGS->value
-        ]);
-        $this->assertBackMenuArrayContains(ModerationSettingsEnum::FILTERS_SETTINGS->value);
-    }
-
-
-    private function prepareDependencies()
-    {
-        $this->chat = Chat::first();
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($this->model);
-
-        // app()->instance("requestModel", $this->model);
-        app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->model));
-        // app()->instance("botService", $this->botService);
-        $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
+        $this->expectReplyMessageWillBeSent($this->stringContains($title));
+        $this->mockBotService->commandHandler()->handle();
     }
 }
 

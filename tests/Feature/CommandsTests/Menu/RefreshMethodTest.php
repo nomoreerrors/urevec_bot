@@ -3,70 +3,94 @@
 namespace Feature\CommandsTests\Menu;
 
 use App\Services\CONSTANTS;
+use App\Classes\PrivateChatCommandCore;
 use Database\Seeders\SimpleSeeder;
 use App\Classes\Menu;
+use Tests\Feature\Traits\MockBotService;
 use Tests\TestCase;
 
 class RefreshMethodTest extends TestCase
 {
+    use MockBotService;
+
+    protected $mockMenu;
+
     public function setUp(): void
     {
         parent::setUp();
-        $this->setPrivateChatBotService();
+        $this->admin = $this->setAdminWithMultipleChats(2);
+        $this->mockBotCreate();
+        $this->mockBotGetAdminMethod($this->admin);
+
+        $this->mockBotCommand("random command");
+        $this->fakeBotCommandHandlerCreate("private");
+
+        $this->clearTestLogFile();
+        $this->forgetBackMenuArray($this->admin->admin_id);
     }
 
-    /**
-     * Test that refresh() method sets the correct adminId
-     *
-     * @return void
-     */
-    public function testRefreshSetsAdminId()
+
+    public function testRefreshSetsIsMenuRefreshToTrue()
     {
-        $result = $this->setValueToProtectedProperty("adminId", Menu::class);
-        $this->assertNull($result);
-        Menu::refresh();
-        $result = $this->setValueToProtectedProperty("adminId", Menu::class);
-        $this->assertEquals($this->admin->admin_id, $result);
+        $this->mockMenu = $this->getMockMenu();
+        $this->expectGetBackMenuFromCache(["some menu"]);
+
+
+        $this->assertFalse($this->mockMenu->getIsMenuRefresh());
+        $this->mockMenu->refresh();
+        $this->assertTrue($this->mockMenu->getIsMenuRefresh());
     }
 
-    /**
-     * Test that refresh() method sets isMenuRefresh to true
-     *
-     * @return void
-     */
-    public function testRefreshSetsIsMenuRefresh()
+    public function testThrowsExceptionWhenGetBackMenuFromCacheFails()
     {
-        $result = $this->setValueToProtectedProperty("isMenuRefresh", Menu::class);
-        $this->assertFalse($result);
-
-        Menu::refresh();
-
-        $result = $this->setValueToProtectedProperty("isMenuRefresh", Menu::class);
-        $this->assertTrue($result);
-    }
-
-    /**
-     * Test that refresh() method does not setPrivateChatCommand if menu is empty
-     *
-     * @return void
-     */
-    public function testRefreshDoesNotSetPrivateChatCommandIfMenuIsEmpty()
-    {
-        $this->forgetBackMenuArray();
+        $this->mockMenu = $this->getMockMenu();
+        $this->expectGetBackMenuFromCache(null);
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage(CONSTANTS::REFRESH_BACK_MENU_FAILED);
-        Menu::refresh();
+        $this->mockMenu->refresh();
+    }
+
+    public function testRefreshScriptRunsSuccessfully()
+    {
+        $mockCommandHandler = $this->createMock(PrivateChatCommandCore::class);
+        $mockCommandHandler->expects($this->once())
+            ->method('handle');
+
+        $this->mockBotCreate();
+        $this->mockBotGetAdminMethod($this->admin);
+        $this->mockBotCommand("random command");
+
+        $this->mockBotCommandHandler("private", null, $mockCommandHandler);
+        $this->expectBotSetPrivateChatCommand("some menu");
+
+        $this->mockMenu = $this->getMockMenu();
+        $this->expectGetBackMenuFromCache(["some menu"]);
+
+
+        $this->mockMenu->refresh();
+    }
+
+
+    private function getMockMenu()
+    {
+        return $this->getMockBuilder(Menu::class)
+            ->setConstructorArgs([$this->mockBotService])
+            ->onlyMethods(['getBackMenuFromCache'])
+            ->getMock();
     }
 
     /**
-     * Test that refresh() method setsPrivateChatCommand with the last menu item
-     *
+     * Expectation for getBackMenuFromCache method
+     * @param mixed $returnValue
      * @return void
      */
-    public function testRefreshSetsPrivateChatCommandWithLastMenuItem()
+    private function expectGetBackMenuFromCache($returnValue)
     {
-        $this->setBackMenuArrayToCache(["menu_item_1", "menu_item_2", "menu_item_3"], $this->getBackMenuCacheKey());
-        Menu::refresh();
-        $this->assertEquals("menu_item_3", $this->botService->getPrivateChatCommand());
+        $this->mockMenu->expects($this->once())
+            ->method('getBackMenuFromCache')
+            ->willReturn($returnValue);
     }
+
+
 }
+

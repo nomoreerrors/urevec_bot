@@ -1,13 +1,13 @@
 <?php
 
 namespace App\Classes;
-
 use App\Enums\UnusualCharsFilterEnum;
 use App\Models\Chat;
 use App\Enums\ResTime;
 use App\Enums\BadWordsFilterEnum;
 use App\Models\UnusualCharsFilter;
 use App\Services\TelegramBotService;
+use App\Traits\RestrictUsers;
 use PHPUnit\Util\Filter;
 use App\Classes\Menu;
 
@@ -21,14 +21,4 @@ class UnusualCharsFilterCommand extends FilterCommand
         }
     }
 
-
-    protected function getSettingsTitles(): array
-    {
-        $titles = parent::getSettingsTitles();
-        $addTitles = [
-            // Additional titles
-        ];
-
-        return array_merge($titles, $addTitles);
-    }
 }
