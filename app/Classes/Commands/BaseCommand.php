@@ -1,20 +1,12 @@
 <?php
 
-namespace App\Classes;
+namespace App\Classes\Commands;
 
-use App\Models\Chat;
-use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
-use App\Traits\RestrictUsers;
-use App\Traits\RestrictionsTimeCases;
-use App\Classes\Menu;
-use App\Traits\RestrictionsCases;
-use App\Traits\ToggleColumn;
-use App\Enums\NewUserRestrictionsEnum;
 
 abstract class BaseCommand
 {
-    use RestrictUsers;
+    // use RestrictUsers;
 
     protected $enum;
 
@@ -76,7 +68,7 @@ abstract class BaseCommand
         // return response("ok");
 
         if (method_exists('App\Classes\Buttons', $methodName)) {
-            return (new Buttons())->$methodName($this->model);
+            return (new Buttons())->$methodName($this->model, $this->enum);
         }
 
         throw new \Exception('Method ' . $methodName . ' not found in App\Classes\Buttons');

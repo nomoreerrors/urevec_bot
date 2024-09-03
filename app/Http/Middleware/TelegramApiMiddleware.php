@@ -50,7 +50,7 @@ class TelegramApiMiddleware
     {
         $data = $request->all();
         //TODO delete it
-        // return response("OK", Response::HTTP_OK);
+        return response("OK", Response::HTTP_OK);
         // throw new BaseTelegramBotException("test", __METHOD__);
 
         $this->saveRawRequestData($data);

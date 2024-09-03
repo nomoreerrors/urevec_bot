@@ -62,12 +62,12 @@ class BadWordsFilterCommandTest extends TestCase
     public function testDisableBadWordsFilter()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DISABLE->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLED_DISABLE->value);
         $this->filter->update(['enabled' => 1]); //set to enabled before test
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::DISABLE->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::ENABLED_DISABLE->replyMessage());
         $this->assertFalse($this->filter->enabled === 1);
     }
 
@@ -75,12 +75,12 @@ class BadWordsFilterCommandTest extends TestCase
     public function testEnableBadWordsFilter()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLE->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLED_ENABLE->value);
         $this->filter->update(['enabled' => 0]); //set to disabled before test
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::ENABLE->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::ENABLED_ENABLE->replyMessage());
         $this->assertTrue($this->filter->enabled === 1);
     }
 
@@ -88,12 +88,12 @@ class BadWordsFilterCommandTest extends TestCase
     public function testDisableBadWordsFilterDeleteMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGES_DISABLE->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->value);
         $this->filter->update(['delete_message' => 1]); //set to enabled before test
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGES_DISABLE->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->replyMessage());
         $this->assertFalse($this->filter->delete_message === 1);
     }
 
@@ -101,13 +101,13 @@ class BadWordsFilterCommandTest extends TestCase
     public function testEnableBadWordsFilterDeleteMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGES_ENABLE->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->value);
         $this->filter->update(['delete_message' => 0]); //set to disabled before test
 
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGES_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->replyMessage());
         $this->assertTrue($this->filter->delete_message === 1);
     }
 
@@ -115,14 +115,14 @@ class BadWordsFilterCommandTest extends TestCase
     public function testEnableBadWordsFilterRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICTIONS_ENABLE->value);
+        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICT_USER_ENABLE->value);
         $this->filter->update(['enabled' => 0]); //set to disabled before test
 
 
         $this->prepareDependencies();
 
         $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::RESTRICTIONS_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(BadWordsFilterEnum::RESTRICT_USER_ENABLE->replyMessage());
         $this->assertTrue($this->filter->enabled === 1);
     }
 

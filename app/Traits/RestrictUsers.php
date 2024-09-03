@@ -3,29 +3,29 @@
 namespace App\Traits;
 
 use App\Classes\Buttons;
+use App\Services\BotErrorNotificationService;
 use App\Enums\ResTime;
 use App\Classes\Menu;
 
 trait RestrictUsers
 {
     // use Toggle;
-
     public function getRestrictionsCases()
     {
         switch ($this->command) {
             case $this->enum::EDIT_RESTRICTIONS->value:
                 $this->sendEditRestrictionsButtons();
                 break;
-            case $this->enum::RESTRICTIONS_ENABLE->value:
-            case $this->enum::RESTRICTIONS_DISABLE->value:
+            case $this->enum::ENABLED_ENABLE->value:
+            case $this->enum::ENABLED_DISABLE->value:
                 $this->toggleColumn('enabled');
                 break;
-            case $this->enum::SEND_MEDIA_ENABLE->value:
-            case $this->enum::SEND_MEDIA_DISABLE->value:
+            case $this->enum::CAN_SEND_MEDIA_ENABLE->value:
+            case $this->enum::CAN_SEND_MEDIA_DISABLE->value:
                 $this->toggleColumn('can_send_media');
                 break;
-            case $this->enum::SEND_MESSAGES_ENABLE->value:
-            case $this->enum::SEND_MESSAGES_DISABLE->value:
+            case $this->enum::CAN_SEND_MESSAGES_ENABLE->value:
+            case $this->enum::CAN_SEND_MESSAGES_DISABLE->value:
                 $this->toggleColumn('can_send_messages');
                 break;
         }
@@ -35,7 +35,7 @@ trait RestrictUsers
     {
         switch ($this->command) {
             case $this->enum::SELECT_RESTRICTION_TIME->value:
-                $this->sendRestrictionTimeButtons();
+                $this->sendRestrictionsTimeButtons();
                 break;
             case $this->enum::SET_TIME_MONTH->value:
             case $this->enum::SET_TIME_WEEK->value:
@@ -57,69 +57,39 @@ trait RestrictUsers
     }
 
 
-    protected function sendRestrictionTimeButtons(): void
-    {
-        $this->botService->menu()->save();
-        $keyBoard = (new Buttons())->create($this->getRestrictionsTimeTitles(), 1, true);
-        $this->botService->sendMessage(
-            $this->enum::SELECT_RESTRICTION_TIME->replyMessage(),
-            $keyBoard
-        );
-    }
-
-
-    protected function getRestrictionsTimeTitles(): array
-    {
-        return [
-            $this->enum::SET_TIME_MONTH->value,
-            $this->enum::SET_TIME_WEEK->value,
-            $this->enum::SET_TIME_DAY->value,
-            $this->enum::SET_TIME_TWO_HOURS->value,
-        ];
-    }
-
     public function sendEditRestrictionsButtons()
     {
+        // BotErrorNotificationService::send("from Unucharscommand");
         $this->botService->menu()->save();
-        $keyBoard = (new Buttons())->create($this->getEditRestrictionsTitles(), 1, true);
+        $keyBoard = (new Buttons())->getEditRestrictionsButtons($this->model, $this->enum);
         $this->botService->sendMessage($this->enum::EDIT_RESTRICTIONS->replyMessage(), $keyBoard);
     }
 
-    protected function getEditRestrictionsTitles(): array
-    {
-        return [
-            $this->model->can_send_media ?
-            $this->enum::SEND_MEDIA_DISABLE->value :
-            $this->enum::SEND_MEDIA_ENABLE->value,
-
-            $this->model->can_send_messages ?
-            $this->enum::SEND_MESSAGES_DISABLE->value :
-            $this->enum::SEND_MESSAGES_ENABLE->value,
-
-            $this->model->enabled ?
-            $this->enum::DISABLE->value :
-            $this->enum::ENABLE->value,
-
-            $this->enum::SELECT_RESTRICTION_TIME->value
-        ];
-    }
-
-    protected function getRestrictionsTitles(): array
-    {
-        return [
-            $this->model->enabled ?
-            $this->enum::RESTRICTIONS_DISABLE->value :
-            $this->enum::RESTRICTIONS_ENABLE->value,
-
-            $this->enum::EDIT_RESTRICTIONS->value
-        ];
-    }
 
 
     public function sendRestrictionsTimeButtons()
     {
         $this->botService->menu()->save();
-        $keyBoard = (new Buttons())->create($this->getRestrictionsTimeTitles(), 1, true);
+        $keyBoard = (new Buttons())->getRestrictionsTimeButtons($this->model, $this->enum);
         $this->botService->sendMessage($this->enum::SELECT_RESTRICTION_TIME->replyMessage(), $keyBoard);
     }
+
+
+    // /**
+    //  * NEW NEW NEW NEW NEW NEW
+    //  * @return void
+    //  */
+    // protected function sendRestrictionsSettings(): void
+    // {
+    //     $this->botService->menu()->save();
+    //     $keyBoard = (new Buttons())->create($this->enum::getRestrictionsCasesValues());
+    //     $this->botService->sendMessage($this->enum::EDIT_RESTRICTIONS->replyMessage(), $keyBoard);
+    // }
+
+    // protected function sendRestrictionsTimeSettings(): void
+    // {
+    //     $this->botService->menu()->save();
+    //     $keyBoard = (new Buttons())->create($this->enum::getRestrictionsTimeCasesValues());
+    //     $this->botService->sendMessage($this->enum::SELECT_RESTRICTION_TIME->replyMessage(), $keyBoard);
+    // }
 }

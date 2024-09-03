@@ -17,7 +17,7 @@ class BadWordsFilter extends FilterModel
         'delete_user',
         'restrict_user',
         'delete_message',
-        'dasable_send_messages',
+        'disable_send_messages',
         'can_send_messages',
         'can_send_media',
         'restriction_time',

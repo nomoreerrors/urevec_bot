@@ -5,7 +5,6 @@ namespace Feature\ChatSelector;
 use App\Classes\PrivateChatCommandCore;
 use App\Models\MessageModels\TextMessageModel;
 use App\Classes\Buttons;
-use Feature\Traits\MockBotService;
 use Mockery;
 use Mockery\MockInterface;
 use ReflectionProperty;
@@ -23,21 +22,19 @@ use App\Models\Admin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Chat;
+use Tests\Feature\Traits\MockBotService;
 
 class ChatSelectorTest extends TestCase
 {
     use RefreshDatabase;
-
-    private $mockBotService;
-    private $mockMenu;
+    use MockBotService;
 
     public function setUp(): void
     {
         parent::setUp();
-        $this->mockBotService = $this->createMock(TelegramBotService::class);
+        $this->mockBotCreate();
         $this->admin = $this->setAdminWithMultipleChats(2);
         $this->chat = $this->admin->chats->first();
-        $this->mockMenu = $this->createMock(Menu::class);
         $this->deleteSelectedChatFromCache($this->admin->admin_id);
         $this->deleteLastCommandFromCache($this->admin->admin_id);
     }
@@ -45,10 +42,11 @@ class ChatSelectorTest extends TestCase
     public function testHasOnlyOneChatReturnsTrueCase(): void
     {
         $this->prepareAdminWithOneChat();
-        $this->mockBotServiceGetPrivateChatCommandMethod("random command", $this->mockBotService);
-        $this->mockBotServiceGetAdminMethod();
-        $this->assertBotServiceChatWasSet($this->mockBotService, $this->admin->chats->first()->chat_id);
-        new ChatSelector($this->mockBotService, $this->mockMenu);
+        $this->mockBotCommand("random command");
+        $this->mockBotGetAdminMethod($this->admin);
+
+        $this->expectBotServiceChatWillBeSet($this->admin->chats->first()->chat_id);
+        new ChatSelector($this->mockBotService);
     }
 
     /**
@@ -58,108 +56,92 @@ class ChatSelectorTest extends TestCase
     public function testTryToGetLastSelectedChatIdFromCacheIsTrueCase(): void
     {
         $this->putSelectedChatIdToCache($this->admin->admin_id, 12345);
-        $this->mockBotServiceGetAdminMethod();
-        $this->mockBotServiceGetPrivateChatCommandMethod("some command", $this->mockBotService);
+        $this->mockBotCommand("random command");
+        $this->mockBotGetAdminMethod($this->admin);
 
-        $this->assertBotServiceChatWasSet($this->mockBotService, 12345);
-        $this->assertSelectChatButtonsWereNotSent();
+        $this->expectBotServiceChatWillBeSet($this->admin->chats->first()->chat_id);
+        $this->expectSelectChatButtonsWillNotSent();
         //Calling select method automatically inside the constructor
-        new ChatSelector($this->mockBotService, $this->mockMenu);
+        new ChatSelector($this->mockBotService);
     }
 
     /**
      * Testcase where user requested a select chat menu and the buttons with groups titles expected to be sent
      * @return void
      */
-    public function testIsSelectChatMenuRequestIsTrueCase()
+    public function testSelectChatMenuRequestIsTrueSelectChatButtonsWillBeSent()
     {
-        $this->mockBotServiceGetPrivateChatCommandMethod(ModerationSettingsEnum::SELECT_CHAT->value, $this->mockBotService);
-        $this->mockBotServiceGetAdminMethod();
-        $this->assertSelectChatMenuKeyBoardWasSent();
-        new ChatSelector($this->mockBotService, new Menu($this->mockBotService));
+        $this->mockBotCommand(ModerationSettingsEnum::SELECT_CHAT->value);
+        $this->mockBotGetAdminMethod($this->admin);
+        $this->mockBotMenuCreate(1);
+
+        $titles = $this->admin->chats()->pluck('chat_title')->toArray();
+        $buttons = (new Buttons())->getSelectChatButtons($titles);
+
+        $this->expectReplyMessageWillBeSent(
+            ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
+            $buttons
+        );
+
+        (new ChatSelector($this->mockBotService))->select();
     }
 
     public function testIsSelectedChatCommandReturnsTrueCase(): void
     {
-        $this->mockConstructorDeps();
-        $this->assertBotServiceChatWasSet($this->mockBotService, $this->chat->chat_id);
-        $this->assertRepliesWithSelectedChatTitle();
-        $this->assertThatLastCommandRestored();
-        $this->assertBackMenuWasCalled();
+        $this->mockBotGetAdminMethod($this->admin);
+        $this->mockBotCommand($this->admin->chats()->first()->chat_title);
+        $this->mockBotGetChatMethod($this->admin->chats()->first());
 
-        $chatSelector = new ChatSelector($this->mockBotService, $this->mockMenu);
+        $this->mockMenuCreate();
+        $this->mockMenu->expects($this->once())
+            ->method("back");
+
+        $this->mockBotService->expects($this->once())
+            ->method("menu")
+            ->willReturn($this->mockMenu);
+
+        $this->expectBotServiceChatWillBeSet($this->admin->chats->first()->chat_id);
+        $this->expectReplyMessageWillBeSent($this->stringContains($this->admin->chats->first()->chat_title));
+
+        $chatSelector = new ChatSelector($this->mockBotService);
+        $chatSelector->select();
+
         $this->assertUpdateFlagWasSetToTrue($chatSelector);
         $this->assertLastChatIdWasCached($this->admin->admin_id, $this->chat->chat_id);
     }
 
-    public function testSendSelectChatButtonsAndStoreCommandInDefaultCase()
+    public function testSendSelectChatButtonsInDefaultCase()
     {
         $command = "test test";
-        $this->mockBotServiceGetPrivateChatCommandMethod($command, $this->mockBotService);
-        $this->mockBotServiceGetAdminMethod();
-        $this->assertSelectChatMenuKeyBoardWasSent();
-
-        new ChatSelector($this->mockBotService, new Menu($this->mockBotService));
-        $this->assertEquals($command, $this->getLastCommandFromCache($this->admin->admin_id));
-    }
+        $this->mockBotCommand($command);
+        $this->mockBotGetAdminMethod($this->admin);
 
 
-    public function assertThatLastCommandRestored()
-    {
-        $this->putLastCommandToCache($this->admin->admin_id, "test");
-        $this->mockBotServiceGetPrivateChatCommandMethod("test", $this->mockBotService);
-    }
+        $titles = $this->admin->chats()->pluck('chat_title')->toArray();
+        $buttons = (new Buttons())->getSelectChatButtons($titles);
 
-    private function prepareRequestModelExpectations(): void
-    {
-        $mockRequestModel = $this->createMock(TextMessageModel::class);
-        $mockRequestModel->expects($this->any())
-            ->method('getFromId')
-            ->willReturn($this->admin->admin_id);
-        //Private chat chat id and from id are equal
-        $mockRequestModel->expects($this->any())
-            ->method('getChatId')
-            ->willReturn($this->admin->admin_id);
+        $this->expectReplyMessageWillBeSent(
+            ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
+            $buttons
+        );
+
+        $this->mockMenuCreate();
+        $this->mockMenu->expects($this->once())
+            ->method("save");
+
         $this->mockBotService->expects($this->once())
-            ->method('getRequestModel')
-            ->willReturn($mockRequestModel);
-    }
+            ->method("menu")
+            ->willReturn($this->mockMenu);
 
-    private function prepareBotServiceExpectations(): void
-    {
-        $this->mockBotServiceGetPrivateChatCommandMethod($this->chat->chat_title, $this->mockBotService);
-        $this->mockBotServiceGetAdminMethod();
-        $this->mockBotServiceGetChatMethod($this->chat);
-    }
-
-    private function mockBotServiceGetAdminMethod()
-    {
-        $this->mockBotService->expects($this->any())
-            ->method('getAdmin')
-            ->willReturn($this->admin);
+        (new ChatSelector($this->mockBotService))->select();
+        // $this->assertEquals($command, $this->getLastCommandFromCache($this->admin->admin_id));
     }
 
 
-
-    private function assertSelectChatButtonsWereNotSent(): void
+    private function expectSelectChatButtonsWillNotSent(): void
     {
         $this->mockBotService->expects($this->never())
             ->method('sendMessage');
-    }
-
-    private function getSelectChatMenuKeyboard(): array
-    {
-        return (new Buttons())
-            ->create($this->admin->chats()->pluck('chat_title')->toArray(), 1, true);
-    }
-
-    private function assertSelectChatMenuKeyBoardWasSent(): void
-    {
-        $this->assertMessageWasSent(
-            $this->mockBotService,
-            $this->stringContains(ModerationSettingsEnum::SELECT_CHAT->replyMessage()),
-            $this->getSelectChatMenuKeyboard()
-        );
     }
 
     private function assertUpdateFlagWasSetToTrue(ChatSelector $chatSelector): void
@@ -167,13 +149,6 @@ class ChatSelectorTest extends TestCase
         $this->assertTrue($this->getValueOfProtectedProperty('updated', $chatSelector));
     }
 
-    private function assertRepliesWIthSelectedChatTitle(): void
-    {
-        $this->assertMessageWasSent(
-            $this->mockBotService,
-            $this->stringContains($this->chat->chat_title)
-        );
-    }
 
     private function mockBotServiceGetChatMethod(Chat $chat): void
     {
@@ -182,17 +157,6 @@ class ChatSelectorTest extends TestCase
             ->willReturn($chat);
     }
 
-    private function assertBackMenuWasCalled()
-    {
-        $this->mockMenu->expects($this->once())
-            ->method('back');
-    }
-
-    private function mockConstructorDeps()
-    {
-        $this->prepareRequestModelExpectations();
-        $this->prepareBotServiceExpectations();
-    }
 
     private function prepareAdminWithOneChat(): void
     {

@@ -30,7 +30,7 @@ class RefreshMethodTest extends TestCase
     }
 
 
-    public function testRefreshSetsIsMenuRefreshToTrue()
+    public function testRefreshSetsIsMenuRefreshFlagToTrue()
     {
         $this->mockMenu = $this->getMockMenu();
         $this->expectGetBackMenuFromCache(["some menu"]);
@@ -60,15 +60,38 @@ class RefreshMethodTest extends TestCase
         $this->mockBotGetAdminMethod($this->admin);
         $this->mockBotCommand("random command");
 
+        // Expect will be called once
         $this->mockBotCommandHandler("private", null, $mockCommandHandler);
+        // Expect with param
         $this->expectBotSetPrivateChatCommand("some menu");
 
         $this->mockMenu = $this->getMockMenu();
         $this->expectGetBackMenuFromCache(["some menu"]);
 
+        $this->mockMenu->refresh();
+        $this->assertTrue($this->mockMenu->getIsMenuRefresh());
+    }
+
+    /**
+     * Test that the isMenuRefresh flag will set to false if it's true    
+     * and the code executing will be interrupted 
+     * @return void
+     */
+    public function testIsMenuRefreshFlagIsSetToFalse()
+    {
+        $this->mockBotService->expects($this->never())
+            ->method('setPrivateChatCommand');
+        $this->mockBotService->expects($this->never())
+            ->method('commandHandler');
+
+        $this->mockMenu = $this->getMockMenu();
+        // Set the flag to true
+        $this->mockMenu->setIsMenuRefresh(true);
 
         $this->mockMenu->refresh();
+        $this->assertFalse($this->mockMenu->getIsMenuRefresh());
     }
+
 
 
     private function getMockMenu()

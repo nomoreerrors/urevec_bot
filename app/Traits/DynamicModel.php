@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Traits;
+use App\Services\BotErrorNotificationService;
 
 trait DynamicModel
 {
@@ -16,6 +17,10 @@ trait DynamicModel
         $className = class_basename(get_class($this));
         $modelName = str_replace('Command', '', $className);
         $modelName = lcfirst($modelName);
+
+        if (empty($this->botService->getChat()->{$modelName})) {
+            throw new \Exception("Property '$modelName' does not exist in getChat()");
+        }
         $this->model = $this->botService->getChat()->{$modelName};
     }
 }

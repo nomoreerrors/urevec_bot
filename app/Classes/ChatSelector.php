@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Enums\MainMenuEnum;
 use App\Enums\ModerationSettingsEnum;
 use App\Models\Admin;
 use App\Services\BotErrorNotificationService;
@@ -14,8 +15,6 @@ use Illuminate\Support\Facades\Cache;
 
 class ChatSelector
 {
-    // private $requestModel;
-
     private $admin = null;
 
     private Buttons $buttons;
@@ -50,18 +49,10 @@ class ChatSelector
             $this->sendSelectChatButtons();
             return;
         }
-        //TODO  Mock ChatSelector's only methods:
-        //isSelectedChatCommand() be called one time 
-        //isSelectedChatCommand() willreturn true
-        // expect methods with:
-        //         $this->botService->setChat($selectedChatId);
-        // $this->botService->sendMessage(
-        //     "Selected chat: " . $this->botService->getChat()->chat_title
 
         if ($this->isSelectedChatCommand()) {
             $this->setSelectedChatAndNotice();
             $this->rememberSelectedChatId();
-            $this->restorePreviousCommandIfExists();
             $this->botService->menu()->back();
             return;
         }
@@ -71,7 +62,7 @@ class ChatSelector
         }
 
         $this->sendSelectChatButtons();
-        $this->rememberLastCommand();
+        // $this->rememberLastCommand();
         return;
     }
 
@@ -181,14 +172,14 @@ class ChatSelector
     }
 
 
-    private function restorePreviousCommandIfExists()
-    {
-        $lastCommand = $this->getLastCommandFromCache();
-        if ($lastCommand) {
-            $this->botService->setPrivateChatCommand($lastCommand);
-            return;
-        }
-    }
+    // private function restorePreviousCommandIfExists()
+    // {
+    //     $lastCommand = $this->getLastCommandFromCache();
+    //     if ($lastCommand) {
+    //         $this->botService->setPrivateChatCommand($lastCommand);
+    //         return;
+    //     }
+    // }
 
     private function setDefaultChat(): void
     {

@@ -2,6 +2,12 @@
 
 namespace App\Classes;
 
+use App\Enums\FiltersSettingsEnum;
+use App\Exceptions\EmptyTitlesArrayException;
+use App\Exceptions\TableColumnNotExistsException;
+use Illuminate\Support\Facades\Schema;
+use App\Services\BotErrorNotificationService;
+use App\Enums\ModerationSettingsEnum;
 use App\Enums\NewUserRestrictionsEnum;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\UnusualCharsFilterEnum;
@@ -18,64 +24,128 @@ class ButtonsTitles
     {
         //
     }
-    public function getRestrictionsTitles()
-    {
-        return [
-            $this->model->enabled ?
-            $this->enum::RESTRICTIONS_DISABLE->value :
-            $this->enum::RESTRICTIONS_ENABLE->value,
 
-            $this->enum::EDIT_RESTRICTIONS->value
-        ];
+    public function getBadWordsFilterTitles(): array
+    {
+        $result = $this->getTitlesBasedOnModelStatus($this->enum::getMainMenuCases());
+        return $result;
     }
 
-    public function getNewUserRestrictionsTitles()
+    public function getUnusualCharsFilterTitles(): array
     {
-        return array_merge(
-            $this->getRestrictionsTitles(),
-        );
+        $result = $this->getTitlesBasedOnModelStatus($this->enum::getMainMenuCases());
+        return $result;
     }
 
-    public function getFilterSettingsTitles()
+
+    public function getModerationSettingsTitles(): array
     {
-        return array_merge(
-            $this->getRestrictionsTitles(),
-            [
-                $this->model->delete_message ?
-                $this->enum::DELETE_MESSAGES_DISABLE->value :
-                $this->enum::DELETE_MESSAGES_ENABLE->value,
-            ]
-        );
+        return ModerationSettingsEnum::getValues();
     }
 
-    public function getBadWordsFilterTitles()
+    public function getFiltersSettingsTitles()
     {
-        return array_merge(
-            $this->getFilterSettingsTitles(),
-            [
-                $this->enum::ADD_WORDS->value,
-                $this->enum::DELETE_WORDS->value,
-                $this->enum::GET_WORDS->value,
-            ]
-        );
+        return FiltersSettingsEnum::getValues();
     }
 
-    public function getModerationSettingsTitles()
+
+    public function getEditRestrictionsTitles(): array
     {
-        return [
-            $this->enum::FILTERS_SETTINGS->value,
-            NewUserRestrictionsEnum::SETTINGS->value,
-            $this->enum::SELECT_CHAT->value
-        ];
+        $titles = $this->getTitlesBasedOnModelStatus($this->enum::getRestrictionsCases());
+        return $titles;
     }
 
-    public function getFiltersMenuSettingsTitles()
+    /**
+     * Enum class should include RestrictionsCases trait
+     * @return array
+     */
+    public function getRestrictionsTimeTitles(): array
     {
-        $buttons = [
-            NewUserRestrictionsEnum::SETTINGS->value,
-            BadWordsFilterEnum::SETTINGS->value,
-            UnusualCharsFilterEnum::SETTINGS->value
-        ];
-        return $buttons;
+        return $this->enum::getRestrictionsTimeCases();
+    }
+
+    /**
+     * Takes all cases from enum and returns titles based on model status
+     * @param array $cases toggled columns cases should have postfix _DISABLE and _ENABLE
+     * @return array
+     */
+    public function getTitlesBasedOnModelStatus(array $cases): array
+    {
+        $titles = [];
+        foreach ($cases as $case) {
+            // Skip cases that don't have postfix _DISABLE and _ENABLE and add it to the array
+            if (
+                strpos($case->name, '_DISABLE') === false &&
+                strpos($case->name, '_ENABLE') === false
+            ) {
+                if (!in_array($case->value, $titles))
+                    $titles[] = $case->value;
+
+            } else {
+                [$columnName, $snakeCaseColumnName] = $this->extractColumnName($case->name);
+
+                if (!$this->columnExists($snakeCaseColumnName)) {
+                    throw new TableColumnNotExistsException($snakeCaseColumnName, $this->model->getTable(), __METHOD__);
+                }
+
+                $titles = $this->addToggleCase($titles, $columnName, $snakeCaseColumnName);
+            }
+        }
+        if (!empty($titles)) {
+            return $titles;
+        }
+
+        throw new EmptyTitlesArrayException(__METHOD__);
+    }
+
+    /**
+     * Extracts the column name and snake case column name from a case.
+     *
+     * @param string $case The name of the enum case.
+     * @return array
+     */
+    private function extractColumnName(string $case): array
+    {
+        $columnName = str_replace(['_DISABLE', '_ENABLE'], '', $case);
+        $snakeCaseColumnName = strtolower(str_replace(['_DISABLE', '_ENABLE'], '', $case));
+
+        return [$columnName, $snakeCaseColumnName];
+    }
+
+    /**
+     * Checks if a column exists and adds the appropriate title to the array.
+     *
+     * @param string $attributeName
+     * @param string $snakeCaseAttributeName
+     * @param array $titles
+     * @return array
+     */
+    private function addToggleCase(array $titles, string $attributeName, string $snakeCaseAttributeName): array
+    {
+        $value = $this->model->{$snakeCaseAttributeName};
+
+        $result = match ($value) {
+            1 => $this->enum::{$attributeName . '_DISABLE'}->value,
+            0 => $this->enum::{$attributeName . '_ENABLE'}->value,
+            default => throw new \LogicException("The value of {$snakeCaseAttributeName} must be 0 or 1"),
+        };
+
+        if (!in_array($result, $titles)) {
+            $titles[] = $result;
+        }
+
+        return $titles;
+    }
+
+    /**
+     * Checks if a column exists in the model's table.
+     *
+     * @param string $columnName
+     * @return bool
+     */
+    private function columnExists(string $columnName): bool
+    {
+        $tableName = $this->model->getTable();
+        return Schema::hasColumn($tableName, $columnName);
     }
 }

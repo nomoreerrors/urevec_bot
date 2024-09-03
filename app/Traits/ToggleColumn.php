@@ -11,6 +11,10 @@ trait ToggleColumn
 
     protected function toggleColumn(string $column)
     {
+        if ($this->botService->menu()->getIsMenuRefresh()) {
+            $this->botService->menu()->setIsMenuRefresh(false);
+            return;
+        }
         $this->updateColumn($column);
         $this->sendToggleMessage();
         $this->refreshMenu();
@@ -34,10 +38,8 @@ trait ToggleColumn
      */
     private function refreshMenu()
     {
-        (new Menu($this->botService))->refresh();
+        $this->botService->menu()->refresh();
     }
-
-
 }
 
 

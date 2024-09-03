@@ -18,10 +18,12 @@ class Menu
 
     private string $cacheKey;
 
+    private static bool $backButtonPressed = false;
+
     /**
      * @var bool  Indicates that menu title should be refreshed after making changes in private chat
      */
-    private bool $isMenuRefresh = false;
+    private static bool $isMenuRefresh = false;
 
 
     public function __construct(private TelegramBotService $botService)
@@ -37,7 +39,8 @@ class Menu
      */
     public function save(): void
     {
-        if ($this->isMenuRefresh) {
+        if (self::$isMenuRefresh) {
+            self::$isMenuRefresh = false;
             return;
         }
 
@@ -53,6 +56,10 @@ class Menu
             if (in_array("back", $backMenuArray)) {
                 array_pop($backMenuArray);
                 $this->saveBackMenuToCache($backMenuArray);
+                return;
+            }
+
+            if (in_array($this->command, $backMenuArray)) {
                 return;
             }
 
@@ -72,10 +79,7 @@ class Menu
     {
         $backMenuArray = $this->getBackMenuFromCache();
 
-        if (
-            empty($backMenuArray) ||
-            count($backMenuArray) == 1
-        ) {
+        if (empty($backMenuArray)) {
             throw new \Exception('No previous menu to go back to');
         }
 
@@ -88,19 +92,21 @@ class Menu
         array_pop($backMenuArray);
         array_push($backMenuArray, "back");
 
-        // $result = $this->saveBackMenuToCache($backMenuArray);
-        // $j = $this->getBackMenuFromCache();
         if (!$this->saveBackMenuToCache($backMenuArray)) {
             throw new \Exception('Failed to save back menu to cache');
         }
+
+        self::$backButtonPressed = true;
 
         $this->botService->setPrivateChatCommand($lastBackMenuCommand);
         $this->botService->commandHandler()->handle();
     }
 
+
     protected function saveBackMenuToCache(array $backMenuArray): bool
     {
-        return Cache::put($this->cacheKey, json_encode($backMenuArray, JSON_UNESCAPED_UNICODE));
+        $result = Cache::put($this->cacheKey, json_encode($backMenuArray, JSON_UNESCAPED_UNICODE));
+        return $result;
     }
 
     protected function getBackMenuFromCache()
@@ -110,6 +116,10 @@ class Menu
 
     protected function getLastBackMenu(array $backMenuArray): string
     {
+        if (count($backMenuArray) == 1) {
+            return $backMenuArray[0];
+        }
+
         $index = count($backMenuArray) - 2;
         return $backMenuArray[$index];
     }
@@ -124,20 +134,40 @@ class Menu
      */
     public function refresh()
     {
-        $this->isMenuRefresh = true;
+        if (self::$isMenuRefresh) {
+            self::$isMenuRefresh = false;
+            return;
+        }
+        // BotErrorNotificationService::send("Menu refreshed");
+
+        self::$isMenuRefresh = true;
         $menu = $this->getBackMenuFromCache();
 
         if (empty($menu)) {
             log::error("Menu refresh failed");
             throw new \Exception(CONSTANTS::REFRESH_BACK_MENU_FAILED);
         }
+
+        // array_pop($menu);
         $this->botService->setPrivateChatCommand(end($menu));
+
         $this->botService->commandHandler()->handle();
     }
 
+
     public function getIsMenuRefresh()
     {
-        return $this->isMenuRefresh;
+        return self::$isMenuRefresh;
+    }
+
+    public function setIsMenuRefresh(bool $isMenuRefresh)
+    {
+        self::$isMenuRefresh = $isMenuRefresh;
+    }
+
+    public function backButtonPressed(): bool
+    {
+        return self::$backButtonPressed;
     }
 }
 

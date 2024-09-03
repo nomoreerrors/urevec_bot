@@ -46,6 +46,7 @@ trait MockBotService
     }
 
 
+
     protected function mockBotGetAdminMethod(Admin $admin, ?int $count = null)
     {
         $this->setupExpectation("getAdmin", $admin, $count);
@@ -83,9 +84,9 @@ trait MockBotService
     protected function mockBotCommandHandler(string $type, ?int $count = null, ?object $commandHandler = null)
     {
         if ($type == "private") {
-            $commandHandler ?? new PrivateChatCommandCore($this->mockBotService);
+            $handler = $commandHandler ?? new PrivateChatCommandCore($this->mockBotService);
         }
-        $this->setupExpectation("commandHandler", $commandHandler, $count);
+        $this->setupExpectation("commandHandler", $handler, $count);
     }
 
 

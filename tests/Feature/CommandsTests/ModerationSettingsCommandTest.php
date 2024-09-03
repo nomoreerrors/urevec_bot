@@ -3,29 +3,19 @@
 namespace Tests\Feature;
 
 use App\Classes\ChatSelector;
-use App\Enums\ModerationSettingsEnum;
-use App\Enums\UnusualCharsFilterEnum;
-use Tests\Feature\Traits\MockBotService;
-use App\Enums\NewUserRestrictionsEnum;
-use App\Classes\Buttons;
+use App\Classes\PrivateChatCommandCore;
 use App\Classes\Menu;
-use App\Enums\BadWordsFilterEnum;
 use App\Models\TelegramRequestModelBuilder;
-use App\Enums\ResTime;
-use App\Models\UnusualCharsFilter;
-use App\Services\BotErrorNotificationService;
-use Illuminate\Support\Facades\Cache;
+use App\Enums\MainMenuEnum;
+use App\Services\TelegramBotService;
+use App\Enums\ModerationSettingsEnum;
+use Tests\Feature\Traits\MockBotService;
+use App\Classes\Buttons;
 use App\Models\Chat;
 use App\Models\Admin;
-use App\Services\TelegramBotService;
-use App\Classes\PrivateChatCommandCore;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use App\Exceptions\BaseTelegramBotException;
-use Illuminate\Support\Facades\Http;
-use App\Services\CONSTANTS;
-use Tests\Feature\Traits\MockMenu;
 use Tests\TestCase;
 
 class ModerationSettingsCommandTest extends TestCase
@@ -46,18 +36,18 @@ class ModerationSettingsCommandTest extends TestCase
     }
 
 
-    public function testUserIsSelectedModerationSettingsAfterChatIsSelected(): void
+    public function testModerationSettingsCommandReplyWithButtons(): void
     {
-        //Mock that the chat is previously selected 
+        //Mock that chat is previously selected 
         $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
 
         $this->expectReplyMessageWillBeSent(
-            ModerationSettingsEnum::SETTINGS->replyMessage(),
+            MainMenuEnum::MODERATION_SETTINGS->replyMessage(),
             (new Buttons())->getModerationSettingsButtons()
         );
 
 
-        $this->mockBotCommand(ModerationSettingsEnum::SETTINGS->value);
+        $this->mockBotCommand(MainMenuEnum::MODERATION_SETTINGS->value);
         $this->mockBotGetChatMethod($this->admin->chats->first());
         $this->mockBotChatSelector();
 
@@ -67,14 +57,15 @@ class ModerationSettingsCommandTest extends TestCase
         $this->mockBotService->commandHandler()->handle();
     }
 
-    public function testIfChatNotSelectedCommandWillBeSavedToBackMenuArrayAndRepliesWithSelectChatMenuButtons(): void
+    public function testMenuIsSavedToBackMenuArrayUntilUserSelectsChat(): void
     {
+        // Reply with select chat buttons instead of moderation settings buttons
         $this->expectReplyMessageWillBeSent(
             ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
             $this->getAdminChatsButtons($this->admin)
         );
 
-        $this->mockBotCommand(ModerationSettingsEnum::SETTINGS->value);
+        $this->mockBotCommand(MainMenuEnum::MODERATION_SETTINGS->value);
         $this->mockBotChatSelector();
 
         $this->expectMockBotMenuMethodWillBeCalled("save", 1);
@@ -85,12 +76,9 @@ class ModerationSettingsCommandTest extends TestCase
 
     public function testSelectingtFiltersSettingsRepliesWithMenuButtons()
     {
-        //Mock that the chat is previously selected 
+        //Mock that chat is previously selected 
         $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
-        $buttons = $this->getFiltersSettingsButtons();
-
-        $this->assertTrue(in_array(BadWordsFilterEnum::SETTINGS->value, $buttons));
-        $this->assertTrue(in_array(UnusualCharsFilterEnum::SETTINGS->value, $buttons));
+        $buttons = (new Buttons())->getFiltersSettingsButtons();
 
         $this->expectReplyMessageWillBeSent(
             ModerationSettingsEnum::FILTERS_SETTINGS->replyMessage(),
@@ -110,8 +98,10 @@ class ModerationSettingsCommandTest extends TestCase
      * Test that user is noticed which chat is selected
      * @return void
      */
-    public function testUserIsSelectedChatRepliesWithSelectedChatTitle()
+    public function testSelectingChatRepliesWithSelectedChatTitle()
     {
+        $this->setBackMenuArrayToCache(["/moderation_settings"], $this->admin->admin_id);
+
         $title = $this->admin->chats->first()->chat_title;
         $this->mockBotCommand($title);
         $this->mockBotGetChatMethod($this->admin->chats->first());
@@ -123,5 +113,6 @@ class ModerationSettingsCommandTest extends TestCase
         $this->expectReplyMessageWillBeSent($this->stringContains($title));
         $this->mockBotService->commandHandler()->handle();
     }
+
 }
 

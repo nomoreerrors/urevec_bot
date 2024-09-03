@@ -544,16 +544,16 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             $model->can_send_media ?
-                $enum::SEND_MEDIA_DISABLE->value :
-                $enum::SEND_MEDIA_ENABLE->value,
+                $enum::CAN_SEND_MEDIA_DISABLE->value :
+                $enum::CAN_SEND_MEDIA_ENABLE->value,
 
             $model->can_send_messages ?
-                $enum::SEND_MESSAGES_DISABLE->value :
-                $enum::SEND_MESSAGES_ENABLE->value,
+                $enum::CAN_SEND_MESSAGES_DISABLE->value :
+                $enum::CAN_SEND_MESSAGES_ENABLE->value,
 
             $model->enabled ?
-                $enum::DISABLE->value :
-                $enum::ENABLE->value,
+                $enum::ENABLED_DISABLE->value :
+                $enum::ENABLED_ENABLE->value,
 
                 $enum::SELECT_RESTRICTION_TIME->value,
         ];
@@ -563,12 +563,12 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             $model->enabled ?
-                $enum::DISABLE->value :
-                $enum::ENABLE->value,
+                $enum::ENABLED_DISABLE->value :
+                $enum::ENABLED_ENABLE->value,
 
             $model->delete_message ?
-                $enum::DELETE_MESSAGES_DISABLE->value :
-                $enum::DELETE_MESSAGES_ENABLE->value,
+                $enum::DELETE_MESSAGE_DISABLE->value :
+                $enum::DELETE_MESSAGE_ENABLE->value,
 
                 $enum::EDIT_RESTRICTIONS->value
         ];
@@ -712,7 +712,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function getFiltersSettingsButtons(): array
     {
-        return (new Buttons())->getFiltersMenuSettingsButtons();
+        return (new Buttons())->getFiltersSettingsButtons();
     }
 
     protected function assertBackMenuArrayContains(int $adminId, array $array)

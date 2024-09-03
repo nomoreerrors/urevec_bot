@@ -1,27 +1,25 @@
 <?php
 
-namespace App\Classes;
+namespace App\Classes\Commands;
 
-use App\Enums\NewUserRestrictionsEnum;
-use App\Enums\ResTime;
-use App\Models\Chat;
-use App\Models\NewUserRestriction;
-use App\Services\BotErrorNotificationService;
 use App\Services\TelegramBotService;
-use App\Models\Admin;
-use App\Classes\Menu;
 use App\Traits\DynamicModel;
-use App\Traits\RestrictionsTimeCases;
-use App\Traits\RestrictionsCases;
 use App\Traits\RestrictUsers;
 use App\Traits\ToggleColumn;
+use App\Services\BotErrorNotificationService;
 
-class NewUserRestrictionsCommand extends BaseCommand
+abstract class FilterCommand extends BaseCommand
 {
     use RestrictUsers;
     use ToggleColumn;
     use DynamicModel;
 
+    /**
+     * Summary of __construct
+     * @param string $command
+     * @param \App\Models\FilterModel $model
+     * @param string $enum Enum::class
+     */
     public function __construct(protected TelegramBotService $botService)
     {
         $this->setModelFromClassName();
@@ -31,8 +29,9 @@ class NewUserRestrictionsCommand extends BaseCommand
 
     protected function handle(): void
     {
-        parent::handle();
         $this->getRestrictionsCases();
         $this->getRestrictionTimeCases();
+
     }
 }
+

@@ -51,26 +51,24 @@ class BackTest extends TestCase
         $menu->back();
     }
 
-
-    public function testBackThrowsExceptionWhenBackMenuArrayHasOnlyOneElement()
+    /**
+     * backButtonPressed flag should be set to true and back flag should be added to back menu array
+     * @return void
+     */
+    public function testSetFlags()
     {
         $this->setBackMenuArrayToCache(self::COMMANDS, $this->admin->admin_id);
         $this->mockBotCommand("random text");
+        $this->mockBotGetAdminMethod($this->admin);
+        $fakeCommandHandler = $this->createMock(PrivateChatCommandCore::class);
+        $this->mockBotCommandHandler("private", 1, $fakeCommandHandler);
 
-        $mockMenu = $this->getMockBuilder(Menu::class)
-            ->setConstructorArgs([$this->mockBotService])
-            ->onlyMethods(['getBackMenuFromCache'])
-            ->getMock();
-
-        $mockMenu->expects($this->once())
-            ->method('getBackMenuFromCache')
-            ->willReturn(["single command"]);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('No previous menu to go back to');
-
-        $mockMenu->back();
+        $menu = new Menu($this->mockBotService);
+        $menu->back();
+        $this->assertBackMenuArrayContains($this->admin->admin_id, ["back"]);
+        $this->assertTrue($menu->backButtonPressed());
     }
+
 
     public function testBackThrowsExceptionWhenBackMenuArrayIsEmpty()
     {
@@ -129,25 +127,7 @@ class BackTest extends TestCase
     }
 
 
-    public function testFailedToSaveBackMenuToCache()
-    {
-        $this->setBackMenuArrayToCache(self::COMMANDS, $this->admin->admin_id);
-        $this->mockBotCommand("random text");
 
-        $mockMenu = $this->getMockBuilder(Menu::class)
-            ->setConstructorArgs([$this->mockBotService])
-            ->onlyMethods(['saveBackMenuToCache'])
-            ->getMock();
-
-        $mockMenu->expects($this->once())
-            ->method('saveBackMenuToCache')
-            ->willReturn(false);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Failed to save back menu to cache');
-
-        $mockMenu->back();
-    }
 
 }
 

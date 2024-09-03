@@ -92,7 +92,7 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testEnableNewUsersAllRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]); // so that the refresh() method works correctly
-        $this->setCommand(NewUserRestrictionsEnum::ENABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::ENABLED_ENABLE->value);
         $this->prepareDependencies();
         $this->setAllRestrictionsDisabled($this->chat);
         $lastRestrictionTime = $this->chat->newUserRestrictions->restriction_time;
@@ -102,7 +102,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
         $this->assertEquals(1, $this->restrictions->first()->enabled);
         $this->assertEquals($lastRestrictionTime, $this->restrictions->first()->restriction_time);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::ENABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::ENABLED_ENABLE->replyMessage());
     }
 
     /**
@@ -112,14 +112,14 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testDisableNewUsersAllRestrictions()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(NewUserRestrictionsEnum::DISABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::ENABLED_DISABLE->value);
         $this->prepareDependencies();
         //Setting everything to 0 before test
         $this->setAllRestrictionsEnabled($this->chat);
 
         (new PrivateChatCommandCore());
         $this->assertEquals(0, $this->restrictions->first()->enabled);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::DISABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::ENABLED_DISABLE->replyMessage());
     }
 
 
@@ -137,7 +137,7 @@ class RestrictNewUsersCommandTest extends TestCase
     public function testToggleNewUsersEnableSendMedia()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::CAN_SEND_MEDIA_ENABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -146,13 +146,13 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(1, $this->restrictions->first()->can_send_media);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::CAN_SEND_MEDIA_ENABLE->replyMessage());
     }
 
     public function testNewUsersDisableSendMedia()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(NewUserRestrictionsEnum::SEND_MEDIA_DISABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::CAN_SEND_MEDIA_DISABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -161,13 +161,13 @@ class RestrictNewUsersCommandTest extends TestCase
         (new PrivateChatCommandCore());
 
         $this->assertEquals(0, $this->restrictions->first()->can_send_media);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MEDIA_DISABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::CAN_SEND_MEDIA_DISABLE->replyMessage());
     }
 
     public function testNewUsersEnableSendMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(NewUserRestrictionsEnum::SEND_MESSAGES_ENABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::CAN_SEND_MESSAGES_ENABLE->value);
         $this->prepareDependencies();
 
         $this->restrictions->update([
@@ -176,14 +176,14 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(1, $this->restrictions->first()->can_send_messages);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MESSAGES_ENABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::CAN_SEND_MESSAGES_ENABLE->replyMessage());
     }
 
     public function testNewUsersDisableSendMessages()
     {
         $this->setBackMenuArrayToCache(["one", "two"]);
         $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->setCommand(NewUserRestrictionsEnum::SEND_MESSAGES_DISABLE->value);
+        $this->setCommand(NewUserRestrictionsEnum::CAN_SEND_MESSAGES_DISABLE->value);
         $this->prepareDependencies();
         $this->restrictions->update([
             "can_send_messages" => 1
@@ -192,7 +192,7 @@ class RestrictNewUsersCommandTest extends TestCase
 
         (new PrivateChatCommandCore());
         $this->assertEquals(0, $this->restrictions->first()->can_send_messages);
-        $this->assertReplyMessageSent(NewUserRestrictionsEnum::SEND_MESSAGES_DISABLE->replyMessage());
+        $this->assertReplyMessageSent(NewUserRestrictionsEnum::CAN_SEND_MESSAGES_DISABLE->replyMessage());
     }
 
     public function testChangesAppliesToCurrentlySelectedChat()
@@ -201,7 +201,7 @@ class RestrictNewUsersCommandTest extends TestCase
         $this->setAllRestrictionsToFalse($this->chat);
         $this->putSelectedChatIdToCache($this->admin->admin_id, $this->chat->chat_id);
 
-        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::ENABLE->value);
+        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::ENABLED_ENABLE->value);
 
 
         new PrivateChatCommandCore();
@@ -215,7 +215,7 @@ class RestrictNewUsersCommandTest extends TestCase
         $this->assertLastChatIdWasCached($this->admin->admin_id, $secondChat->chat_id);
         $this->setAllRestrictionsToFalse($secondChat);
 
-        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::SEND_MEDIA_ENABLE->value);
+        app("botService")->setPrivateChatCommand(NewUserRestrictionsEnum::CAN_SEND_MEDIA_ENABLE->value);
 
         new PrivateChatCommandCore();
         $this->assertEquals(1, app("botService")->getChat()->newUserRestrictions()->first()->fresh()->can_send_media);

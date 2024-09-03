@@ -80,9 +80,9 @@ class SaveTest extends TestCase
         array_pop($array);
         $this->assertBackMenuArrayContains($this->admin->admin_id, $array);
         //Assert that "back" value was deleted
-        $this->assertFalse($this->assertBackMenuArrayNotContains($this->admin->admin_id, "back"));
+        $this->assertBackMenuArrayNotContains($this->admin->admin_id, "back");
         //Assert that random value is not in back menu
-        $this->assertFalse($this->assertBackMenuArrayNotContains($this->admin->admin_id, "random text"));
+        $this->assertBackMenuArrayNotContains($this->admin->admin_id, "random text");
     }
 
     public function testSaveMethodInCaseIsRefreshFlagEqualsTrue()
@@ -115,11 +115,73 @@ class SaveTest extends TestCase
     }
 
 
+    public function testBackMethodDoesNotSaveDuplicates()
+    {
+        $array = ["first text", "second text", "third text", "fourth text"];
+        $this->setBackMenuArrayToCache($array, $this->admin->admin_id);
+        $this->mockBotCommand("random text");
+
+        $menu = new Menu($this->mockBotService);
+        $menu->save();
+
+        // Simulate another call to the back method with the same command
+        $menu->save();
+        $backMenuArray = $this->getBackMenuArray($this->admin->admin_id);
+
+        $result = array_filter($backMenuArray, function ($element) {
+            return $element == "random text";
+        });
+
+        $this->assertCount(1, $result);
+    }
+
+    /**
+     *  isMenuRefresh flag should be set to false if it's true and the code executing should be interrupted       
+     * @return void
+     */
+    public function testIfMenuRefreshFlagIsTrueSetToFalse()
+    {
+        $this->mockMenu = $this->getMockBuilder(Menu::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([])
+            ->getMock();
+
+        $this->mockMenu->setIsMenuRefresh(true);
+
+        $this->mockMenu->save();
+        $this->assertFalse($this->mockMenu->getIsMenuRefresh());
+    }
+
+
     private function updateBotCommand(string $value)
     {
         $this->mockBotRefresh();
         $this->mockBotGetAdminMethod($this->admin);
         $this->mockBotCommand($value);
     }
+
+
+    public function testFailedToSaveBackMenuToCache()
+    {
+        $array = ["first text", "second text", "third text", "fourth text"];
+        $this->setBackMenuArrayToCache($array, $this->admin->admin_id);
+        $this->mockBotCommand("random text");
+
+        $mockMenu = $this->getMockBuilder(Menu::class)
+            ->setConstructorArgs([$this->mockBotService])
+            ->onlyMethods(['saveBackMenuToCache'])
+            ->getMock();
+
+        $mockMenu->expects($this->once())
+            ->method('saveBackMenuToCache')
+            ->willReturn(false);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Failed to save back menu to cache');
+
+        $mockMenu->back();
+    }
+
+
 
 }

@@ -2,7 +2,7 @@
 
 namespace App\Enums\Traits;
 
-trait Exists
+trait EnumValues
 {
     /**
      * Check if value exists in enum
@@ -11,6 +11,14 @@ trait Exists
     {
         $values = array_column(self::cases(), 'value');
         return in_array($value, $values);
+    }
+
+    /**
+     * @return array
+     */
+    public static function getValues(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 
 }
