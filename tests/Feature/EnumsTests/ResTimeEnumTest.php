@@ -2,15 +2,15 @@
 
 namespace Tests;
 
-use App\Enums\NewUserRestrictionsEnum;
 use App\Models\ForwardMessageModel;
-use App\Enums\UnusualCharsFilterEnum;
+use App\Enums\CommandEnums\NewUserRestrictionsEnum;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
+use App\Enums\CommandEnums\UnusualCharsFilterEnum;
 use App\Enums\ResTime;
 use App\Models\Chat;
 use App\Models\UnusualCharsFilter;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use App\Enums\BadWordsFilterEnum;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 

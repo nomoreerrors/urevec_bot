@@ -2,16 +2,16 @@
 
 namespace App\Classes;
 
-use App\Enums\FiltersSettingsEnum;
+use App\Enums\CommandEnums\FiltersSettingsEnum;
 use App\Exceptions\EmptyTitlesArrayException;
 use App\Exceptions\TableColumnNotExistsException;
 use Illuminate\Support\Facades\Schema;
 use App\Services\BotErrorNotificationService;
-use App\Enums\ModerationSettingsEnum;
-use App\Enums\NewUserRestrictionsEnum;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
+use App\Enums\CommandEnums\NewUserRestrictionsEnum;
 use Illuminate\Database\Eloquent\Model;
-use App\Enums\UnusualCharsFilterEnum;
-use App\Enums\BadWordsFilterEnum;
+use App\Enums\CommandEnums\UnusualCharsFilterEnum;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
 
 class ButtonsTitles
 {
@@ -61,7 +61,7 @@ class ButtonsTitles
      */
     public function getRestrictionsTimeTitles(): array
     {
-        return $this->enum::getRestrictionsTimeCases();
+        return $this->enum::getRestrictionsTimeCasesValues();
     }
 
     /**

@@ -44,7 +44,8 @@ class NewSupergroupChatAddedTest extends TestCase
         $this->assertEquals(0, $chat->badWordsFilter->delete_user);
         $this->assertEquals(1, $chat->badWordsFilter->enabled);
         $this->assertEquals(1, $chat->badWordsFilter->delete_message);
-        $this->assertEquals(1, $chat->badWordsFilter->dasable_send_messages);
+        $this->assertEquals(0, $chat->badWordsFilter->can_send_messages);
+        $this->assertEquals(0, $chat->badWordsFilter->can_send_media);
         $this->assertEquals(ResTime::TWO_HOURS->value, $chat->badWordsFilter->restriction_time);
     }
 
@@ -77,7 +78,8 @@ class NewSupergroupChatAddedTest extends TestCase
         $this->assertEquals(0, $chat->unusualCharsFilter->delete_user);
         $this->assertEquals(1, $chat->unusualCharsFilter->enabled);
         $this->assertEquals(1, $chat->unusualCharsFilter->delete_message);
-        $this->assertEquals(1, $chat->unusualCharsFilter->dasable_send_messages);
+        $this->assertEquals(0, $chat->unusualCharsFilter->can_send_messages);
+        $this->assertEquals(0, $chat->unusualCharsFilter->can_send_media);
         $this->assertEquals(ResTime::TWO_HOURS->value, $chat->unusualCharsFilter->restriction_time);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Classes\Commands;
 
 use App\Services\TelegramBotService;
+use App\Classes\Buttons;
 
 abstract class BaseCommand
 {
@@ -85,8 +86,8 @@ abstract class BaseCommand
         $className = class_basename(get_class($this));
         $enumName = str_replace('Command', 'Enum', $className);
 
-        if (class_exists('App\Enums\\' . $enumName)) {
-            $this->enum = 'App\Enums\\' . $enumName;
+        if (class_exists('App\Enums\CommandEnums\\' . $enumName)) {
+            $this->enum = 'App\Enums\CommandEnums\\' . $enumName;
         } else {
             throw new \Exception('Enum ' . $enumName . ' not found in App\Enums');
         }

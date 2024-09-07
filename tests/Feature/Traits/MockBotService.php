@@ -104,7 +104,7 @@ trait MockBotService
     }
 
 
-    protected function expectReplyMessageWillBeSent(mixed $message, ?array $params = null, ?int $count = null)
+    protected function expectReplyMessage(mixed $message, ?array $params = null, ?int $count = null)
     {
         $this->expectWith("sendMessage", $message, $params, $count);
     }
@@ -116,7 +116,7 @@ trait MockBotService
     }
 
 
-    protected function expectMockBotMenuMethodWillBeCalled(string $method, ?int $count = null)
+    protected function expectMockMenuMethod(string $method, ?int $count = null)
     {
         if (empty($this->mockMenu)) {
             $this->mockMenuCreate();

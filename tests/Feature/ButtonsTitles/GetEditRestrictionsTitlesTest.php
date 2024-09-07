@@ -4,7 +4,7 @@ namespace Feature\ButtonsTitles;
 
 use Tests\TestCase;
 use App\Classes\ButtonsTitles;
-use App\Enums\BadWordsFilterEnum;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
 
 
 class GetEditRestrictionsTitlesTest extends TestCase

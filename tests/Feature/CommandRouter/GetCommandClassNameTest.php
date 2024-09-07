@@ -22,24 +22,42 @@ class GetCommandClassNameTest extends TestCase
         $this->assertEquals('App\Classes\Commands\BadWordsFilterCommand', $commandClassName);
     }
 
-    public function testEnumNotFoundException()
+    public function testEnumCaseNotFoundReturnNull()
     {
         $commandRouter = new CommandRouter('invalid_command');
-        $this->expectException(EnumNotFoundException::class);
-        $commandRouter->getCommandClassName();
+        $this->assertNull($commandRouter->getCommandClassName());
     }
 
+    /**
+     * Testcase where the command class does not exist
+     * @return void
+     */
     public function testGetCommandClassNameThrowsClassNotFoundExceptionWhenClassDoesNotExist()
     {
         $commandRouter = $this->getMockBuilder(CommandRouter::class)
             ->setConstructorArgs(['some command'])
-            ->onlyMethods(['enumHas', 'classExists'])
+            ->onlyMethods(['enumHas', 'commandClassExists'])
             ->getMock();
         $commandRouter->method('enumHas')->willReturn(true);
-        $commandRouter->method('classExists')->willReturn(false);
+        $commandRouter->method('commandClassExists')->willReturn(false);
 
         $this->expectException(ClassNotFoundException::class);
         $commandRouter->getCommandClassName();
+    }
+
+    /**
+     * Testcase where the enum class does not exist
+     * @return void
+     */
+    public function testGetCommandClassNameReturnsNullWhenEnumClassDoesNotExist()
+    {
+        $commandRouter = $this->getMockBuilder(CommandRouter::class)
+            ->setConstructorArgs(['some_command'])
+            ->onlyMethods(['isValidEnumClass'])
+            ->getMock();
+        $commandRouter->method('isValidEnumClass')->willReturn(false);
+
+        $this->assertNull($commandRouter->getCommandClassName());
     }
 
     public function testEnumNamespace(): void

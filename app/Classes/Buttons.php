@@ -2,20 +2,21 @@
 
 namespace App\Classes;
 
-use App\Enums\MainMenuEnum;
-use App\Enums\UnusualCharsFilterEnum;
+use App\Enums\CommandEnums\MainMenuEnum;
+use App\Classes\Commands\MainMenuCommand;
+use App\Enums\CommandEnums\UnusualCharsFilterEnum;
 use App\Models\BadWordsFilter;
 use App\Services\BotErrorNotificationService;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\NewUserRestriction;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Enums\ModerationSettingsEnum;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
 use App\Exceptions\BaseTelegramBotException;
-use App\Enums\BadWordsFilterEnum;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
 use App\Models\FilterModel;
 use App\Models\UnusualCharsFilter;
 use App\Services\CONSTANTS;
-use App\Enums\NewUserRestrictionsEnum;
+use App\Enums\CommandEnums\NewUserRestrictionsEnum;
 use Nette\ArgumentOutOfRangeException;
 use PHPUnit\Util\Filter;
 use App\Classes\ButtonsTitles;
@@ -81,15 +82,6 @@ class Buttons
         return $keyBoard;
     }
 
-    /**
-     * NewUserRestriction base settings menu buttons 
-     */
-    public function getNewUserRestrictionsButtons(NewUserRestriction $newUsersRestriction, string $enum): array
-    {
-        $titles = (new ButtonsTitles($newUsersRestriction, $enum))->getNewUserRestrictionsTitles();
-        $keyBoard = $this->create($titles, 1, true);
-        return $keyBoard;
-    }
 
     public function getBadWordsFilterButtons(BadWordsFilter $filter, string $enum): array
     {
@@ -110,7 +102,6 @@ class Buttons
     {
         $titles = (new ButtonsTitles($model, $enum))->getRestrictionsTimeTitles();
         $keyBoard = $this->create($titles, 1, true);
-        // BotErrorNotificationService::send("buttons.php 106");
         return $keyBoard;
     }
 
@@ -127,4 +118,14 @@ class Buttons
         $keyBoard = $this->create($titles, 1, true);
         return $keyBoard;
     }
+
+    // /**
+    //  * NewUserRestriction base settings menu buttons 
+    //  */
+    // public function getNewUserRestrictionsButtons(NewUserRestriction $newUsersRestriction, string $enum): array
+    // {
+    //     $titles = (new ButtonsTitles($newUsersRestriction, $enum))->getNewUserRestrictionsTitles();
+    //     $keyBoard = $this->create($titles, 1, true);
+    //     return $keyBoard;
+    // }
 }

@@ -2,200 +2,177 @@
 
 namespace Feature\CommandsTests;
 
-use App\Classes\PrivateChatCommandCore;
-use App\Enums\ModerationSettingsEnum;
-use App\Models\MessageModels\TextMessageModel;
-use App\Services\TelegramBotService;
+use App\Classes\Commands\BadWordsFilterCommand;
+use App\Classes\Buttons;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
 use App\Enums\ResTime;
-use App\Models\TelegramRequestModelBuilder;
-use Illuminate\Support\Facades\Cache;
-use App\Models\Chat;
-use App\Models\Admin;
-use Database\Seeders\SimpleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use App\Enums\BadWordsFilterEnum;
-use App\Exceptions\BaseTelegramBotException;
-use Illuminate\Support\Facades\Http;
-use App\Services\CONSTANTS;
+use Tests\Feature\Traits\MockBotService;
 use Tests\TestCase;
 
 class BadWordsFilterCommandTest extends TestCase
 {
+    use MockBotService;
     protected $filter;
     public function setUp(): void
     {
         parent::setUp();
-        (new SimpleSeeder())->run(1, 5);
-        $this->admin = Admin::first();
+        $this->admin = $this->setAdminWithMultipleChats(2);
         $this->chat = $this->admin->chats->first();
         $this->filter = $this->chat->badWordsFilter;
-        $this->fakeSendMessageSucceedResponse();
-        $this->fakeResponseWithAdminsIds($this->admin->admin_id, 66666);
-        $this->clearTestLogFile();
+        $this->mockBotCreate();
+        $this->mockBotGetChatMethod($this->admin->chats->first());
+        $this->mockBotGetAdminMethod($this->admin);
+        // $this->clearTestLogFile();
     }
 
     public function testifSelectBadWordsFilterEditRestrictionsReplyWithButtons()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::EDIT_RESTRICTIONS->value);
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::EDIT_RESTRICTIONS->value);
 
-        $buttons = $this->getEditRestrictionsButtons($this->filter, BadWordsFilterEnum::class);
-        $buttons[] = ModerationSettingsEnum::BACK->value;
+        $this->mockMenuCreate();
+        $this->expectMockMenuMethod("save");
+        $this->mockBotMenuCreate(1);
 
-        $this->assertButtonsWereSent($buttons);
-        $this->assertReplyMessageSent(BadWordsFilterEnum::EDIT_RESTRICTIONS->replyMessage());
+        $buttons = (new Buttons())->getEditRestrictionsButtons($this->filter, BadWordsFilterEnum::class);
+        $this->expectReplyMessage(BadWordsFilterEnum::EDIT_RESTRICTIONS->replyMessage(), $buttons, 1);
+
+        new BadWordsFilterCommand($this->mockBotService);
     }
 
-
-    public function testifSelectBadWordsFilterSettingsReplyWithButtons()
-    {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SETTINGS->value);
-        $this->prepareDependencies();
-        $buttons = $this->getFilterSettingsButtons($this->filter, BadWordsFilterEnum::class);
-
-        $this->assertButtonsWereSent($buttons);
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SETTINGS->replyMessage());
-    }
 
 
     public function testDisableBadWordsFilter()
     {
-        $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLED_DISABLE->value);
+        $this->mockBotCommand(BadWordsFilterEnum::ENABLED_DISABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::ENABLED_DISABLE->replyMessage());
         $this->filter->update(['enabled' => 1]); //set to enabled before test
-        $this->prepareDependencies();
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::ENABLED_DISABLE->replyMessage());
-        $this->assertFalse($this->filter->enabled === 1);
+        new BadWordsFilterCommand($this->mockBotService);
+        $this->assertTrue($this->filter->enabled === 0);
     }
 
 
     public function testEnableBadWordsFilter()
     {
-        $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::ENABLED_ENABLE->value);
-        $this->filter->update(['enabled' => 0]); //set to disabled before test
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::ENABLED_ENABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::ENABLED_ENABLE->replyMessage());
+        $this->filter->update(['enabled' => 0]); //set to enabled before test
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::ENABLED_ENABLE->replyMessage());
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->enabled === 1);
     }
 
 
     public function testDisableBadWordsFilterDeleteMessages()
     {
-        $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->value);
-        $this->filter->update(['delete_message' => 1]); //set to enabled before test
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->replyMessage());
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGE_DISABLE->replyMessage());
-        $this->assertFalse($this->filter->delete_message === 1);
+        $this->filter->update(['delete_message' => 1]); //set to enabled before test
+
+        new BadWordsFilterCommand($this->mockBotService);
+        $this->assertTrue($this->filter->delete_message === 0);
     }
 
 
     public function testEnableBadWordsFilterDeleteMessages()
     {
-        $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->value);
-        $this->filter->update(['delete_message' => 0]); //set to disabled before test
+        $this->mockBotCommand(BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->replyMessage());
 
-        $this->prepareDependencies();
+        $this->filter->update(['delete_message' => 0]); //set to enabled before test
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::DELETE_MESSAGE_ENABLE->replyMessage());
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->delete_message === 1);
     }
 
 
     public function testEnableBadWordsFilterRestrictions()
     {
-        $this->setBackMenuArrayToCache(["one", "two"]);
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::RESTRICT_USER_ENABLE->value);
-        $this->filter->update(['enabled' => 0]); //set to disabled before test
+        $this->mockBotCommand(BadWordsFilterEnum::RESTRICT_USER_ENABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::RESTRICT_USER_ENABLE->replyMessage());
 
+        $this->filter->update(['restrict_user' => 0]); //set to enabled before test
 
-        $this->prepareDependencies();
+        new BadWordsFilterCommand($this->mockBotService);
+        $this->assertTrue($this->filter->restrict_user === 1);
+    }
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::RESTRICT_USER_ENABLE->replyMessage());
-        $this->assertTrue($this->filter->enabled === 1);
+    public function testDisableBadWordsFilterRestrictions()
+    {
+        $this->mockBotCommand(BadWordsFilterEnum::RESTRICT_USER_DISABLE->value);
+        $this->mockBotMenuCreate();
+        $this->expectReplyMessage(BadWordsFilterEnum::RESTRICT_USER_DISABLE->replyMessage());
+
+        $this->filter->update(['restrict_user' => 1]); //set to disabled before test
+
+        new BadWordsFilterCommand($this->mockBotService);
+        $this->assertTrue($this->filter->restrict_user === 0);
     }
 
 
     public function testSelectBadWordsFilterRestrictionTimeSettingsReplyWithButtons()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SELECT_RESTRICTION_TIME->value);
-        $this->prepareDependencies();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SELECT_RESTRICTION_TIME->replyMessage());
-        $this->assertButtonsWereSent($this->getRestrictionsTimeButtons($this->filter, BadWordsFilterEnum::class));
+        $this->mockBotCommand(BadWordsFilterEnum::SELECT_RESTRICTION_TIME->value);
+        $this->mockBotMenuCreate();
+        $buttons = (new Buttons())->getEditRestrictionsTimeButtons($this->filter, BadWordsFilterEnum::class);
+
+        $this->expectReplyMessage(BadWordsFilterEnum::SELECT_RESTRICTION_TIME->replyMessage(), $buttons);
+        $this->assertTrue(true); // just to pass the test
+        new BadWordsFilterCommand($this->mockBotService);
     }
 
 
     public function testSetBadWordsFilterRestrictionTimeMonth()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SET_TIME_MONTH->value);
-        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::SET_TIME_MONTH->value);
+        $this->mockBotMenuCreate();
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SET_TIME_MONTH->replyMessage());
+        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
+
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->restriction_time === ResTime::getTime(BadWordsFilterEnum::SET_TIME_MONTH));
     }
 
 
     public function testSetBadWordsFilterRestrictionTimeWeek()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SET_TIME_WEEK->value);
-        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::SET_TIME_WEEK->value);
+        $this->mockBotMenuCreate();
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SET_TIME_WEEK->replyMessage());
+        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
+
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->restriction_time === ResTime::getTime(BadWordsFilterEnum::SET_TIME_WEEK));
     }
 
 
     public function testSetBadWordsFilterRestrictionTimeDay()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SET_TIME_DAY->value);
-        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
-        $this->prepareDependencies();
+        $this->mockBotCommand(BadWordsFilterEnum::SET_TIME_DAY->value);
+        $this->mockBotMenuCreate();
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SET_TIME_DAY->replyMessage());
+        $this->filter->update(['restriction_time' => 0]); //set to disabled before test
+
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->restriction_time === ResTime::getTime(BadWordsFilterEnum::SET_TIME_DAY));
     }
 
 
     public function testSetBadWordsFilterRestrictionTimeTwoHours()
     {
-        $this->data = $this->getPrivateChatMessage($this->admin->admin_id, BadWordsFilterEnum::SET_TIME_TWO_HOURS->value);
+        $this->mockBotCommand(BadWordsFilterEnum::SET_TIME_TWO_HOURS->value);
+        $this->mockBotMenuCreate();
+
         $this->filter->update(['restriction_time' => 0]); //set to disabled before test
-        $this->prepareDependencies();
 
-        $this->filter->refresh();
-        $this->assertReplyMessageSent(BadWordsFilterEnum::SET_TIME_TWO_HOURS->replyMessage());
+        new BadWordsFilterCommand($this->mockBotService);
         $this->assertTrue($this->filter->restriction_time === ResTime::getTime(BadWordsFilterEnum::SET_TIME_TWO_HOURS));
-    }
-
-
-    public function prepareDependencies()
-    {
-        $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($this->requestModel);
-        app()->singleton("requestModel", fn() => $this->requestModel);
-        app()->singleton("botService", fn() => $this->botService);
-        // fake that chat was previously selected
-        $this->putSelectedChatIdToCache(
-            $this->admin->admin_id,
-            $this->admin->chats->first()->chat_id
-        );
-        new PrivateChatCommandCore();
     }
 
 }

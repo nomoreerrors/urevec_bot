@@ -13,6 +13,13 @@ trait EnumValues
         return in_array($value, $values);
     }
 
+    public static function hasCase(string $value): bool
+    {
+        $caseNames = array_map(fn($case) => $case->name, self::cases());
+        $result = in_array($value, $caseNames);
+        return $result;
+    }
+
     /**
      * @return array
      */

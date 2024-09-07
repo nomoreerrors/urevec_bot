@@ -17,7 +17,7 @@ trait DynamicModel
         $className = class_basename(get_class($this));
         $modelName = str_replace('Command', '', $className);
         $modelName = lcfirst($modelName);
-
+        // $j = $this->botService->getChat()->{$modelName};
         if (empty($this->botService->getChat()->{$modelName})) {
             throw new \Exception("Property '$modelName' does not exist in getChat()");
         }

@@ -70,8 +70,8 @@ enum BadWordsFilterEnum: string implements EnumHasRestrictionTimeInterface
     {
         return match ($this) {
             self::ADD_WORDS => 'Установите список в формате: BAD WORDS:слово1,слово2,слово3',
-            self::ENABLED_DISABLE => 'Фильтр отключен',
-            self::ENABLED_ENABLE => 'Фильтр включен',
+            self::ENABLED_DISABLE => 'Фильтр слов отключен',
+            self::ENABLED_ENABLE => 'Фильтр слов включен',
             self::DELETE_MESSAGE_DISABLE => 'Удаление сообщений отключено',
             self::DELETE_MESSAGE_ENABLE => 'Удаление сообщений включено',
             self::SELECT_RESTRICTION_TIME => 'Выберите время ограничения нарушителей',

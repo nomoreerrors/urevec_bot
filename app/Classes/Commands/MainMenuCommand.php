@@ -2,14 +2,15 @@
 
 namespace App\Classes\Commands;
 
-use App\Enums\BadWordsFilterEnum;
-use App\Enums\NewUserRestrictionsEnum;
-use App\Enums\UnusualCharsFilterEnum;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
+use App\Classes\Buttons;
+use App\Enums\CommandEnums\NewUserRestrictionsEnum;
+use App\Enums\CommandEnums\UnusualCharsFilterEnum;
 use App\Models\Chat;
-use App\Enums\ModerationSettingsEnum;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
 use App\Services\TelegramBotService;
 use App\Classes\Menu;
-use App\Enums\MainMenuEnum;
+use App\Enums\CommandEnums\MainMenuEnum;
 use App\Services\BotErrorNotificationService;
 
 class MainMenuCommand extends BaseCommand

@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use App\Classes\BaseCommand;
 use App\Exceptions\UnknownChatException;
@@ -19,24 +20,46 @@ class PrivateChatCommandCore extends BaseBotCommandCore
 
     public function handle(): void
     {
+        $this->updateCommandIfChanged();
+
         if ($this->botService->menu()->backButtonPressed()) {
-            // Some logic here
+            //  
         } else {
             $this->botService->chatSelector()->select();
 
             if (
-                $this->botService->chatSelector()->hasBeenUpdated() ||
-                $this->botService->chatSelector()->buttonsHaveBeenSent()
+                $this->botService->chatSelector()->buttonsHaveBeenSent() ||
+                $this->botService->chatSelector()->hasBeenUpdated()
             ) {
                 return;
             }
+        }
 
 
-            $commandClassName = (new CommandRouter($this->command))->getCommandClassName();
-            $this->botService->createCommand($commandClassName);
+        $commandClassName = $this->getCommandClassName();
 
+        if (!$this->isValidCommandClassName($commandClassName)) {
             return;
         }
+
+        $this->botService->createCommand($commandClassName);
+    }
+
+
+
+    protected function getCommandClassName(): ?string
+    {
+        return (new CommandRouter($this->command))->getCommandClassName();
+    }
+
+    protected function isValidCommandClassName(?string $commandClassName): bool
+    {
+        if (!$commandClassName) {
+            $this->botService->sendMessage(CONSTANTS::COMMAND_NOT_FOUND);
+            BotErrorNotificationService::send($this->command . " " . CONSTANTS::COMMAND_NOT_FOUND);
+            return false;
+        }
+        return true;
     }
 
 
@@ -53,5 +76,15 @@ class PrivateChatCommandCore extends BaseBotCommandCore
         }
         return $this;
     }
+
+    /**
+     * updates the command for the case it has been changed in chatSelector or Menu class
+     * @return void
+     */
+    protected function updateCommandIfChanged(): void
+    {
+        $this->command = $this->botService->getPrivateChatCommand();
+    }
+
 
 }

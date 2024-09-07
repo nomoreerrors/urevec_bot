@@ -98,7 +98,9 @@ class Menu
 
         self::$backButtonPressed = true;
 
+        // BotErrorNotificationService::send($lastBackMenuCommand . " pressed back button");
         $this->botService->setPrivateChatCommand($lastBackMenuCommand);
+
         $this->botService->commandHandler()->handle();
     }
 
@@ -109,9 +111,10 @@ class Menu
         return $result;
     }
 
-    protected function getBackMenuFromCache()
+    protected function getBackMenuFromCache(): ?array
     {
-        return json_decode(Cache::get($this->cacheKey), true);
+        $result = json_decode(Cache::get($this->cacheKey), true);
+        return $result;
     }
 
     protected function getLastBackMenu(array $backMenuArray): string
@@ -138,7 +141,6 @@ class Menu
             self::$isMenuRefresh = false;
             return;
         }
-        // BotErrorNotificationService::send("Menu refreshed");
 
         self::$isMenuRefresh = true;
         $menu = $this->getBackMenuFromCache();
@@ -147,8 +149,8 @@ class Menu
             log::error("Menu refresh failed");
             throw new \Exception(CONSTANTS::REFRESH_BACK_MENU_FAILED);
         }
+        // dd($menu);
 
-        // array_pop($menu);
         $this->botService->setPrivateChatCommand(end($menu));
 
         $this->botService->commandHandler()->handle();

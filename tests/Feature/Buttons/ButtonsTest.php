@@ -3,10 +3,11 @@
 namespace Feature\Buttons;
 
 use App\Classes\Buttons;
+use App\Enums\CommandEnums\MainMenuEnum;
 use Nette\ArgumentOutOfRangeException;
 use Illuminate\Support\Facades\Http;
-use App\Enums\ModerationSettingsEnum;
 use PHPUnit\Framework\TestCase;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
 
 class ButtonsTest extends TestCase
 {
@@ -42,7 +43,7 @@ class ButtonsTest extends TestCase
         $this->assertCount(2, $result['keyboard']);
         $this->assertCount(3, $result['keyboard'][0]);
         $this->assertCount(1, $result['keyboard'][1]);
-        $this->assertEquals(ModerationSettingsEnum::BACK->value, $result['keyboard'][1][0]['text']);
+        $this->assertEquals(MainMenuEnum::BACK->value, $result['keyboard'][1][0]['text']);
     }
 
     /**

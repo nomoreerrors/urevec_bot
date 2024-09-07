@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Classes\BaseBotCommandCore;
+use App\Classes\Commands\BaseCommand;
 use InvalidArgumentException;
-use App\Classes\BaseCommand;
 use App\Classes\PrivateChatCommandCore;
 use App\Enums\ResTime;
 use App\Classes\ChatSelector;
@@ -422,14 +422,14 @@ class TelegramBotService
 
 
     public function createCommand(string $className): ?BaseCommand
-    { {
-            if (!class_exists($className)) {
-                throw new InvalidArgumentException("Invalid command class: $className");
-            }
-            return new $className($this);
+    {
+        if (!class_exists($className)) {
+            throw new InvalidArgumentException("Invalid command class: $className");
         }
+        return new $className($this);
     }
 }
+
 
 
 

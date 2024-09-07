@@ -2,6 +2,7 @@
 
 namespace App\Classes\Commands;
 
+use App\Enums\Traits\EnumValues;
 use App\Services\TelegramBotService;
 use App\Traits\DynamicModel;
 use App\Traits\RestrictUsers;

@@ -3,15 +3,18 @@
 namespace Feature\CommandsTests\Menu;
 
 use App\Services\CONSTANTS;
+use Illuminate\Support\Facades\Cache;
 use App\Classes\PrivateChatCommandCore;
 use Database\Seeders\SimpleSeeder;
 use App\Classes\Menu;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Traits\MockBotService;
 use Tests\TestCase;
 
 class RefreshMethodTest extends TestCase
 {
     use MockBotService;
+    use RefreshDatabase;
 
     protected $mockMenu;
 
@@ -24,9 +27,11 @@ class RefreshMethodTest extends TestCase
 
         $this->mockBotCommand("random command");
         $this->fakeBotCommandHandlerCreate("private");
-
-        $this->clearTestLogFile();
-        $this->forgetBackMenuArray($this->admin->admin_id);
+        $this->mockMenu = $this->getMockBuilder(Menu::class)
+            ->setConstructorArgs([$this->mockBotService])
+            ->onlyMethods(['getBackMenuFromCache'])
+            ->getMock();
+        // Cache::fake();
     }
 
 
@@ -34,9 +39,8 @@ class RefreshMethodTest extends TestCase
     {
         $this->mockMenu = $this->getMockMenu();
         $this->expectGetBackMenuFromCache(["some menu"]);
-
-
         $this->assertFalse($this->mockMenu->getIsMenuRefresh());
+
         $this->mockMenu->refresh();
         $this->assertTrue($this->mockMenu->getIsMenuRefresh());
     }
@@ -44,9 +48,13 @@ class RefreshMethodTest extends TestCase
     public function testThrowsExceptionWhenGetBackMenuFromCacheFails()
     {
         $this->mockMenu = $this->getMockMenu();
-        $this->expectGetBackMenuFromCache(null);
+        // Cache::shouldReceive('get')->andReturn(null); // Mock the cache store
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage(CONSTANTS::REFRESH_BACK_MENU_FAILED);
+
+        $this->mockMenu->setIsMenuRefresh(false);
+        $this->assertFalse($this->mockMenu->getIsMenuRefresh());
+        $this->expectGetBackMenuFromCache([]);
         $this->mockMenu->refresh();
     }
 
@@ -63,20 +71,19 @@ class RefreshMethodTest extends TestCase
         // Expect will be called once
         $this->mockBotCommandHandler("private", null, $mockCommandHandler);
         // Expect with param
-        $this->expectBotSetPrivateChatCommand("some menu");
+        $this->expectBotSetPrivateChatCommand("some menu 2");
 
         $this->mockMenu = $this->getMockMenu();
-        $this->expectGetBackMenuFromCache(["some menu"]);
+        $this->expectGetBackMenuFromCache(["some menu 2"]);
+
+        // Don't know why, but it doesn't work without it
+        $this->mockMenu->setIsMenuRefresh(false);
 
         $this->mockMenu->refresh();
         $this->assertTrue($this->mockMenu->getIsMenuRefresh());
     }
 
-    /**
-     * Test that the isMenuRefresh flag will set to false if it's true    
-     * and the code executing will be interrupted 
-     * @return void
-     */
+
     public function testIsMenuRefreshFlagIsSetToFalse()
     {
         $this->mockBotService->expects($this->never())

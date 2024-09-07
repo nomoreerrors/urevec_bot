@@ -29,6 +29,7 @@ trait ToggleColumn
 
     private function sendToggleMessage()
     {
+        $j = $this->enum::from($this->command)->replyMessage();
         $this->botService->sendMessage($this->enum::from($this->command)->replyMessage());
     }
 

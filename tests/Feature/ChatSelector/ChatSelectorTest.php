@@ -4,6 +4,7 @@ namespace Feature\ChatSelector;
 
 use App\Classes\PrivateChatCommandCore;
 use App\Models\MessageModels\TextMessageModel;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
 use App\Classes\Buttons;
 use Mockery;
 use Mockery\MockInterface;
@@ -11,7 +12,6 @@ use ReflectionProperty;
 use ReflectionClass;
 use ReflectionMethod;
 use App\Classes\ChatSelector;
-use App\Enums\ModerationSettingsEnum;
 use App\Services\TelegramBotService;
 use App\Classes\Menu;
 use Illuminate\Support\Facades\Log;
@@ -78,7 +78,7 @@ class ChatSelectorTest extends TestCase
         $titles = $this->admin->chats()->pluck('chat_title')->toArray();
         $buttons = (new Buttons())->getSelectChatButtons($titles);
 
-        $this->expectReplyMessageWillBeSent(
+        $this->expectReplyMessage(
             ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
             $buttons
         );
@@ -101,7 +101,7 @@ class ChatSelectorTest extends TestCase
             ->willReturn($this->mockMenu);
 
         $this->expectBotServiceChatWillBeSet($this->admin->chats->first()->chat_id);
-        $this->expectReplyMessageWillBeSent($this->stringContains($this->admin->chats->first()->chat_title));
+        $this->expectReplyMessage($this->stringContains($this->admin->chats->first()->chat_title));
 
         $chatSelector = new ChatSelector($this->mockBotService);
         $chatSelector->select();
@@ -120,11 +120,13 @@ class ChatSelectorTest extends TestCase
         $titles = $this->admin->chats()->pluck('chat_title')->toArray();
         $buttons = (new Buttons())->getSelectChatButtons($titles);
 
-        $this->expectReplyMessageWillBeSent(
+        $this->expectReplyMessage(
             ModerationSettingsEnum::SELECT_CHAT->replyMessage(),
             $buttons
         );
 
+        // Expecting previous menu will be saved to back menu array in cache
+        // untill chat will be selected
         $this->mockMenuCreate();
         $this->mockMenu->expects($this->once())
             ->method("save");

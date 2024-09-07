@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Classes;
+
 use App\Exceptions\ClassNotFoundException;
 use App\Exceptions\EnumNotFoundException;
 use App\Exceptions\InvalidCommandException;
 use App\Exceptions\NamespaceException;
+use App\Services\BotErrorNotificationService;
 
 class CommandRouter
 {
@@ -21,34 +23,29 @@ class CommandRouter
 
 
     /**
-     * Dynamically retrieves the class name of a command based on a given command type.
-     * 
      * Loops through all enum classes and checks if the command type exists. If a match is found,
      * returns the class name of the corresponding command class.
      * 
      * @return string|null The class name of the command if found, null otherwise.
      * @throws ClassNotFoundException If the class name is not found in the declared classes.
-     * @throws InvalidCommandException If the command type is not found in any of the enum classes.
-     * @throws NamespaceException If the class name does not start with the expected namespace.
-     * @throws EnumNotFoundException If the enum class does not contain the expected enum value.
      */
     public function getCommandClassName(): ?string
-    { {
-            $this->namespace = self::ENUM_NAMESPACE;
-            $this->path = app_path(self::COMMAND_ENUM_PATH);
-            $enumClasses = scandir($this->path);
+    {
+        $this->namespace = self::ENUM_NAMESPACE;
+        $this->path = app_path(self::COMMAND_ENUM_PATH);
+        $enumClasses = scandir($this->path);
 
-            foreach ($enumClasses as $enumClassFile) {
-                if (substr($enumClassFile, -4) === '.php') {
-                    $enumClass = $this->namespace . '\\' . substr($enumClassFile, 0, -4);
+        foreach ($enumClasses as $enumClassFile) {
+            if (substr($enumClassFile, -4) === '.php') {
+                $enumClass = $this->namespace . '\\' . substr($enumClassFile, 0, -4);
 
+                if ($this->isValidEnumClass($enumClass)) {
                     if ($this->enumHas($enumClass)) {
-                        $this->enumClass = $enumClass;
                         $baseName = class_basename($enumClass);
                         $commandClass = str_replace('Enum', 'Command', $baseName);
                         $commandClassName = 'App\Classes\Commands\\' . $commandClass;
 
-                        if (!$this->classExists($commandClassName)) {
+                        if (!$this->commandClassExists($commandClassName)) {
                             throw new ClassNotFoundException("Class $commandClass not found.");
                         }
 
@@ -56,12 +53,12 @@ class CommandRouter
                     }
                 }
             }
-
-            throw new EnumNotFoundException("Enum value " . $this->command . " not found in any enum class");
         }
+        // BotErrorNotificationService::send('Неизвестная команда: ' . $this->command);
+        return null;
     }
 
-    protected function classExists(string $commandClassName): bool
+    protected function commandClassExists(string $commandClassName): bool
     {
         $result = class_exists($commandClassName);
         return $result;
@@ -71,6 +68,11 @@ class CommandRouter
     {
         $result = $enumClass::exists($this->command);
         return $result;
+    }
+
+    protected function isValidEnumClass(string $enumClass): bool
+    {
+        return class_exists($enumClass) && strpos($enumClass, $this->namespace) === 0;
     }
 
     public function getEnumNamespace(): string

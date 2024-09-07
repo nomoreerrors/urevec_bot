@@ -3,11 +3,11 @@
 namespace Feature\ButtonsTitles;
 
 use App\Exceptions\EmptyTitlesArrayException;
+use App\Enums\CommandEnums\BadWordsFilterEnum;
 use App\Exceptions\TableColumnNotExistsException;
 use Tests\TestCase;
 use Illuminate\Database\Eloquent\Model;
 use App\Classes\ButtonsTitles;
-use App\Enums\BadWordsFilterEnum;
 
 
 enum FakeEnum: string

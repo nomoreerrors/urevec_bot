@@ -19,6 +19,7 @@ class CreateMediaModelTest extends TestCase
     {
         parent::setUp();
         $this->data = $this->getMessageModelData();
+        $this->fakeResponseWithAdminsIds(1, 2);
     }
 
     public function test_create_video_media_model(): void

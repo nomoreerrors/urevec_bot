@@ -430,12 +430,16 @@ class TelegramRequestModelBuilder
             return $this;
         }
 
-        $response = $this->http::post(
+        // $j = env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators";
+        $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
             ['chat_id' => self::$chatId]
         )->json();
-        // BotErrorNotificationService::send("getChatAdministrators: " . json_encode($response));
-        // dd($response);
+        // $response = $this->http::post(
+        //     env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/getChatAdministrators",
+        //     ['chat_id' => self::$chatId]
+        // )->json();
+
 
         if (!$response['ok']) {
             throw new BaseTelegramBotException(CONSTANTS::GET_ADMINS_FAILED, __METHOD__);

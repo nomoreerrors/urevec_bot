@@ -22,7 +22,7 @@ trait RestrictionsCases
             self::SET_TIME_TWO_HOURS->value,
             self::SET_TIME_DAY->value,
             self::SET_TIME_WEEK->value,
-            self::SET_TIME_MONT->valueH
+            self::SET_TIME_MONTH->value
         ];
     }
 
@@ -49,7 +49,7 @@ trait RestrictionsCases
             self::CAN_SEND_MEDIA_DISABLE->value,
             self::CAN_SEND_MEDIA_ENABLE->value,
             self::RESTRICT_USER_DISABLE->value,
-            self::RESTRICT_USER_ENABL->value,
+            self::RESTRICT_USER_ENABLE->value,
             self::DELETE_USER_ENABLE->value,
             self::DELETE_USER_DISABLE->value
         ];

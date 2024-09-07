@@ -3,8 +3,8 @@
 namespace App\Classes;
 
 use App\Enums\MainMenuEnum;
-use App\Enums\ModerationSettingsEnum;
 use App\Models\Admin;
+use App\Enums\CommandEnums\ModerationSettingsEnum;
 use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use App\Models\MessageModels\TextMessageModel;

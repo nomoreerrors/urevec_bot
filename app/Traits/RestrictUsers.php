@@ -29,6 +29,41 @@ trait RestrictUsers
                 $this->toggleColumn('can_send_messages');
                 break;
         }
+
+        $this->getDeleteMessageColumnCases();
+        $this->getRestrictUserColumnCases();
+    }
+
+    /**
+     * Add column case if column exists
+     * @return void
+     */
+    protected function getDeleteMessageColumnCases(): void
+    {
+        if (!$this->enum::hasCase("DELETE_MESSAGE_ENABLE")) {
+            return;
+        }
+
+        switch ($this->command) {
+            case $this->enum::DELETE_MESSAGE_ENABLE->value:
+            case $this->enum::DELETE_MESSAGE_DISABLE->value:
+                $this->toggleColumn('delete_message');
+                break;
+        }
+    }
+
+    protected function getRestrictUserColumnCases(): void
+    {
+        if (!$this->enum::hasCase("RESTRICT_USER_ENABLE")) {
+            return;
+        }
+
+        switch ($this->command) {
+            case $this->enum::RESTRICT_USER_ENABLE->value:
+            case $this->enum::RESTRICT_USER_DISABLE->value:
+                $this->toggleColumn('restrict_user');
+                break;
+        }
     }
 
     protected function getRestrictionTimeCases(): void

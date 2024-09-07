@@ -642,7 +642,7 @@ abstract class TestCase extends BaseTestCase
     public function forgetBackMenuArray(int $adminId)
     {
         $cacheKey = $this->getBackMenuCacheKey($adminId);
-        Cache::forget($cacheKey);
+        Cache::delete($cacheKey);
     }
 
     protected function setBackMenuArrayToCache(array $backMenuArray, int $adminId)
