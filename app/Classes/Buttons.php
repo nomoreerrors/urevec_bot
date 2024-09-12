@@ -3,9 +3,11 @@
 namespace App\Classes;
 
 use App\Enums\CommandEnums\MainMenuEnum;
+use App\Enums\CommandEnums\LinksFilterEnum;
 use App\Classes\Commands\MainMenuCommand;
 use App\Enums\CommandEnums\UnusualCharsFilterEnum;
 use App\Models\BadWordsFilter;
+use App\Models\LinksFilter;
 use App\Services\BotErrorNotificationService;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\NewUserRestriction;
@@ -93,6 +95,13 @@ class Buttons
     public function getUnusualCharsFilterButtons(UnusualCharsFilter $filter, string $enum): array
     {
         $titles = (new ButtonsTitles($filter, $enum))->getUnusualCharsFilterTitles();
+        $keyBoard = $this->create($titles, 1, true);
+        return $keyBoard;
+    }
+
+    public function getLinksFilterButtons(LinksFilter $filter, string $enum): array
+    {
+        $titles = (new ButtonsTitles($filter, $enum))->getLinksFilterTitles();
         $keyBoard = $this->create($titles, 1, true);
         return $keyBoard;
     }

@@ -82,10 +82,10 @@ enum BadWordsFilterEnum: string implements EnumHasRestrictionTimeInterface
             self::EDIT_RESTRICTIONS => 'Выберите ограничения для пользователей, попавших под фильтр',
             self::RESTRICT_USER_ENABLE => 'Все ограничения включены',
             self::RESTRICT_USER_DISABLE => 'Все ограничения отключены',
-            self::CAN_SEND_MESSAGES_DISABLE => 'Фильтр символов: Отправка сообщений нарушителям запрещена',
-            self::CAN_SEND_MESSAGES_ENABLE => 'Фильтр символов: Отправка сообщений нарушителям запрещена',
-            self::CAN_SEND_MEDIA_DISABLE => 'Фильтр символов: Отправка медиа-сообщений нарушителям запрещена',
-            self::CAN_SEND_MEDIA_ENABLE => 'Фильтр символов: Отправка медиа-сообщений нарушителям запрещена',
+            self::CAN_SEND_MESSAGES_DISABLE => 'Фильтр слов: Отправка сообщений нарушителям запрещена',
+            self::CAN_SEND_MESSAGES_ENABLE => 'Фильтр слов: Отправка сообщений нарушителям запрещена',
+            self::CAN_SEND_MEDIA_DISABLE => 'Фильтр слов: Отправка медиа-сообщений нарушителям запрещена',
+            self::CAN_SEND_MEDIA_ENABLE => 'Фильтр слов: Отправка медиа-сообщений нарушителям запрещена',
         };
     }
 

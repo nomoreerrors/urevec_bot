@@ -3,6 +3,7 @@
 namespace App\Classes\Commands;
 
 use App\Classes\Buttons;
+use App\Enums\CommandEnums\LinksFilterEnum;
 use App\Enums\NewUserRestrictionsEnum;
 use App\Models\Chat;
 use App\Enums\ModerationSettingsEnum;
@@ -30,6 +31,9 @@ class FiltersSettingsCommand extends BaseCommand
             case $this->enum::UNUSUAL_CHARS_FILTER_SETTINGS->value:
                 $this->sendUnusualCharsFilterSettings();
                 break;
+            case $this->enum::LINKS_FILTER_SETTINGS->value:
+                $this->sendLinksFilterSettings();
+                break;
         }
     }
 
@@ -40,12 +44,21 @@ class FiltersSettingsCommand extends BaseCommand
         $this->botService->sendMessage(FiltersSettingsEnum::BADWORDS_FILTER_SETTINGS->replyMessage(), $keyBoard);
     }
 
+
     protected function sendUnusualCharsFilterSettings(): void
     {
         $this->botService->menu()->save();
         $keyBoard = (new Buttons())->getUnusualCharsFilterButtons($this->botService->getChat()->unusualCharsFilter, UnusualCharsFilterEnum::class);
 
         $this->botService->sendMessage(FiltersSettingsEnum::UNUSUAL_CHARS_FILTER_SETTINGS->replyMessage(), $keyBoard);
+    }
+
+
+    protected function sendLinksFilterSettings(): void
+    {
+        $this->botService->menu()->save();
+        $keyBoard = (new Buttons())->getLinksFilterButtons($this->botService->getChat()->linksFilter, LinksFilterEnum::class);
+        $this->botService->sendMessage(FiltersSettingsEnum::LINKS_FILTER_SETTINGS->replyMessage(), $keyBoard);
     }
 }
 

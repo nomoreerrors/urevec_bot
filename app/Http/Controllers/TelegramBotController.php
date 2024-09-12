@@ -3,21 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Classes\CommandBuilder;
+use App\Services\ChatRulesService;
 use App\Classes\CommandsList;
-use App\Classes\Menu;
-use App\Classes\ChatSelector;
-use App\Classes\ModerationSettings;
-use App\Exceptions\BaseTelegramBotException;
-use App\Jobs\FailedRequestJob;
-use App\Models\TelegramRequestModelBuilder;
-use App\Models\MessageModels\TextMessageModel;
-use App\Services\BaseBotCommandCore;
-use App\Classes\PrivateChatCommandCore;
-use App\Services\TelegramMiddlewareService;
-use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Cache;
-use App\Classes\ReplyKeyboardMarkup;
-use Illuminate\Support\Facades\Http;
+use App\Classes\ChatRules;
 use App\Services\TelegramBotService;
 use App\Services\WebhookService;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,14 +26,24 @@ class TelegramBotController extends Controller
     }
 
 
-    public function webhookHandler(Request $request)
+    public function webhookHandler()
     {
         switch ($this->requestModel->getChatType()) {
             case "private":
                 $this->botService->commandHandler()->handle();
+                break;
+            case "group":
+            case "supergroup":
+                $this->validateChatRules();
+                break;
         }
 
         return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
+    }
+
+    public function validateChatRules()
+    {
+        (new ChatRules($this->botService, new ChatRulesService($this->botService)))->validate();
     }
 
     /**

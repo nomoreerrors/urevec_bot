@@ -38,4 +38,27 @@ class Chat extends Model
     {
         return $this->hasOne(UnusualCharsFilter::class);
     }
+
+    public function linksFilter(): HasOne
+    {
+        return $this->hasOne(LinksFilter::class);
+    }
+
+    public static function getDefinedRelationsNames(): array
+    {
+        $reflector = new \ReflectionClass(get_called_class());
+
+        $result = collect($reflector->getMethods())
+            ->filter(
+                fn($method) => !empty ($method->getReturnType()) &&
+                str_contains(
+                    $method->getReturnType(),
+                    'Illuminate\Database\Eloquent\Relations'
+                )
+            )
+            ->pluck('name')
+            ->all();
+
+        return $result;
+    }
 }

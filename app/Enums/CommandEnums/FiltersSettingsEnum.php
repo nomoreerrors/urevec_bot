@@ -14,6 +14,7 @@ enum FiltersSettingsEnum: string
 
     case BADWORDS_FILTER_SETTINGS = 'Фильтр запрещенных слов';
     case UNUSUAL_CHARS_FILTER_SETTINGS = 'Фильтр подозрительных символов';
+    case LINKS_FILTER_SETTINGS = 'Фильтр ссылок';
 
     public function replyMessage(): string
     {

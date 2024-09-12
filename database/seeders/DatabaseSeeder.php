@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BadWordsFilter;
+use App\Models\LinksFilter;
 use App\Models\Chat;
 use App\Models\ChatAdmins;
 use App\Models\Admin;
@@ -11,6 +12,7 @@ use App\Models\NewUserRestriction;
 use App\Models\UnusualCharsFilter;
 use App\Models\User;
 use Database\Factories\ChatFactory;
+use Database\Factories\LinksFilterFactory;
 use Database\Factories\NewUserRestrictionFactory;
 use Illuminate\Database\Seeder;
 
@@ -19,6 +21,7 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      * Don't forget to use --env=testing flag to seed and migrate
+     * 
      */
     public function run(): void
     {
@@ -31,6 +34,7 @@ class DatabaseSeeder extends Seeder
                 )
                 ->has(BadWordsFilter::factory(1))
                 ->has(UnusualCharsFilter::factory(1))
+                ->has(LinksFilter::factory(1))
         )->create();
 
         $chats = Chat::all();

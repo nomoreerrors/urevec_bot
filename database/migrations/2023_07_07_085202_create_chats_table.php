@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger("chat_id");
+            $table->bigInteger("chat_id")->unique();
             $table->string("chat_title", 100)->default("unset");
             $table->timestamps();
         });

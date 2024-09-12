@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             FailedRequestJob::dispatch(request()->all());
-
+            // Не работает код 200, поэтому ушел отсюда
             return response($e->getMessage(), 200);
         });
     })->create();

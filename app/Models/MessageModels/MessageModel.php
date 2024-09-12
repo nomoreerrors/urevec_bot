@@ -11,8 +11,6 @@ class MessageModel extends TelegramRequestModelBuilder
 {
     use HasFactory;
 
-
-
     protected bool $hasTextLink = false;
 
     protected bool $isForward = false;

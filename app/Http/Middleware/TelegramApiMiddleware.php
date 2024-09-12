@@ -50,38 +50,46 @@ class TelegramApiMiddleware
     {
         $data = $request->all();
         //TODO delete it
+        // BotErrorNotificationService::send("ok");
         // return response("OK", Response::HTTP_OK);
         // throw new BaseTelegramBotException("test", __METHOD__);
+        try {
 
-        $this->saveRawRequestData($data);
-        $this->middlewareService = new TelegramMiddlewareService($data);
-        $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
-        $this->middlewareService->checkIfIpAllowed(request()->ip());
-        $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
-        $this->setContainerDeps();
+            $this->saveRawRequestData($data);
+            $this->middlewareService = new TelegramMiddlewareService($data);
+            $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
+            $this->middlewareService->checkIfIpAllowed(request()->ip());
+            $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
+            $this->setContainerDeps();
+
+        } catch (UnexpectedRequestException | BaseTelegramBotException $e) {
+            FailedRequestJob::dispatch($data);
+            return response("OK", Response::HTTP_OK);
+        }
 
         if ($this->requestModel->getChatType() !== "private") {
-            $this->setChat();
+            app(TelegramBotService::class)->createChat();
+            // $this->setChat();
         }
 
         return $next($request);
     }
 
-    /**
-     * Set or create a new chat by groupchat Id
-     */
-    private function setChat(): void
-    {
-        $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
+    // /**
+    //  * Set or create a new chat by groupchat Id
+    //  */
+    // private function setChat(): void
+    // {
+    //     $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
 
-        if (!$chatExists) {
-            app(TelegramBotService::class)->createChat();
-            app(TelegramBotService::class)->setMyCommands();
-        } else {
-            app(TelegramBotService::class)->setChat($this->requestModel->getChatId());
-        }
-        return;
-    }
+    //     if (!$chatExists) {
+    //         app(TelegramBotService::class)->createChat();
+    //         app(TelegramBotService::class)->setMyCommands();
+    //     } else {
+    //         app(TelegramBotService::class)->setChat($this->requestModel->getChatId());
+    //     }
+    //     return;
+    // }
 
     private function setContainerDeps()
     {

@@ -62,6 +62,5 @@ class DeleteMessageTest extends TestCase
         $this->expectExceptionMessage(CONSTANTS::DELETE_MESSAGE_FAILED .
             CONSTANTS::WRONG_INSTANCE_TYPE);
         $this->botService->deleteMessage();
-        sleep(5);
     }
 }

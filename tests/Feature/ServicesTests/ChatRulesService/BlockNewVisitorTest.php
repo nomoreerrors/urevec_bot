@@ -136,7 +136,7 @@ class BlockNewVisitorTest extends TestCase
     {
         $this->requestModel = (new TelegramRequestModelBuilder($this->data))->create();
         $this->botService = new TelegramBotService($this->requestModel);
-        $this->botService->setChat($this->chat->chat_id);
+        $this->botService->updateChatRelations($this->chat->chat_id);
         app()->singleton("botService", fn() => $this->botService);
         $this->rulesService = new ChatRulesService($this->requestModel);
     }

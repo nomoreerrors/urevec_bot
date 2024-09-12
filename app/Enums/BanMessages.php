@@ -8,9 +8,12 @@ enum BanMessages: string
     case INVITED_USER_BLOCKED = "НОВЫЙ ПРИГЛАШЕННЫЙ ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН НА СУТКИ.";
     case MEMBER_BLOCKED = "ПОЛЬЗОВАТЕЛЬ ЗАБЛОКИРОВАН.";
 
+    case USER_DELETED = "ПОЛЬЗОВАТЕЛЬ УДАЛЕН ЗА НАРУШЕНИЕ ПРАВИЛ ЧАТА.";
+
 
     public function withId(int $id)
     {
         return $this->value . " " . "user_id: " . $id;
     }
+
 }

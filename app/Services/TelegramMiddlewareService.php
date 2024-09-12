@@ -41,7 +41,7 @@ class TelegramMiddlewareService
 
         if (!$this->typeIsExpected) {
 
-            throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, __METHOD__);
+            throw new UnexpectedRequestException(CONSTANTS::UNKNOWN_OBJECT_TYPE, 200);
         } else
             return;
     }

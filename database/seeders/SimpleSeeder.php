@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\BadWordsFilter;
 use App\Models\Chat;
+use App\Models\LinksFilter;
 use App\Models\ChatAdmins;
 use App\Models\NewUserRestriction;
 use App\Models\Admin;
@@ -30,6 +31,7 @@ class SimpleSeeder extends Seeder
                 )
                 ->has(BadWordsFilter::factory(1))
                 ->has(UnusualCharsFilter::factory(1))
+                ->has(LinksFilter::factory(1))
         )->create();
     }
 }

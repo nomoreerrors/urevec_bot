@@ -39,4 +39,15 @@ enum ResTime: int
             default => throw new BaseTelegramBotException("Not found restriction time: " . $enumCase->name, __METHOD__)
         };
     }
+
+    public function getRussianReply(): string
+    {
+        return match ($this) {
+            self::TWO_HOURS => "на 2 часа",
+            self::DAY => "на 24 часа",
+            self::WEEK => "на неделю",
+            self::MONTH => "на месяц",
+            self::NONE => "0",
+        };
+    }
 }

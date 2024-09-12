@@ -17,14 +17,15 @@ use App\Models\MessageModels\TextMessageModel;
 
 class ChatRulesService
 {
-    private TelegramBotService $botService;
     private ?ResTime $restrictionTime;
+
+    private TelegramRequestModelBuilder $model;
 
     private string $humanReadableRerestritionTime = "";
 
-    public function __construct(private TelegramRequestModelBuilder $model)
+    public function __construct(private TelegramBotService $botService)
     {
-        $this->botService = app("botService");
+        $this->model = $this->botService->getRequestModel();
     }
 
     /**
@@ -135,31 +136,71 @@ class ChatRulesService
 
     public function ifMessageHasLinkBlockUser(): bool
     {
-        if ($this->model->getFromAdmin()) {
+        if (!$this->model instanceof MessageModel || $this->model->getFromAdmin()) {
             return false;
         }
 
-        if (!($this->model instanceof MessageModel)) {
+        if (!$this->shouldRestrictUser('linksFilter')) {
             return false;
         }
 
-        // Text_link key value
-        if ($this->model->getHasTextLink()) {
-            $this->botService->banUser();
+        $resTime = $this->getRestrictionTime('linksFilter');
+
+        if ($this->model->getHasTextLink() || ($this->model->getHasLink())) {
+            $this->botService->setBanReasonModelName('linksFilter');
+            $this->botService->banUser($resTime);
+
+            if ($this->shouldDeleteMessage('linksFilter')) {
+                $this->botService->deleteMessage();
+            }
             return true;
         }
-
-        if (
-            method_exists($this->model, 'getHasLink') &&
-            $this->model->getHasLink()
-        ) {
-            $this->botService->banUser();
-            return true;
-
-        }
-
         return false;
     }
+
+    /**
+     * Check if the user should be restricted based on the given type.
+     *
+     * The method checks if the restrict_user column is set to true in the
+     * corresponding relation with the given type.
+     *
+     * @param string $type the type of the relation, e.g. 'linksFilter', 'newUserRestrictions'
+     * @return bool true if the user should be restricted, false otherwise
+     */
+    protected function shouldRestrictUser(string $type): bool
+    {
+        $relation = $this->botService->getChat()->{$type};
+        return $relation->first()->restrict_user;
+    }
+
+    /**
+     * Check if the chat settings allow deleting messages of the specified type
+     *
+     * @param string $type the type of messages to check, e.g. 'linksFilter', 'newUserRestrictions'
+     * @return bool true if the bot should delete messages of the specified type, false otherwise
+     */
+    protected function shouldDeleteMessage(string $type): bool
+    {
+        $relation = $this->botService->getChat()->{$type};
+        return $relation->first()->delete_message;
+    }
+
+
+
+    /**
+     * Extract restriction time from the relation with the given type
+     *
+     * @param string $type the type of the relation, e.g. 'linksFilter', 'newUserRestrictions'
+     * @return \App\Enums\ResTime the restriction time represented as an enum value
+     */
+    protected function getRestrictionTime(string $type): ResTime
+    {
+        $relation = $this->botService->getChat()->{$type};
+        $resTime = ResTime::from($relation->first()->restriction_time);
+        return $resTime;
+    }
+
+
 }
 
 

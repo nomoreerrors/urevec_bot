@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace App\Classes;
 
 use App\Services\ChatRulesService;
 use App\Services\TelegramBotService;
@@ -17,37 +17,34 @@ use App\Services\CONSTANTS;
 use Illuminate\Support\Facades\Log;
 
 
-class ChatRulesMiddleware
+class ChatRules
 {
-    public function handle(Request $request, Closure $next): Response
+    public function __construct(
+        private TelegramBotService $telegramBotService,
+        private ChatRulesService $ruleService
+    ) {
+    }
+
+    public function validate(): Response
     {
-        $requestModel = app(TelegramBotService::class)->getRequestModel();
-
-        if ($requestModel->getChatType() !== "private") {
-            $ruleService = new ChatRulesService($requestModel);
-        } else {
-            return $next($request);
-        }
-
-
-        if ($ruleService->blockNewVisitor()) {
+        if ($this->ruleService->blockNewVisitor()) {
             return response(CONSTANTS::NEW_MEMBER_RESTRICTED, Response::HTTP_OK);
         }
 
-        if ($ruleService->blockUserIfMessageIsForward()) {
+        if ($this->ruleService->blockUserIfMessageIsForward()) {
             return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
         }
 
-        if ($ruleService->ifMessageHasLinkBlockUser()) {
+        if ($this->ruleService->ifMessageHasLinkBlockUser()) {
             return response(CONSTANTS::MEMBER_BLOCKED, Response::HTTP_OK);
         }
 
-        if ($ruleService->ifMessageContainsBlackListWordsBanUser()) {
+        if ($this->ruleService->ifMessageContainsBlackListWordsBanUser()) {
             return response(CONSTANTS::DELETED_BY_FILTER, Response::HTTP_OK);
         }
-
-        return $next($request);
-
+        return response(CONSTANTS::DEFAULT_RESPONSE, Response::HTTP_OK);
     }
+
+
 }
 

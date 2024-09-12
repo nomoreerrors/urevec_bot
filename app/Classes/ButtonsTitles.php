@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Enums\CommandEnums\FiltersSettingsEnum;
+use App\Enums\CommandEnums\LinksFilterEnum;
 use App\Exceptions\EmptyTitlesArrayException;
 use App\Exceptions\TableColumnNotExistsException;
 use Illuminate\Support\Facades\Schema;
@@ -37,6 +38,11 @@ class ButtonsTitles
         return $result;
     }
 
+    public function getLinksFilterTitles(): array
+    {
+        $result = $this->getTitlesBasedOnModelStatus($this->enum::getMainMenuCases());
+        return $result;
+    }
 
     public function getModerationSettingsTitles(): array
     {

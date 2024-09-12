@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Classes\BaseBotCommandCore;
 use App\Classes\Commands\BaseCommand;
+use App\Exceptions\DeleteUserFailedException;
 use InvalidArgumentException;
 use App\Classes\PrivateChatCommandCore;
 use App\Enums\ResTime;
@@ -25,6 +26,7 @@ use App\Models\InvitedUserUpdateModel;
 use App\Models\MessageModels\MessageModel;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use App\Exceptions\RestrictChatMemberFailedException;
 use Illuminate\Support\Facades\Log;
 use App\Services\CONSTANTS;
 use App\Exceptions\BaseTelegramBotException;
@@ -50,6 +52,20 @@ class TelegramBotService
 
     private ?BaseBotCommandCore $commandHandler = null;
 
+    /**
+     * All existed relationships models names
+     * @var array
+     */
+    private array $chatRelations = [];
+
+    /**
+     * Name of the filter model in camel case
+     * Used to determine which model's restrictions should be checked
+     * to decide if a user should be restricted
+     * @var string
+     */
+    private string $banReasonModelName = "";
+
 
     public function __construct(private TelegramRequestModelBuilder $requestModel)
     {
@@ -58,38 +74,46 @@ class TelegramBotService
         $this->setChatSelector();
         $this->setCommandHandler();
         $this->setPrivateChatMenu();
+        $this->setChatRelations();
     }
 
     /**
      * Restrict member
      * @param int $id 
-     * @return array
+     * @return void 
      */
-    public function restrictChatMember(ResTime $resTime = null, int $id = null): bool
+    public function restrictChatMember(ResTime $resTime = null, int $id = null): void
     {
         $time = $resTime ?? $this->chatRestrictionTime;
         $until_date = time() + $time->value;
+
+        if (empty($this->banReasonModelName)) {
+            throw new RestrictChatMemberFailedException(null, __METHOD__);
+        }
+
+        $reasonModel = $this->getChat()->{$this->banReasonModelName};
+        $canSendMedia = $reasonModel->can_send_media;
+        $canSendMessages = $reasonModel->can_send_messages;
 
         $response = Http::post(
             env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
             [
                 "chat_id" => $this->requestModel->getChatId(),
                 "user_id" => $id ?? $this->requestModel->getFromId(),
-                "can_send_messages" => false,
-                "can_send_documents" => false,
-                "can_send_photos" => false,
-                "can_send_videos" => false,
-                "can_send_video_notes" => false,
-                "can_send_other_messages" => false,
+                "can_send_messages" => $canSendMessages,
+                "can_send_documents" => $canSendMedia,
+                "can_send_photos" => $canSendMedia,
+                "can_send_videos" => $canSendMedia,
+                "can_send_video_notes" => $canSendMedia,
+                "can_send_other_messages" => $canSendMedia,
                 "until_date" => $until_date
             ]
         );
-        if ($response->Ok()) {
-            log::info(CONSTANTS::MEMBER_BLOCKED . " " . $this->requestModel->getFromId() .
-                " " . $time->getHumanRedable());
-            return true;
+
+        if (!$response->Ok()) {
+            throw new RestrictChatMemberFailedException(null, __METHOD__);
         }
-        throw new BaseTelegramBotException(CONSTANTS::RESTRICT_MEMBER_FAILED, __METHOD__);
+        return;
     }
 
     /**
@@ -110,14 +134,32 @@ class TelegramBotService
                 "message_id" => $this->requestModel->getMessageId()
             ]
         );
-        // dd($response->json());
-        $response->json();
 
         if ($response->ok()) {
             return;
         } else {
             throw new BaseTelegramBotException(CONSTANTS::DELETE_MESSAGE_FAILED, __METHOD__);
         }
+    }
+
+    /**
+     * Delete user from chat
+     * @return Response 
+     * @throws BaseTelegramBotException
+     */
+    public function deleteUser(): array
+    {
+        $data = [
+            "chat_id" => $this->getRequestModel()->getChatId(),
+            "user_id" => $this->getRequestModel()->getFromId()
+        ];
+
+        $response = $this->sendPost('banChatMember', $data);
+
+        if ($response->ok()) {
+            return $response->json();
+        }
+        throw new DeleteUserFailedException(CONSTANTS::DELETE_USER_FAILED, __METHOD__);
     }
 
     /**
@@ -152,42 +194,83 @@ class TelegramBotService
     /**
      * Summary of banUser
      * @param ResTime $resTime
-     * @throws \App\Exceptions\BanUserFailedException
-     * @return bool
+     * @return void 
      */
-    public function banUser(ResTime $resTime = null): bool
+    public function banUser(ResTime $resTime = null): void
     {
-        $time = $resTime ?? $this->chatRestrictionTime;
-        $result = $this->restrictChatMember($time);
-
-        if ($result) {
-            $this->sendMessage("Пользователь " . $this->requestModel->getFromUserName() . " заблокирован на 24 часа за нарушение правил чата.");
-            $this->deleteMessage();
-            return true;
+        if ($this->shouldDeleteUser()) {
+            $this->deleteUser();
+            $this->sendMessage($this->getRequestModel()->getFromUserName() . " удален за нарушение правил чата.");
+            return;
         }
-        throw new BanUserFailedException(CONSTANTS::BAN_USER_FAILED, __METHOD__);
+
+        $time = $resTime ?? $this->getChatRestrictionTime();
+        $this->restrictChatMember($time);
+        $this->sendMessage($this->getRequestModel()->getFromUserName() . " заблокирован на " . $time->getRussianReply() . " за нарушение правил чата.");
     }
 
     public function createChat(): void
     {
-        $this->chat = Chat::create([
-            "chat_id" => $this->requestModel->getChatId(),
-            "chat_title" => $this->requestModel->getChatTitle(),
-        ]);
+        $this->chat = $this->findChat();
 
-        $this->chat->newUserRestrictions()->create();
-        $this->chat->badWordsFilter()->create();
-        $this->chat->unusualCharsFilter()->create();
+        if (empty($this->chat)) {
+            $this->chat = Chat::create([
+                "chat_id" => $this->getRequestModel()->getChatId(),
+                "chat_title" => $this->getRequestModel()->getChatTitle(),
+            ]);
+            $this->createChatAdmins();
+            $this->setMyCommands();
+        }
 
-        // Create admins in admins table and attaching them to the chat id from the incoming request   
-        foreach ($this->requestModel->getAdmins() as $admin) {
+        $this->updateChatRelations();
+    }
+
+
+    /**
+     * Create or update admins of a new created chat and attach them to the chat 
+     * @return void
+     */
+    protected function createChatAdmins(): void
+    {
+        if (!empty($this->getChat()->admins()->first())) {
+            return;
+        }
+
+        foreach ($this->getRequestModel()->getAdmins() as $admin) {
             $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
                 ? Admin::where('admin_id', $admin['admin_id'])->first()
                 : Admin::create($admin);
             $adminModel->chats()->attach($this->chat->id);
         }
+    }
 
-        $this->setChat($this->chat->chat_id);
+    /**
+     *Create or update new added relations models in DB if they don't exist yet
+     * @param int $chatId
+     * @return void
+     */
+    protected function updateChatRelations(): void
+    {
+        $relations = $this->getChatRelations();
+
+        foreach ($relations as $relation) {
+            if (empty($this->getChat()->{$relation})) {
+                $this->getChat()->{$relation}()->create();
+            }
+        }
+    }
+
+    /**
+     * Set an existing chat and update its relations if needed
+     * @param int $chatId
+     * @return void
+     */
+    public function setChat(int $chatId): void
+    {
+        $this->chat = Chat::with($this->getChatRelations())
+            ->where("chat_id", $chatId)->first();
+
+        $this->updateChatRelations();
     }
 
     /**
@@ -326,12 +409,7 @@ class TelegramBotService
         return $response;
     }
 
-    public function setChat(int $chatId): void
-    {
-        $this->chat = Chat::with("newUserRestrictions", "badWordsFilter", "unusualCharsFilter", "admins")
-            ->where("chat_id", $chatId)->first();
-        $this->setChatRestrictionTime();
-    }
+
 
     public function getChat()
     {
@@ -339,11 +417,12 @@ class TelegramBotService
     }
 
 
-    private function setChatRestrictionTime(): void
-    {
-        $time = $this->chat->newUserRestrictions->restriction_time;
-        $this->chatRestrictionTime = ResTime::from($time);
-    }
+    // private function setChatRestrictionTime(): void
+    // {
+    //     // $time = $this->chat->newUserRestrictions->restriction_time;
+    //     // $this->chatRestrictionTime = ResTime::from($time);
+    //     $this->chatRestrictionTime = ResTime::TWO_HOURS;
+    // }
 
     private function setAdmin(): static
     {
@@ -388,7 +467,7 @@ class TelegramBotService
     }
 
     /**
-     * Get bot private chat menu
+     * Get bot private chat menu property
      * @return Menu|null
      */
     public function menu(): ?Menu
@@ -396,6 +475,10 @@ class TelegramBotService
         return $this->menu;
     }
 
+    /**
+     * Get ChatSelector class property
+     * @return void
+     */
     private function setChatSelector(): void
     {
         if ($this->requestModel->getChatType() === "private") {
@@ -421,12 +504,61 @@ class TelegramBotService
     }
 
 
+    /**
+     * Create command class instance 
+     * @param string $className Example:  BadWordsFilterCommand extends BaseCommand
+     * @throws \InvalidArgumentException
+     * @return object
+     */
     public function createCommand(string $className): ?BaseCommand
     {
         if (!class_exists($className)) {
             throw new InvalidArgumentException("Invalid command class: $className");
         }
         return new $className($this);
+    }
+
+    public function setBanReasonModelName(string $reason): void
+    {
+        $this->banReasonModelName = $reason;
+    }
+
+    public function getBanReasonModelName(): string
+    {
+        return $this->banReasonModelName;
+    }
+
+    public function getChatRestrictionTime(): ResTime
+    {
+        return $this->chatRestrictionTime;
+    }
+
+    /**
+     * @return bool
+     */
+    protected function shouldDeleteUser(): bool
+    {
+        $relation = $this->getChat()->{$this->getBanReasonModelName()};
+        return $relation->first()->delete_user;
+    }
+
+    public function getChatRelations(): array
+    {
+        return $this->chatRelations;
+    }
+
+    public function setChatRelations(): void
+    {
+        $this->chatModels = Chat::getDefinedRelationsNames();
+    }
+
+    /**
+     * Summary of findChat
+     * @return Chat|object|\Illuminate\Database\Eloquent\Model|null
+     */
+    protected function findChat(): ?Chat
+    {
+        return Chat::where("chat_id", $this->requestModel->getChatId())->first();
     }
 }
 

@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\ChatRulesMiddleware;
+// use App\Http\Middleware\ChatRulesMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TelegramBotController;
@@ -15,7 +15,7 @@ Route::get('/user', function (Request $request) {
 Route::post('/webhook', [TelegramBotController::class, 'webhookHandler'])
     ->middleware([
         TelegramApiMiddleware::class,
-        ChatRulesMiddleware::class
+        // ChatRulesMiddleware::class
     ]);
 
 
