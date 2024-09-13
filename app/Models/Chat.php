@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\GetRelationsTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Database\Factories\ChatFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Chat extends Model
 {
     use HasFactory;
+    use GetRelationsTrait;
 
     protected $fillable = [
         'chat_id',
@@ -44,21 +46,5 @@ class Chat extends Model
         return $this->hasOne(LinksFilter::class);
     }
 
-    public static function getDefinedRelationsNames(): array
-    {
-        $reflector = new \ReflectionClass(get_called_class());
 
-        $result = collect($reflector->getMethods())
-            ->filter(
-                fn($method) => !empty ($method->getReturnType()) &&
-                str_contains(
-                    $method->getReturnType(),
-                    'Illuminate\Database\Eloquent\Relations'
-                )
-            )
-            ->pluck('name')
-            ->all();
-
-        return $result;
-    }
 }

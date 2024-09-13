@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Classes\BaseBotCommandCore;
+use App\Classes\ChatBuilder;
 use App\Classes\Commands\BaseCommand;
 use App\Exceptions\DeleteUserFailedException;
 use InvalidArgumentException;
@@ -52,11 +53,9 @@ class TelegramBotService
 
     private ?BaseBotCommandCore $commandHandler = null;
 
-    /**
-     * All existed relationships models names
-     * @var array
-     */
-    private array $chatRelations = [];
+    private ?ChatBuilder $chatBuilder = null;
+
+
 
     /**
      * Name of the filter model in camel case
@@ -72,9 +71,9 @@ class TelegramBotService
         $this->setAdmin()
             ->setPrivateChatCommand();
         $this->setChatSelector();
+        $this->setChatBuilder();
         $this->setCommandHandler();
         $this->setPrivateChatMenu();
-        $this->setChatRelations();
     }
 
     /**
@@ -209,56 +208,62 @@ class TelegramBotService
         $this->sendMessage($this->getRequestModel()->getFromUserName() . " заблокирован на " . $time->getRussianReply() . " за нарушение правил чата.");
     }
 
-    public function createChat(): void
-    {
-        $this->chat = $this->findChat();
+    // public function createChat(): void
+    // {
+    //     $this->chat = $this->findChat();
 
-        if (empty($this->chat)) {
-            $this->chat = Chat::create([
-                "chat_id" => $this->getRequestModel()->getChatId(),
-                "chat_title" => $this->getRequestModel()->getChatTitle(),
-            ]);
-            $this->createChatAdmins();
-            $this->setMyCommands();
-        }
+    //     if (empty($this->chat)) {
+    //         $this->chat = Chat::create([
+    //             "chat_id" => $this->getRequestModel()->getChatId(),
+    //             "chat_title" => $this->getRequestModel()->getChatTitle(),
+    //         ]);
+    //         $this->createChatAdmins();
+    //         $this->setMyCommands();
+    //     }
 
-        $this->updateChatRelations();
-    }
+    //     $this->updateChatRelations();
+    // }
 
 
-    /**
-     * Create or update admins of a new created chat and attach them to the chat 
-     * @return void
-     */
-    protected function createChatAdmins(): void
-    {
-        if (!empty($this->getChat()->admins()->first())) {
-            return;
-        }
+    // /**
+    //  * Create or update admins of a new created chat and attach them to the chat 
+    //  * @return void
+    //  */
+    // protected function createChatAdmins(): void
+    // {
+    //     if (!empty($this->getChat()->admins()->first())) {
+    //         return;
+    //     }
 
-        foreach ($this->getRequestModel()->getAdmins() as $admin) {
-            $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
-                ? Admin::where('admin_id', $admin['admin_id'])->first()
-                : Admin::create($admin);
-            $adminModel->chats()->attach($this->chat->id);
-        }
-    }
+    //     foreach ($this->getRequestModel()->getAdmins() as $admin) {
+    //         $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
+    //             ? Admin::where('admin_id', $admin['admin_id'])->first()
+    //             : Admin::create($admin);
+    //         $adminModel->chats()->attach($this->chat->id);
+    //     }
+    // }
 
-    /**
-     *Create or update new added relations models in DB if they don't exist yet
-     * @param int $chatId
-     * @return void
-     */
-    protected function updateChatRelations(): void
-    {
-        $relations = $this->getChatRelations();
+    // /**
+    //  *Create or update new added relations models in DB if they don't exist yet
+    //  * @param int $chatId
+    //  * @return void
+    //  */
+    // protected function updateChatRelations(): void
+    // {
+    //     $relations = $this->getChatRelations();
 
-        foreach ($relations as $relation) {
-            if (empty($this->getChat()->{$relation})) {
-                $this->getChat()->{$relation}()->create();
-            }
-        }
-    }
+    //     foreach ($relations as $relation) {
+    //         $this->createChatRelation($relation);
+
+    //     }
+    // }
+
+    // protected function createChatRelation(string $relation): void
+    // {
+    //     if (empty($this->getChat()->{$relation})) {
+    //         $this->getChat()->{$relation}()->create();
+    //     }
+    // }
 
     /**
      * Set an existing chat and update its relations if needed
@@ -267,10 +272,10 @@ class TelegramBotService
      */
     public function setChat(int $chatId): void
     {
-        $this->chat = Chat::with($this->getChatRelations())
+        $this->chat = Chat::with($this->chatBuilder()->getChatRelationsNames())
             ->where("chat_id", $chatId)->first();
 
-        $this->updateChatRelations();
+        $this->chatBuilder()->updateChatRelations();
     }
 
     /**
@@ -486,6 +491,16 @@ class TelegramBotService
         }
     }
 
+    private function setChatBuilder(): void
+    {
+        $this->chatBuilder = new ChatBuilder($this);
+    }
+
+    public function chatBuilder(): ?ChatBuilder
+    {
+        return $this->chatBuilder;
+    }
+
     public function chatSelector(): ?ChatSelector
     {
         return $this->chatSelector;
@@ -502,7 +517,6 @@ class TelegramBotService
     {
         return $this->commandHandler;
     }
-
 
     /**
      * Create command class instance 
@@ -540,25 +554,6 @@ class TelegramBotService
     {
         $relation = $this->getChat()->{$this->getBanReasonModelName()};
         return $relation->first()->delete_user;
-    }
-
-    public function getChatRelations(): array
-    {
-        return $this->chatRelations;
-    }
-
-    public function setChatRelations(): void
-    {
-        $this->chatModels = Chat::getDefinedRelationsNames();
-    }
-
-    /**
-     * Summary of findChat
-     * @return Chat|object|\Illuminate\Database\Eloquent\Model|null
-     */
-    protected function findChat(): ?Chat
-    {
-        return Chat::where("chat_id", $this->requestModel->getChatId())->first();
     }
 }
 
