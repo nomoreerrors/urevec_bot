@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Classes\CommandBuilder;
+use App\Services\BotErrorNotificationService;
 use App\Services\ChatRulesService;
 use App\Classes\CommandsList;
 use App\Classes\ChatRules;

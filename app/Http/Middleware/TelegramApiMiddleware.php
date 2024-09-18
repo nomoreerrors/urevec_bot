@@ -46,7 +46,7 @@ class TelegramApiMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next): ?Response
     {
         $data = $request->all();
         //TODO delete it
@@ -65,31 +65,28 @@ class TelegramApiMiddleware
         } catch (UnexpectedRequestException | BaseTelegramBotException $e) {
             FailedRequestJob::dispatch($data);
             return response("OK", Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            BotErrorNotificationService::send($e->getMessage());
+            FailedRequestJob::dispatch($data);
+            return response("OK", Response::HTTP_OK);
         }
 
+        if (
+            $this->requestModel->getChatType() !== "private" &&
+            $this->requestModel->getChatType() !== "group" &&
+            $this->requestModel->getChatType() !== "supergroup"
+        ) {
+            return response("Unexpected chat type", Response::HTTP_OK);
+        }
+
+
         if ($this->requestModel->getChatType() !== "private") {
-            app(TelegramBotService::class)->createChat();
+            app(TelegramBotService::class)->chatBuilder()->createChat();
             // $this->setChat();
         }
 
         return $next($request);
     }
-
-    // /**
-    //  * Set or create a new chat by groupchat Id
-    //  */
-    // private function setChat(): void
-    // {
-    //     $chatExists = Chat::where("chat_id", $this->requestModel->getChatId())->exists();
-
-    //     if (!$chatExists) {
-    //         app(TelegramBotService::class)->createChat();
-    //         app(TelegramBotService::class)->setMyCommands();
-    //     } else {
-    //         app(TelegramBotService::class)->setChat($this->requestModel->getChatId());
-    //     }
-    //     return;
-    // }
 
     private function setContainerDeps()
     {

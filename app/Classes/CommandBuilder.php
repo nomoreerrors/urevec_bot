@@ -52,6 +52,9 @@ class CommandBuilder
         if ($this->scope === true) {
             throw new BaseTelegramBotException("МЕТОД НЕ МОЖЕТ БЫТЬ ВЫЗВАН ПОВТОРНО", __METHOD__);
         }
+        if (empty($this->commandsArray["commands"])) {
+            throw new BaseTelegramBotException("No commands added before setting scope", __METHOD__);
+        }
         $this->scope = true;
         $this->commandsArray["scope"] = [
             "type" => "chat",

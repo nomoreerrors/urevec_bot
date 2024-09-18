@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Classes\BaseBotCommandCore;
 use App\Classes\ChatBuilder;
 use App\Classes\Commands\BaseCommand;
+use App\Classes\CommandsList;
+use App\Classes\PrivateChatCommandRegister;
 use App\Exceptions\DeleteUserFailedException;
 use InvalidArgumentException;
 use App\Classes\PrivateChatCommandCore;
@@ -55,6 +57,8 @@ class TelegramBotService
 
     private ?ChatBuilder $chatBuilder = null;
 
+    private ?PrivateChatCommandRegister $privateChatCommandRegister = null;
+
 
 
     /**
@@ -72,6 +76,7 @@ class TelegramBotService
             ->setPrivateChatCommand();
         $this->setChatSelector();
         $this->setChatBuilder();
+        $this->setPrivateChatCommandRegister();
         $this->setCommandHandler();
         $this->setPrivateChatMenu();
     }
@@ -208,62 +213,6 @@ class TelegramBotService
         $this->sendMessage($this->getRequestModel()->getFromUserName() . " заблокирован на " . $time->getRussianReply() . " за нарушение правил чата.");
     }
 
-    // public function createChat(): void
-    // {
-    //     $this->chat = $this->findChat();
-
-    //     if (empty($this->chat)) {
-    //         $this->chat = Chat::create([
-    //             "chat_id" => $this->getRequestModel()->getChatId(),
-    //             "chat_title" => $this->getRequestModel()->getChatTitle(),
-    //         ]);
-    //         $this->createChatAdmins();
-    //         $this->setMyCommands();
-    //     }
-
-    //     $this->updateChatRelations();
-    // }
-
-
-    // /**
-    //  * Create or update admins of a new created chat and attach them to the chat 
-    //  * @return void
-    //  */
-    // protected function createChatAdmins(): void
-    // {
-    //     if (!empty($this->getChat()->admins()->first())) {
-    //         return;
-    //     }
-
-    //     foreach ($this->getRequestModel()->getAdmins() as $admin) {
-    //         $adminModel = Admin::where('admin_id', $admin['admin_id'])->exists()
-    //             ? Admin::where('admin_id', $admin['admin_id'])->first()
-    //             : Admin::create($admin);
-    //         $adminModel->chats()->attach($this->chat->id);
-    //     }
-    // }
-
-    // /**
-    //  *Create or update new added relations models in DB if they don't exist yet
-    //  * @param int $chatId
-    //  * @return void
-    //  */
-    // protected function updateChatRelations(): void
-    // {
-    //     $relations = $this->getChatRelations();
-
-    //     foreach ($relations as $relation) {
-    //         $this->createChatRelation($relation);
-
-    //     }
-    // }
-
-    // protected function createChatRelation(string $relation): void
-    // {
-    //     if (empty($this->getChat()->{$relation})) {
-    //         $this->getChat()->{$relation}()->create();
-    //     }
-    // }
 
     /**
      * Set an existing chat and update its relations if needed
@@ -278,77 +227,6 @@ class TelegramBotService
         $this->chatBuilder()->updateChatRelations();
     }
 
-    /**
-     * Setting menu commands for the bot in private and group chats.
-     *
-     * @return void
-     * @throws BaseTelegramBotException
-     */
-    public function setMyCommands(): void
-    {
-        $this->setGroupChatCommandsForAdmins();
-        $this->setPrivateChatCommandsForAdmins();
-
-        $chatAdmins = $this->chat->admins;
-        foreach ($chatAdmins as $admin) {
-            $admin->pivot->update(['my_commands_set' => 1]);
-        }
-    }
-
-
-    public function getMyCommands(string $type, int $chatId): array
-    {
-        $scope = [
-            "scope" => [
-                "type" => $type,
-                "chat_id" => $chatId
-            ]
-        ];
-
-        $response = $this->sendPost("getMyCommands", $scope);
-        // dd($response->json());
-        return $response->json();
-    }
-
-    /**
-     * Set bot commands visibility in a private chat for admins
-     *
-     * @param int $adminId
-     * @return void
-     * @throws BaseTelegramBotException
-     */
-    public function setPrivateChatCommandsForAdmins(): void
-    {
-        $adminsIdsArray = $this->requestModel->getAdminsIds();
-        $moderationSettings = app("commandsList")->moderationSettings;
-
-        if (empty($adminsIdsArray)) {
-            throw new BaseTelegramBotException(
-                CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED .
-                CONSTANTS::EMPTY_ADMIN_IDS_ARRAY,
-                __METHOD__
-            );
-        }
-
-        foreach ($adminsIdsArray as $adminId) {
-            $commands = (new CommandBuilder($adminId))
-                ->command($moderationSettings->command, $moderationSettings->description)
-                ->withChatScope()
-                ->get();
-
-            $response = $this->sendPost("setMyCommands", $commands);
-
-            if (!$response->ok()) {
-                throw new BaseTelegramBotException(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED, __METHOD__);
-            }
-
-            $this->checkifCommandsAreSet($adminId, $commands);
-        }
-
-        $this->chat->admins()->update([
-            "private_commands_access" => 1
-        ]);
-    }
 
     /**
      * Set bot commands in a group chat for all admins by typing "/"
@@ -376,27 +254,6 @@ class TelegramBotService
         ]);
     }
 
-    /**
-     * Make sure that recieved commands list is the same as expected
-     * @param int $chatId
-     * @param array $commands
-     * @throws \App\Exceptions\BaseTelegramBotException
-     * @return void
-     */
-    public function checkifCommandsAreSet(int $chatId, array $commands): static
-    {
-        $updatedCommands = $this->getMyCommands("chat", $chatId)["result"];
-
-        for ($i = 0; $i < count($commands["commands"]); $i++) {
-
-            $result = array_diff($updatedCommands[$i], $commands["commands"][$i]);
-
-            if (!empty($result)) {
-                throw new SetCommandsFailedException($commands, $updatedCommands);
-            }
-        }
-        return $this;
-    }
 
     /**
      * Summary of sendPost
@@ -555,6 +412,24 @@ class TelegramBotService
         $relation = $this->getChat()->{$this->getBanReasonModelName()};
         return $relation->first()->delete_user;
     }
+
+    protected function setPrivateChatCommandRegister(): void
+    {
+        // if ($this->requestModel->getChatType() === "private") {
+        $this->privateChatCommandRegister = new PrivateChatCommandRegister($this);
+        // }
+    }
+
+    public function privateChatCommandRegister()
+    {
+        return $this->privateChatCommandRegister;
+    }
+
+    protected function commandsList()
+    {
+        return new CommandsList();
+    }
+
 }
 
 

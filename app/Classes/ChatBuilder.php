@@ -3,6 +3,7 @@
 namespace App\Classes;
 
 use App\Exceptions\BaseTelegramBotException;
+use App\Services\BotErrorNotificationService;
 use App\Models\Admin;
 use App\Services\TelegramBotService;
 use App\Models\Chat;
@@ -25,16 +26,37 @@ class ChatBuilder
     {
         $this->chat = $this->findChat();
 
+        // BotErrorNotificationService::send("tgcontroller");
         if (empty($this->chat)) {
             $this->chat = Chat::create([
                 "chat_id" => $this->botService->getRequestModel()->getChatId(),
                 "chat_title" => $this->botService->getRequestModel()->getChatTitle(),
             ]);
             $this->createChatAdmins();
-            $this->botService->setMyCommands();
+            $this->setMyCommands();
+
         }
 
         $this->updateChatRelations();
+    }
+
+    protected function setMyCommands()
+    {
+        $commands = [
+            [
+                "command" => "moderation_settings",
+                "description" => "TEST 234!!! Configure bot moderation settiings"
+            ],
+            [
+                "command" => "David Gale",
+                "description" => "K-Pax"
+            ],
+        ];
+
+        BotErrorNotificationService::send($this->chat->admins()->first()->admin_id);
+        foreach ($this->chat->admins()->get() as $admin) {
+            $this->botService->privateChatCommandRegister()->setMyCommands($admin->admin_id, $commands);
+        }
     }
 
 
@@ -61,7 +83,7 @@ class ChatBuilder
      * @param int $chatId
      * @return void
      */
-    protected function updateChatRelations(): void
+    public function updateChatRelations(): void
     {
         $relations = $this->getChatRelationsNames();
 
@@ -83,7 +105,8 @@ class ChatBuilder
      */
     protected function findChat(): ?Chat
     {
-        return Chat::where("chat_id", $this->botService->getRequestModel()->getChatId())->first();
+        $result = Chat::where("chat_id", $this->botService->getRequestModel()->getChatId())->first();
+        return $result;
     }
 
 

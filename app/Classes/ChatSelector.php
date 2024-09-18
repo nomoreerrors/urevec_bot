@@ -165,7 +165,7 @@ class ChatSelector
     {
         $chatId = $this->getLastSelectedChatIdFromCache();
         if ($chatId) {
-            $this->botService->updateChatRelations($chatId);
+            $this->botService->setChat($chatId);
             return true;
         }
         return false;
@@ -183,7 +183,7 @@ class ChatSelector
 
     private function setDefaultChat(): void
     {
-        $this->botService->updateChatRelations($this->admin->chats->first()->chat_id);
+        $this->botService->setChat($this->admin->chats->first()->chat_id);
     }
 
     public function hasBeenUpdated(): bool

@@ -244,6 +244,16 @@ class CreateChatTest extends TestCase
             ->willReturn(null);
     }
 
+
+    // public function testIfAssignNullToChatPropertyShouldContiniue(): void
+    // {
+    //     $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
+    //         ->setConstructorArgs([$this->botService])
+    //         ->onlyMethods(['getChatRelations', 'findChat'])
+    //         ->getMock();
+    // }
+
+
     /**
      * Get a chat with 2 admins but without any relationships
      * @return \App\Models\Chat
@@ -263,5 +273,6 @@ class CreateChatTest extends TestCase
         }
         return $chat;
     }
+
 
 }
