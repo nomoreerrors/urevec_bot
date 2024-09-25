@@ -15,11 +15,9 @@ class CheckIfCommandsAreSetTest extends TestCase
     public function testCheckIfCommandsAreSetWithMatchingCommands(): void
     {
         $commands = [
-            "commands" => [
-                [
-                    "command" => "test_command",
-                    "description" => "Test command"
-                ]
+            [
+                "command" => "test_command",
+                "description" => "Test command"
             ]
         ];
 
@@ -41,11 +39,9 @@ class CheckIfCommandsAreSetTest extends TestCase
     public function testCheckIfCommandsAreSetWithNonMatchingCommands(): void
     {
         $commands = [
-            "commands" => [
-                [
-                    "command" => "test_command",
-                    "description" => "Test command"
-                ]
+            [
+                "command" => "test_command",
+                "description" => "Test command"
             ]
         ];
 
@@ -67,10 +63,7 @@ class CheckIfCommandsAreSetTest extends TestCase
 
     public function testCheckIfCommandsAreSetWithEmptyCommands(): void
     {
-        $commands = [
-            "commands" => []
-        ];
-
+        $commands = [];
         $updatedCommands = [];
 
         $privateChatCommandRegister = $this->getMockBuilder(PrivateChatCommandRegister::class)
@@ -84,11 +77,9 @@ class CheckIfCommandsAreSetTest extends TestCase
     public function testCheckIfCommandsAreSetWithExtraCommands(): void
     {
         $commands = [
-            "commands" => [
-                [
-                    "command" => "test_command",
-                    "description" => "Test command"
-                ]
+            [
+                "command" => "test_command",
+                "description" => "Test command"
             ]
         ];
 

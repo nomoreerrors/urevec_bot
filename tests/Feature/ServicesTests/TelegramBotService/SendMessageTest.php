@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\TelegramRequestModelBuilder;
+use App\Models\MessageModels\TextMessageModel;
+use Illuminate\Http\Client\Response;
 use App\Services\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -13,42 +15,130 @@ use Tests\TestCase;
 
 class SendMessageTest extends TestCase
 {
-    protected $service;
-    private $testMessage = "His name is Robert Paulsen";
+    private string $textMessage = "Hello, world!";
+
+    private array $params = [
+        "chat_id" => 12345,
+        "text" => "Hello, world!",
+    ];
+
+    private array $replyMarkup =
+        [
+            "inline_keyboard" => [
+                [
+                    ["text" => "Button 1"],
+                    ["text" => "Button 2",]
+                ]
+            ]
+        ];
+
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->data = $this->getMessageModelData();
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->service = new TelegramBotService($this->model);
+        $this->params['reply_markup'] = $this->replyMarkup;
     }
 
-    public function testSendMessageReturnStatusTrue(): void
+    /**
+     * Test that the sendMessage method sends a message successfully.
+     *
+     * @test
+     * @return void
+     */
+    public function testSendMessageSendsMessageSuccessfully(): void
     {
-        Http::fake([
-            '*' => Http::response([
-                'ok' => true,
-                'result' => $this->getMultiMediaModelData()
-            ], 200)
-        ]);
+        $requestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["getChatId"])
+            ->getMock();
 
-        $this->assertNull($this->service->sendMessage($this->testMessage));
+        $requestModel->method("getChatId")->willReturn(12345);
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["sendPost", "getRequestModel"])
+            ->getMock();
+
+        $this->botService->method("getRequestModel")->willReturn($requestModel);
+
+
+        $this->botService->expects($this->once())
+            ->method("sendPost")
+            ->with(
+                "sendMessage",
+                $this->params
+            )
+            ->willReturn($this->getFakeResponse());
+
+        $this->botService->sendMessage($this->textMessage, $this->replyMarkup);
     }
 
-    public function testSendMessageThrowsExceptionIfStatusFalse(): void
-    {
-        Http::fake([
-            '*' => Http::response([
-                'ok' => false,
-                'description' => 'User not found',
-                'result' => $this->getMultiMediaModelData()
-            ], 404)
-        ]);
 
+    /**
+     * Test that the sendMessage method throws an exception when the response is not OK.
+     *
+     * @test
+     * @return void
+     */
+    public function testSendMessageThrowsExceptionWhenResponseIsNotOk(): void
+    {
+        $requestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["getChatId"])
+            ->getMock();
+
+        $requestModel->method("getChatId")->willReturn(12345);
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["sendPost", "getRequestModel"])
+            ->getMock();
+
+        $this->botService->method("getRequestModel")->willReturn($requestModel);
+
+
+        $this->botService->expects($this->once())
+            ->method("sendPost")
+            ->with(
+                "sendMessage",
+                $this->params
+            )
+            ->willReturn($this->getFakeResponse(false));
+
+        // Act & Assert
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::SEND_MESSAGE_FAILED);
-        $this->expectExceptionMessage(CONSTANTS::SEND_MESSAGE_FAILED);
-        $this->service->sendMessage($this->testMessage);
+        $this->botService->sendMessage($this->textMessage, $this->replyMarkup);
+    }
+
+
+    public function testParametersWIthoutReplyMarkupSendCorrectly(): void
+    {
+        $requestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["getChatId"])
+            ->getMock();
+
+        $requestModel->method("getChatId")->willReturn(12345);
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["sendPost", "getRequestModel"])
+            ->getMock();
+
+        $this->botService->method("getRequestModel")->willReturn($requestModel);
+
+
+        unset($this->params['reply_markup']);
+
+        $this->botService->expects($this->once())
+            ->method("sendPost")
+            ->with(
+                "sendMessage",
+                $this->params
+            )
+            ->willReturn($this->getFakeResponse(true));
+
+        $this->botService->sendMessage($this->textMessage);
     }
 }

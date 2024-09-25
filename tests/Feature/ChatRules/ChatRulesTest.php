@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Middleware;
+namespace Tests\Feature\ChatRules;
 
 use App\Classes\ChatRules;
 use Illuminate\Foundation\Testing\RefreshDatabase;

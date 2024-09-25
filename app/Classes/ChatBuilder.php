@@ -24,36 +24,42 @@ class ChatBuilder
 
     public function createChat(): void
     {
-        $this->chat = $this->findChat();
-
-        // BotErrorNotificationService::send("tgcontroller");
-        if (empty($this->chat)) {
+        if (!empty($this->chat = $this->findChat())) {
+            $this->botService()->setChat($this->chat->chat_id);
+        } else {
             $this->chat = Chat::create([
                 "chat_id" => $this->botService->getRequestModel()->getChatId(),
                 "chat_title" => $this->botService->getRequestModel()->getChatTitle(),
             ]);
             $this->createChatAdmins();
+            $this->botService()->setChat($this->botService->getRequestModel()->getChatId());
             $this->setMyCommands();
 
         }
-
-        $this->updateChatRelations();
     }
 
+    /**
+     * Each command must be  without backslash but with "_" between words
+     * @return void
+     */
     protected function setMyCommands()
     {
         $commands = [
             [
-                "command" => "moderation_settings",
-                "description" => "TEST 234!!! Configure bot moderation settiings"
+                "command" => "test_command",
+                "description" => "test description"
             ],
             [
-                "command" => "David Gale",
-                "description" => "K-Pax"
+                "command" => "second_test_command",
+                "description" => "second test description"
             ],
+            [
+                "command" => "third_test_command",
+                "description" => "third test description"
+            ]
         ];
 
-        BotErrorNotificationService::send($this->chat->admins()->first()->admin_id);
+        // BotErrorNotificationService::send($this->chat->admins()->first()->admin_id);
         foreach ($this->chat->admins()->get() as $admin) {
             $this->botService->privateChatCommandRegister()->setMyCommands($admin->admin_id, $commands);
         }
@@ -97,6 +103,7 @@ class ChatBuilder
         if (empty($this->chat->{$relation})) {
             $this->chat->{$relation}()->create();
         }
+        // $this->chat->refresh();
     }
 
     /**
@@ -117,7 +124,12 @@ class ChatBuilder
 
     public function setChatRelationsNames(): void
     {
-        $this->chatModels = Chat::getDefinedRelationsNames();
+        $this->chatRelationsNames = Chat::getDefinedRelationsNames();
+    }
+
+    protected function botService(): TelegramBotService
+    {
+        return $this->botService;
     }
 
 }

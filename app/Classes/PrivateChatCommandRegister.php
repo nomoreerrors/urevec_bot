@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Services\BotErrorNotificationService;
 use App\Services\CONSTANTS;
 use App\Models\Admin;
 use App\Exceptions\SetCommandsFailedException;
@@ -14,7 +15,7 @@ use App\Models\Chat;
  */
 class PrivateChatCommandRegister
 {
-    private ?Chat $chat;
+    private Chat $chat;
 
     public function __construct(private TelegramBotService $botService)
     {
@@ -28,25 +29,32 @@ class PrivateChatCommandRegister
      */
     public function setMyCommands(int $adminId, array $commands): void
     {
-        // if (!array_key_exists("commands", $commands) || !array_key_exists("description", $commands)) {
+        // $this->chat = $this->botService->getChat();
+        $this->validateCommands($commands);
+        $this->setPrivateChatCommands($adminId, $commands);
 
-        //     throw new BaseTelegramBotException(CONSTANTS::SET_MY_COMMANDS_FAILED, __METHOD__);
-        // }
+        $updatedCommands = $this->getMyCommands("chat", $adminId);
 
+        $this->checkifCommandsAreSet($commands, $updatedCommands);
+        $this->updatePrivateChatCommandsAccessColumn($adminId);
+        $this->updateMyCommandsColumn($adminId);
+    }
+
+    /**
+     * Validate the commands array
+     *
+     * @param array $commands
+     * @return void
+     * @throws BaseTelegramBotException
+     */
+    protected function validateCommands(array $commands): void
+    {
         if (
             count(array_column($commands, 'command')) !== count($commands) ||
             count(array_column($commands, 'description')) !== count($commands)
         ) {
             throw new BaseTelegramBotException(CONSTANTS::SET_MY_COMMANDS_FAILED, __METHOD__);
         }
-
-        $this->setPrivateChatCommands($adminId, $commands);
-
-        $updatedCommands = $this->getMyCommands("chat", $adminId);
-
-        $this->checkifCommandsAreSet($commands, $updatedCommands);
-        $this->updatePrivateChatCommandsAccessColumn();
-        $this->updateMyCommandsColumn($adminId);
     }
 
     /**
@@ -56,10 +64,14 @@ class PrivateChatCommandRegister
      */
     public function updateMyCommandsColumn(int $adminId): void
     {
-        $this->chat->admins()
-            ->first()
-            ->pivot
-            ->update(['my_commands_set' => 1]);
+        $result = $this->chat->admins()->where('admins.admin_id', $adminId)
+            ->first()->pivot->update([
+                "my_commands_set" => 1
+            ]);
+
+        if (!$result) {
+            throw new BaseTelegramBotException(CONSTANTS::SET_MY_COMMANDS_FAILED, __METHOD__);
+        }
     }
 
 
@@ -99,6 +111,7 @@ class PrivateChatCommandRegister
         $response = $this->botService->sendPost("setMyCommands", $commands);
 
         if (!$response->ok()) {
+            // BotErrorNotificationService::send(json_encode($response->json()));
             throw new BaseTelegramBotException(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED, __METHOD__);
         }
     }
@@ -108,13 +121,17 @@ class PrivateChatCommandRegister
      * update my commands column for all chat admins
      * @return void
      */
-    protected function updatePrivateChatCommandsAccessColumn(): void
+    protected function updatePrivateChatCommandsAccessColumn($adminId): void
     {
-        $this->chat->admins()
-            ->first()
-            ->pivot->update([
+        $result = $this->chat->admins()->where('admins.admin_id', $adminId)
+            ->first()->pivot->update([
                 "private_commands_access" => 1
             ]);
+
+
+        if (!$result) {
+            throw new BaseTelegramBotException(CONSTANTS::SET_MY_COMMANDS_FAILED, __METHOD__);
+        }
     }
 
 
@@ -143,11 +160,11 @@ class PrivateChatCommandRegister
     public function checkIfCommandsAreSet(array $expectedCommands, array $actualCommands): array
     {
         $result = [];
-        if (count($expectedCommands["commands"]) !== count($actualCommands)) {
+        if (count($expectedCommands) !== count($actualCommands)) {
             throw new SetCommandsFailedException($expectedCommands, $actualCommands);
         }
 
-        foreach ($expectedCommands["commands"] as $index => $expectedCommand) {
+        foreach ($expectedCommands as $index => $expectedCommand) {
             $result = array_diff($actualCommands[$index], $expectedCommand);
 
             if (!empty($result)) {

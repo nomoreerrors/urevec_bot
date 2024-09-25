@@ -2,6 +2,9 @@
 
 namespace Feature\PrivateChatCommandRegister;
 
+use App\Models\Admin;
+use App\Models\Chat;
+use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Services\TelegramBotService;
@@ -41,7 +44,9 @@ class SetMyCommandsTest extends TestCase
             ->onlyMethods([])
             ->getMock();
 
-        $privateChatCommandRegister->setMyCommands(123, ['commands' => 'test']);
+        $privateChatCommandRegister->setMyCommands(123, [
+            ['command' => 'test']
+        ]);
     }
 
 
@@ -55,17 +60,22 @@ class SetMyCommandsTest extends TestCase
             ->onlyMethods([])
             ->getMock();
 
-        $privateChatCommandRegister->setMyCommands(123, ['description' => 'test']);
+        $privateChatCommandRegister->setMyCommands(123, [
+            ['description' => 'test']
+        ]);
     }
 
     public function testMethodsExpectedToBeCalledWithExpectedParameters(): void
     {
         $adminId = 123;
-        $command = ['commands' => 'test', 'description' => 'test'];
+        $commands = [
+            ['command' => 'test', 'description' => 'test']
+        ];
 
         $privateChatCommandRegister = $this->getMockBuilder(PrivateChatCommandRegister::class)
             ->disableOriginalConstructor()
             ->onlyMethods([
+                'validateCommands',
                 'setPrivateChatCommands',
                 'checkifCommandsAreSet',
                 'updatePrivateChatCommandsAccessColumn',
@@ -74,9 +84,14 @@ class SetMyCommandsTest extends TestCase
             ])
             ->getMock();
 
+
+        $privateChatCommandRegister->expects($this->once())
+            ->method('validateCommands')
+            ->with($commands);
+
         $privateChatCommandRegister->expects($this->once())
             ->method('setPrivateChatCommands')
-            ->with($adminId, $command);
+            ->with($adminId, $commands);
 
         $privateChatCommandRegister->expects($this->once())
             ->method('getMyCommands')
@@ -85,7 +100,7 @@ class SetMyCommandsTest extends TestCase
 
         $privateChatCommandRegister->expects($this->once())
             ->method('checkifCommandsAreSet')
-            ->with($command, []);
+            ->with($commands, []);
 
         $privateChatCommandRegister->expects($this->once())
             ->method('updatePrivateChatCommandsAccessColumn');
@@ -95,17 +110,21 @@ class SetMyCommandsTest extends TestCase
             ->with($adminId);
 
 
-        $privateChatCommandRegister->setMyCommands($adminId, $command);
+        $privateChatCommandRegister->setMyCommands($adminId, $commands);
     }
 
 
-    public function testMyCommandsColumnValueSetToTrue(): void
+    public function testMyCommandsColumnValueSetToTrueForAllAdmins(): void
     {
-        $admin = $this->setAdminWithMultipleChats(1);
+        // Set two admins with the same chat 
+        (new SimpleSeeder())->attachAdmins(2);
 
-        $chat = $admin->chats->first();
+        $chat = Chat::first();
+        $admin = Admin::first();
+        $secondAdmin = Admin::where('admin_id', '!=', $admin->admin_id)->first();
+
+        //Set all admin commands to false
         $chat->admins()->update(['my_commands_set' => 0]);
-        // $j = $chat->admins()->first()->pivot->my_commands_set;
 
 
         $botService = $this->createMock(TelegramBotService::class);
@@ -117,24 +136,39 @@ class SetMyCommandsTest extends TestCase
             ->onlyMethods([
                 'setPrivateChatCommands',
                 'checkifCommandsAreSet',
-                'updatePrivateChatCommandsAccessColumn',
-                'getMyCommands'
+                'getMyCommands',
+                'validateCommands',
+                'updatePrivateChatCommandsAccessColumn'
             ])
             ->getMock();
 
 
-        $privateChatCommandRegister->setMyCommands($admin->admin_id, ['commands' => 'test', 'description' => 'test']);
-        $this->assertEquals(1, $chat->admins()->first()->pivot->my_commands_set);
+        $privateChatCommandRegister->setMyCommands($admin->admin_id, [
+            ['command' => 'test', 'description' => 'test']
+        ]);
+
+        $privateChatCommandRegister->setMyCommands($secondAdmin->admin_id, [
+            ['command' => 'test', 'description' => 'test']
+        ]);
+
+        $admins = $chat->admins()->get();
+        $this->assertEquals(2, $admins->count());
+
+        foreach ($admins as $admin) {
+            $this->assertEquals(1, $admin->pivot->my_commands_set);
+        }
     }
 
-    /**
-     * @method setPrivateChatCommands
-     */
-    public function testupdatePrivateChatCommandsAccessColumnSetToTrue(): void
+    public function testPrivateChatCommandsAccessColumnValueSetToTrueForAllAdmins(): void
     {
-        $admin = $this->setAdminWithMultipleChats(1);
+        // Set two admins with the same chat 
+        (new SimpleSeeder())->attachAdmins(2);
 
-        $chat = $admin->chats->first();
+        $chat = Chat::first();
+        $admin = Admin::first();
+        $secondAdmin = Admin::where('admin_id', '!=', $admin->admin_id)->first();
+
+        //Set all admin commands to false
         $chat->admins()->update(['private_commands_access' => 0]);
 
 
@@ -147,14 +181,40 @@ class SetMyCommandsTest extends TestCase
             ->onlyMethods([
                 'setPrivateChatCommands',
                 'checkifCommandsAreSet',
+                'getMyCommands',
                 'updateMyCommandsColumn',
-                'getMyCommands'
+                'validateCommands'
             ])
             ->getMock();
 
 
-        $privateChatCommandRegister->setMyCommands($admin->admin_id, ['commands' => 'test', 'description' => 'test']);
-        $this->assertEquals(1, $chat->admins()->first()->pivot->private_commands_access);
+        $privateChatCommandRegister->setMyCommands($admin->admin_id, [
+            ['command' => 'test', 'description' => 'test']
+        ]);
+
+        $privateChatCommandRegister->setMyCommands($secondAdmin->admin_id, [
+            ['command' => 'test', 'description' => 'test']
+        ]);
+
+        $admins = $chat->admins()->get();
+
+        $this->assertEquals(2, $admins->count());
+
+        foreach ($admins as $admin) {
+            $this->assertEquals(1, $admin->pivot->private_commands_access);
+        }
     }
+
+
+    // public function testPrivateChatCommandsAccessColumnUpdateFailedThrowsException(): void
+    // {
+    //     //
+    // }
+
+
+    // public function testSetMyCommandsFailedThrowsException(): void
+    // {
+    //     //
+    // }
 
 }

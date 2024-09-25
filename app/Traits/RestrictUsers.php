@@ -7,6 +7,12 @@ use App\Services\BotErrorNotificationService;
 use App\Enums\ResTime;
 use App\Classes\Menu;
 
+/**
+ * Trait RestrictUsers
+ * 
+ * This trait has methods to handle Telegram bot commands
+ * that are related to restrictions in the chat
+ */
 trait RestrictUsers
 {
     // use Toggle;

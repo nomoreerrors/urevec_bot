@@ -1,8 +1,9 @@
 <?php
 
-namespace Tests\Feature\ServicesTests\TelegramBotService;
+namespace Tests\Feature\ChatBuilder;
 
 use App\Models\MessageModels\TextMessageModel;
+use App\Classes\PrivateChatCommandRegister;
 use App\Classes\ChatBuilder;
 use App\Models\Chat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,17 +53,13 @@ class CreateChatTest extends TestCase
 
         $this->botService = $this->getMockBuilder(TelegramBotService::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getRequestModel', 'setMyCommands'])
+            ->onlyMethods(['getRequestModel', 'chatBuilder'])
             ->getMock();
-
-        //Expected to be skipped
-        $this->botService->expects($this->never())
-            ->method('setMyCommands');
 
 
         $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
             ->setConstructorArgs([$this->botService])
-            ->onlyMethods(['getChatRelations', 'findChat', 'createChatAdmins'])
+            ->onlyMethods(['getChatRelationsNames', 'findChat', 'createChatAdmins'])
             ->getMock();
 
         //Expected to be skipped
@@ -70,13 +67,17 @@ class CreateChatTest extends TestCase
             ->method('createChatAdmins');
 
 
+        //Prepare relatioins for the updateChatRelations() method     
         $this->chatBuilder->expects($this->any())
-            ->method('getChatRelations')
+            ->method('getChatRelationsNames')
             ->willReturn(['newUserRestrictions', 'admins', 'linksFilter', 'badWordsFilter', 'unusualCharsFilter']);
 
         $this->chatBuilder->expects($this->once())
             ->method('findChat')
             ->willReturn($chat);
+
+        $this->botService->expects($this->any())
+            ->method('chatBuilder')->willReturn($this->chatBuilder);
 
 
         //Assert that all relationships are null before the test 
@@ -85,6 +86,7 @@ class CreateChatTest extends TestCase
         $this->assertNull($chat->badWordsFilter()->first());
         $this->assertNull($chat->unusualCharsFilter()->first());
 
+        // $j = $chat->newUserRestrictions();
         $this->chatBuilder->createChat();
         //Assert that all relationships are not null after the test
         $this->assertNotNull($chat->newUserRestrictions()->first());
@@ -94,30 +96,33 @@ class CreateChatTest extends TestCase
     }
 
 
-    public function testNewChatCreatedWithAdminsAttached(): void
+    public function testCreateNewChatWithAdminsAttached(): void
     {
-        $chatId = 123;
-        $chatTitle = 'some title';
-        //Make so that the create new chat part of code won't be skipped 
-        $this->prepareCreateNewChat($chatId, $chatTitle);
+        //Prepare request model with chat id and title and also admins that will be attached to the chat
+        $this->mockRequestModel(123, 'some title');
+
+        //Prepare bot with 'setChat' to be skipped to not test it this time 
+        // and 'getRequestModel' to assign chatId and chatTitle  to the newly created chat
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getRequestModel', 'setChat'])
+            ->getMock();
+
+
+        $this->botService->expects($this->any())->method('getRequestModel')->willReturn($this->requestModel);
+
+        //Prepare chatBuilder with botService in constructor and with list of methods that should be skipped
+        $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
+            ->setConstructorArgs([$this->botService])
+            ->onlyMethods(['getChatRelationsNames', 'findChat', 'setMyCommands'])
+            ->getMock();
+
 
         $this->chatBuilder->createChat();
-        $chat = Chat::where('chat_id', $chatId)->first();
+        //Find newly created chat
+        $chat = Chat::where('chat_id', 123)->first();
 
         $this->assertAdminsAttached($chat);
-        // Assert that all relationships are not null after the test
-        $this->assertNotNull($chat->newUserRestrictions()->first());
-        $this->assertNotNull($chat->linksFilter()->first());
-        $this->assertNotNull($chat->badWordsFilter()->first());
-        $this->assertNotNull($chat->unusualCharsFilter()->first());
-    }
-
-    private function assertAdminsAttached(Chat $chat): void
-    {
-        $admins = $chat->admins()->get();
-        $adminsIds = $admins->pluck('admin_id')->toArray();
-        $this->assertContains(99999, $adminsIds);
-        $this->assertContains(88888, $adminsIds);
     }
 
 
@@ -130,25 +135,67 @@ class CreateChatTest extends TestCase
     {
         $chatId = 123;
         $chatTitle = 'some title';
-        //prepare chat with two admins
-        $this->prepareCreateNewChat($chatId, $chatTitle);
+        //Prepare request model with chat id and title and also admins that will be attached to the chat
+        $this->mockRequestModel($chatId, $chatTitle);
+        //Prepare bot with request model and with 'setChat' method to skip it
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['getRequestModel', 'setChat'])
+            ->getMock();
 
+        $this->botService->expects($this->any())->method('getRequestModel')->willReturn($this->requestModel);
+
+        //Prepare chatBuilder with botService in constructor and 
+        //With list of methods that should be skipped because we're only interested that admins are created without duplicates
+        $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
+            ->setConstructorArgs([$this->botService])
+            ->onlyMethods(['updateChatRelations', 'findChat', 'setMyCommands'])
+            ->getMock();
+
+
+        //First time create a new chat
         $this->chatBuilder->createChat();
         $chat = Chat::where('chat_id', $chatId)->first();
         $this->assertAdminsAttached($chat);
 
 
 
-        //Prepare to create a  new chat but with the same admins as in the previous chat
+
+        //Prepare to create a new chat but with the same admins as in the previous chat
         $secondChatId = 555;
         $secondChatTitle = 'another title';
-        $this->prepareCreateNewChat($secondChatId, $secondChatTitle);
+
+        //Prepare request model with chat id and title and also admins that will be attached to the chat
+        $this->mockRequestModel($secondChatId, $secondChatTitle);
+        //Prepare bot with request model and set 'setChat' method  to be skipped
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['getRequestModel', 'setChat'])
+            ->getMock();
+
+        $this->botService->expects($this->any())->method('getRequestModel')->willReturn($this->requestModel);
+
+        //Prepare chatBuilder with botService in constructor and set methods that should be skipped
+        $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
+            ->setConstructorArgs([$this->botService])
+            ->onlyMethods(['updateChatRelations', 'findChat', 'setMyCommands'])
+            ->getMock();
+
+
+        //Second time create a new chat
         $this->chatBuilder->createChat();
+
+
+        // Find chats to assert that there are 2 chats and both have 2 admins
+        $chat = Chat::where('chat_id', $chatId)->first();
+        $this->assertAdminsAttached($chat);
 
         $secondChat = Chat::where('chat_id', $secondChatId)->first();
         $this->assertAdminsAttached($secondChat);
 
+
+
+        // Assert that there are still only 2 admins in the database at all
         $this->assertEquals(2, Admin::all()->count());
+        // Assert that there are 2 chats
         $this->assertEquals(2, Admin::first()->chats->count());
     }
 
@@ -158,44 +205,37 @@ class CreateChatTest extends TestCase
         $chatId = 777;
         $chat = $this->getChatWithAdmins($chatId);
 
-
+        //Set chat method should be skipped
         $this->botService = $this->getMockBuilder(TelegramBotService::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods(['getRequestModel', 'setMyCommands'])
+            ->onlyMethods(['setChat'])
             ->getMock();
 
-        //Expected to be skipped
-        $this->botService->expects($this->never())
-            ->method('setMyCommands');
 
-
+        //Prepare chatBuilder with botService in constructor
+        // And methods that should be skipped
         $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
             ->setConstructorArgs([$this->botService])
-            ->onlyMethods(['getChatRelations', 'findChat', 'createChatAdmins', 'updateChatRelations'])
+            ->onlyMethods(['findChat', 'createChatAdmins', 'setMyCommands'])
             ->getMock();
 
 
-        //Fake that chat is already in DB
-        $this->chatBuilder->expects($this->once())
-            ->method('findChat')
-            ->willReturn($chat);
-
+        //Fake that chat is already in DB to assert that creating a new one will be skipped 
+        $this->chatBuilder->expects($this->once())->method('findChat')->willReturn($chat);
         //Just expect to be called once
-        $this->chatBuilder->expects($this->once())
-            ->method('updateChatRelations'); //return null
 
         //Expected to be skipped
-        $this->chatBuilder->expects($this->never())
-            ->method('createChatAdmins');
+        $this->chatBuilder->expects($this->never())->method('setMyCommands');
+        $this->chatBuilder->expects($this->never())->method('createChatAdmins');
 
         $this->chatBuilder->createChat();
+        // Assert that there are only one chat that we put in DB at the top of the test
+        // And no more chats will be created
         $this->assertEquals(1, Chat::all()->count());
     }
 
 
-    private function prepareCreateNewChat(int $chatId, string $chatTitle): void
+    private function mockRequestModel(int $chatId, string $chatTitle): void
     {
-        // Prepare request model
         $this->requestModel = $this->createMock(TextMessageModel::class);
         $this->requestModel->expects($this->any())
             ->method('getChatId')
@@ -210,52 +250,27 @@ class CreateChatTest extends TestCase
             ->willReturn(
                 [$this->firstAdmin, $this->secondAdmin]
             );
+    }
 
 
+    private function mockBotWithRequestModel($chatId, $chatTitle)
+    {
+        $this->mockRequestModel($chatId, $chatTitle);
         //Prepare bot
         $this->botService = $this->getMockBuilder(TelegramBotService::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getRequestModel', 'setMyCommands'])
+            ->onlyMethods(['getRequestModel'])
             ->getMock();
 
-        //dummy mycommands
-        $this->botService->expects($this->once())
-            ->method('setMyCommands');
 
         $this->botService->expects($this->any())
             ->method('getRequestModel')
             ->willReturn($this->requestModel);
-
-
-
-        //Prepare chatBuilder with botService in constructor
-        $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
-            ->setConstructorArgs([$this->botService])
-            ->onlyMethods(['getChatRelations', 'findChat'])
-            ->getMock();
-
-        $this->chatBuilder->expects($this->any())
-            ->method('getChatRelations')
-            ->willReturn(['newUserRestrictions', 'admins', 'linksFilter', 'badWordsFilter', 'unusualCharsFilter']);
-
-        //Mock that the chat is not found in db to create a new one
-        $this->chatBuilder->expects($this->once())
-            ->method('findChat')
-            ->willReturn(null);
     }
 
 
-    // public function testIfAssignNullToChatPropertyShouldContiniue(): void
-    // {
-    //     $this->chatBuilder = $this->getMockBuilder(ChatBuilder::class)
-    //         ->setConstructorArgs([$this->botService])
-    //         ->onlyMethods(['getChatRelations', 'findChat'])
-    //         ->getMock();
-    // }
-
-
     /**
-     * Get a chat with 2 admins but without any relationships
+     * Get chat with 2 admins but without any relationships
      * @return \App\Models\Chat
      */
     private function getChatWithAdmins(int $id): Chat
@@ -274,5 +289,12 @@ class CreateChatTest extends TestCase
         return $chat;
     }
 
+    private function assertAdminsAttached(Chat $chat): void
+    {
+        $admins = $chat->admins()->get();
+        $adminsIds = $admins->pluck('admin_id')->toArray();
+        $this->assertContains($this->firstAdmin['admin_id'], $adminsIds);
+        $this->assertContains($this->secondAdmin['admin_id'], $adminsIds);
+    }
 
 }

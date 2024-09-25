@@ -3,6 +3,7 @@
 namespace App\Enums;
 
 use App\Exceptions\BaseTelegramBotException;
+use App\Enums\Time;
 use App\Services\BotErrorNotificationService;
 
 enum ResTime: int
@@ -21,6 +22,16 @@ enum ResTime: int
             self::WEEK => "RESTRICT TIME: ONE WEEK",
             self::MONTH => "RESTRICT TIME: ONE MONTH",
             self::NONE => "RESTRICT TIME: NONE"
+        };
+    }
+
+    public function getSeconds(): string
+    {
+        return match ($this) {
+            self::TWO_HOURS => Time::HOUR->value * 2,
+            self::DAY => Time::DAY->value,
+            self::WEEK => Time::WEEK->value,
+            self::MONTH => Time::MONTH->value,
         };
     }
 

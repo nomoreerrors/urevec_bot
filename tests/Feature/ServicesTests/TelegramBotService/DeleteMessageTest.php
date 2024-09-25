@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\MessageModels\TextMessageModel;
+use App\Models\StatusUpdates\NewMemberJoinUpdateModel;
 use App\Models\TelegramRequestModelBuilder;
 use App\Services\CONSTANTS;
 use App\Exceptions\BaseTelegramBotException;
@@ -16,51 +18,75 @@ class DeleteMessageTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->data = $this->getMessageModelData();
-        $this->model = (new TelegramRequestModelBuilder($this->data))->create();
-        $this->botService = new TelegramBotService($this->model);
     }
 
-    public function testDeleteMessageStatusOkReturnsNull(): void
+    public function testWrongInstanceTypeThrowsException(): void
     {
-        Http::fake([
-            '*' => Http::response([
-                'ok' => true,
-                'result' => $this->getMessageModelData()
-            ], 200)
-        ]);
+        $this->expectException(BaseTelegramBotException::class);
+        $this->expectExceptionMessage(CONSTANTS::DELETE_MESSAGE_FAILED . CONSTANTS::WRONG_INSTANCE_TYPE);
 
-        $this->assertNull($this->botService->deleteMessage());
+        $mockRequestModel = $this->getMockBuilder(NewMemberJoinUpdateModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['getRequestModel'])
+            ->getMock();
+
+        $this->botService->method('getRequestModel')->willReturn($mockRequestModel);
+        $this->botService->deleteMessage();
     }
 
-    /**
-     * Test that a message deletion request with a non-existent message ID returns false.
-     * @return void
-     */
-    public function testDeleteUnexistentMessageThrowsException(): void
+    public function testExpectedParametersWasPassed(): void
     {
-        Http::fake([
-            '*' => Http::response([
-                "ok" => false,
-                "error_code" => 400,
-                "description" => "Bad Request: message to delete not found",
-                'result' => $this->getMessageModelData()
-            ], 404)
-        ]);
+        $mockRequestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
+        $mockRequestModel->method('getChatId')->willReturn(123);
+        $mockRequestModel->method('getMessageId')->willReturn(456);
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['getRequestModel', 'sendPost'])
+            ->getMock();
+
+        $expectedArgs = ['chat_id' => 123, 'message_id' => 456];
+        $this->botService->method('getRequestModel')->willReturn($mockRequestModel);
+        $this->botService->method('sendPost')
+            ->with('deleteMessage', $expectedArgs)
+            ->willReturn($this->getFakeResponse());
+
+
+
+        $this->botService->deleteMessage();
+        $this->assertTrue(true); // Just to pass the test
+    }
+
+    public function testResponseIsNotOkThrowsException(): void
+    {
         $this->expectException(BaseTelegramBotException::class);
         $this->expectExceptionMessage(CONSTANTS::DELETE_MESSAGE_FAILED);
-        $this->botService->deleteMessage();
-    }
 
-    public function testNotAMessageModelInstanceThrowsException(): void
-    {
-        $this->model = (new TelegramRequestModelBuilder($this->getNewMemberJoinUpdateModelData()))->create();
-        $this->botService = new TelegramBotService($this->model);
+        $mockRequestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $this->expectException(BaseTelegramBotException::class);
-        $this->expectExceptionMessage(CONSTANTS::DELETE_MESSAGE_FAILED .
-            CONSTANTS::WRONG_INSTANCE_TYPE);
+        $mockRequestModel->method('getChatId')->willReturn(123);
+        $mockRequestModel->method('getMessageId')->willReturn(456);
+
+        $this->botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['getRequestModel', 'sendPost'])
+            ->getMock();
+
+        $expectedArgs = ['chat_id' => 123, 'message_id' => 456];
+        $this->botService->method('getRequestModel')->willReturn($mockRequestModel);
+        $this->botService->method('sendPost')
+            ->with('deleteMessage', $expectedArgs)
+            ->willReturn($this->getFakeResponse(false));
+
+
+
         $this->botService->deleteMessage();
+        $this->assertTrue(true); // Just to pass the test
     }
 }

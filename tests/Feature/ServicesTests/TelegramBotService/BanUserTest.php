@@ -76,7 +76,6 @@ class BanUserTest extends TestCase
 
 
         $this->mockBotService->banUser();
-
     }
 
     public function testRestrictChatMemberWithtTimePassedAsArgument(): void

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\EnvironmentVariablesException;
+use Illuminate\Support\Facades\App;
 use App\Models\Admin;
 use App\Classes\Menu;
 use App\Classes\PrivateChatCommandCore;
@@ -33,13 +34,14 @@ use App\Services\CONSTANTS;
 
 class TelegramApiMiddleware
 {
-    private bool $chatIdAllowed = false;
-
+    // private bool $chatIdAllowed = false;
     private $chatModel = null;
 
     private TelegramRequestModelBuilder $requestModel;
 
     private TelegramMiddlewareService $middlewareService;
+
+    private TelegramBotService $botService;
 
     /**
      * Handle an incoming request.
@@ -52,7 +54,6 @@ class TelegramApiMiddleware
         //TODO delete it
         // BotErrorNotificationService::send("ok");
         // return response("OK", Response::HTTP_OK);
-        // throw new BaseTelegramBotException("test", __METHOD__);
         try {
 
             $this->saveRawRequestData($data);
@@ -60,7 +61,11 @@ class TelegramApiMiddleware
             $this->middlewareService->validateEnvironmentVariables(env("DB_HOST"), env("ALLOWED_CHATS_ID"));
             $this->middlewareService->checkIfIpAllowed(request()->ip());
             $this->requestModel = (new TelegramRequestModelBuilder($data))->create();
-            $this->setContainerDeps();
+
+
+            $this->botService = app(TelegramBotService::class);
+            $this->botService->setRequestModel($this->requestModel);
+
 
         } catch (UnexpectedRequestException | BaseTelegramBotException $e) {
             FailedRequestJob::dispatch($data);
@@ -70,6 +75,7 @@ class TelegramApiMiddleware
             FailedRequestJob::dispatch($data);
             return response("OK", Response::HTTP_OK);
         }
+
 
         if (
             $this->requestModel->getChatType() !== "private" &&
@@ -81,18 +87,12 @@ class TelegramApiMiddleware
 
 
         if ($this->requestModel->getChatType() !== "private") {
-            app(TelegramBotService::class)->chatBuilder()->createChat();
-            // $this->setChat();
+            $this->botService->chatBuilder()->createChat();
         }
 
         return $next($request);
     }
 
-    private function setContainerDeps()
-    {
-        app()->singleton(TelegramBotService::class, fn() => new TelegramBotService($this->requestModel));
-        app()->singleton("commandsList", fn() => new CommandsList());
-    }
 
     private function saveRawRequestData(array $requestData): void
     {

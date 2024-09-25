@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Classes\CommandBuilder;
+use Illuminate\Support\Facades\App;
 use App\Services\BotErrorNotificationService;
 use App\Services\ChatRulesService;
 use App\Classes\CommandsList;
@@ -22,6 +23,7 @@ class TelegramBotController extends Controller
 
     public function __construct()
     {
+        // Singleton registered in app/Providers/AppServiceProvider.php
         $this->botService = app(TelegramBotService::class);
         $this->requestModel = $this->botService->getRequestModel();
     }

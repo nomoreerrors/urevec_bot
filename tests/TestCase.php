@@ -3,6 +3,7 @@
 namespace Tests;
 
 use App\Models\ForwardMessageModel;
+use Illuminate\Http\Client\Response;
 use App\Classes\PrivateChatCommandCore;
 use App\Classes\Buttons;
 use ReflectionMethod;
@@ -184,6 +185,19 @@ abstract class TestCase extends BaseTestCase
                 ], 200)
         ]);
     }
+
+    public function fakeResponseSetMyCommands(bool $status = true)
+    {
+        return Http::fake([
+            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/setMyCommands" =>
+                Http::response([
+                    'ok' => $status,
+                    'description' => 'description',
+                    'result' => $status
+                ])
+        ]);
+    }
+
 
 
     public function getAdminId()
@@ -584,12 +598,18 @@ abstract class TestCase extends BaseTestCase
         ];
     }
 
-    public function getAccessToProtectedMethodAndInvoke(string $method, object $mockClass)
+    public function getAccessToProtectedMethodAndInvoke(string $method, object $mockClass, ?array $args = null)
     {
         $reflection = new ReflectionClass($mockClass);
         $reflectionMethod = $reflection->getMethod($method);
         $reflectionMethod->setAccessible(true);
-        $result = $reflectionMethod->invoke($mockClass);
+        if (!empty($args)) {
+
+            $result = $reflectionMethod->invoke($mockClass, ...$args);
+        } else {
+
+            $result = $reflectionMethod->invoke($mockClass);
+        }
         return $result;
     }
 
@@ -728,6 +748,19 @@ abstract class TestCase extends BaseTestCase
         $backMenuArray = $this->getBackMenuArray($adminId);
         $this->assertFalse(in_array($value, $backMenuArray));
     }
+
+    protected function getFakeResponse(bool $ok = true): Response
+    {
+        $response = $this->getMockBuilder(Response::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(["ok"])
+            ->getMock();
+
+        $ok ? $response->method("ok")->willReturn(true) : $response->method("ok")->willReturn(false);
+        return $response;
+    }
+
+
 }
 
 

@@ -65,17 +65,17 @@ class SetPrivateChatCommandsTest extends TestCase
 
 
         $command = [
-            "command" => "test command",
+            "command" => "/test_command",
             "description" => "test description",
         ];
 
         $secondCommand = [
-            "command" => "second test command",
+            "command" => "/second_test_command",
             "description" => "second test description",
         ];
 
         $thirdCommand = [
-            "command" => "third test command",
+            "command" => "/third_test_command",
             "description" => "third test description",
         ];
 

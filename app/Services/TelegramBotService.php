@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Services;
 
 use App\Classes\BaseBotCommandCore;
+use App\Enums\RestrictChatMemberData;
 use App\Classes\ChatBuilder;
 use App\Classes\Commands\BaseCommand;
 use App\Classes\CommandsList;
@@ -33,19 +33,20 @@ use App\Exceptions\RestrictChatMemberFailedException;
 use Illuminate\Support\Facades\Log;
 use App\Services\CONSTANTS;
 use App\Exceptions\BaseTelegramBotException;
+use App\Traits\RestrictChatMemberTrait;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\TextUI\Configuration\Constant;
 
 
 class TelegramBotService
 {
+    use RestrictChatMemberTrait;
+
     private $chat = null;
 
     private $admin = null;
 
     private $textCommands = null;
-
-    private ResTime $chatRestrictionTime = ResTime::DAY;
 
     private ?string $privateChatCommand = null;
 
@@ -59,6 +60,7 @@ class TelegramBotService
 
     private ?PrivateChatCommandRegister $privateChatCommandRegister = null;
 
+    private $requestModel = null;
 
 
     /**
@@ -70,54 +72,58 @@ class TelegramBotService
     private string $banReasonModelName = "";
 
 
-    public function __construct(private TelegramRequestModelBuilder $requestModel)
+    public function __construct()
+    {
+    }
+
+    /**
+     * The general method that should be called to initialize the service
+     * @param \App\Models\TelegramRequestModelBuilder $requestModel
+     * @return void
+     */
+    public function setRequestModel(TelegramRequestModelBuilder $requestModel): void
+    {
+        $this->requestModel = $requestModel;
+        $this->init();
+    }
+
+    public function init()
     {
         $this->setAdmin()
             ->setPrivateChatCommand();
         $this->setChatSelector();
         $this->setChatBuilder();
-        $this->setPrivateChatCommandRegister();
+        // $this->setPrivateChatCommandRegister();
         $this->setCommandHandler();
         $this->setPrivateChatMenu();
     }
 
+
     /**
-     * Restrict member
-     * @param int $id 
-     * @return void 
+     * Summary of sendMessage
+     * @param string $text_message
+     * @param array $reply_markup reply parameters of Telegram Api
+     * @return void
+     * @throws BaseTelegramBotException
      */
-    public function restrictChatMember(ResTime $resTime = null, int $id = null): void
+    public function sendMessage(string $text_message, ?array $reply_markup = null): void
     {
-        $time = $resTime ?? $this->chatRestrictionTime;
-        $until_date = time() + $time->value;
+        $params = [
+            "chat_id" => $this->getRequestModel()->getChatId(),
+            "text" => $text_message
+        ];
 
-        if (empty($this->banReasonModelName)) {
-            throw new RestrictChatMemberFailedException(null, __METHOD__);
+        if ($reply_markup) {
+            $params["reply_markup"] = $reply_markup;
         }
 
-        $reasonModel = $this->getChat()->{$this->banReasonModelName};
-        $canSendMedia = $reasonModel->can_send_media;
-        $canSendMessages = $reasonModel->can_send_messages;
+        $response = $this->sendPost('sendMessage', $params);
 
-        $response = Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/restrictChatMember",
-            [
-                "chat_id" => $this->requestModel->getChatId(),
-                "user_id" => $id ?? $this->requestModel->getFromId(),
-                "can_send_messages" => $canSendMessages,
-                "can_send_documents" => $canSendMedia,
-                "can_send_photos" => $canSendMedia,
-                "can_send_videos" => $canSendMedia,
-                "can_send_video_notes" => $canSendMedia,
-                "can_send_other_messages" => $canSendMedia,
-                "until_date" => $until_date
-            ]
-        );
-
-        if (!$response->Ok()) {
-            throw new RestrictChatMemberFailedException(null, __METHOD__);
+        if ($response->ok()) {
+            return;
         }
-        return;
+        log::info($text_message . json_encode($params, JSON_UNESCAPED_UNICODE) . "chat_id: " . $this->getRequestModel()->getChatId());
+        throw new BaseTelegramBotException(CONSTANTS::SEND_MESSAGE_FAILED, __METHOD__);
     }
 
     /**
@@ -127,21 +133,26 @@ class TelegramBotService
      */
     public function deleteMessage(): void
     {
-        if (!($this->requestModel instanceof MessageModel)) {
-            throw new BaseTelegramBotException(CONSTANTS::DELETE_MESSAGE_FAILED .
-                CONSTANTS::WRONG_INSTANCE_TYPE, __METHOD__);
+        if (!($this->getRequestModel() instanceof MessageModel)) {
+            throw new BaseTelegramBotException(
+                CONSTANTS::DELETE_MESSAGE_FAILED .
+                CONSTANTS::WRONG_INSTANCE_TYPE,
+                __METHOD__
+            );
         }
-        $response = Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/deleteMessage",
-            [
-                "chat_id" => $this->requestModel->getChatId(),
-                "message_id" => $this->requestModel->getMessageId()
-            ]
-        );
+
+        $data = [
+            "chat_id" => $this->getRequestModel()->getChatId(),
+            "message_id" => $this->getRequestModel()->getMessageId()
+        ];
+
+        $response = $this->sendPost('deleteMessage', $data);
+
 
         if ($response->ok()) {
             return;
         } else {
+            log::info(CONSTANTS::DELETE_MESSAGE_FAILED . json_encode($data));
             throw new BaseTelegramBotException(CONSTANTS::DELETE_MESSAGE_FAILED, __METHOD__);
         }
     }
@@ -166,34 +177,6 @@ class TelegramBotService
         throw new DeleteUserFailedException(CONSTANTS::DELETE_USER_FAILED, __METHOD__);
     }
 
-    /**
-     * Summary of sendMessage
-     * @param string $text_message
-     * @return void
-     * @throws BaseTelegramBotException
-     */
-    public function sendMessage(string $text_message, ?array $reply_markup = null): void
-    {
-        $params = [
-            "chat_id" => $this->requestModel->getChatId(),
-            "text" => $text_message
-        ];
-
-        if ($reply_markup) {
-            $params["reply_markup"] = $reply_markup;
-        }
-
-        $response = Http::post(
-            env('TELEGRAM_API_URL') . env('TELEGRAM_API_TOKEN') . "/sendMessage",
-            $params
-        );
-        // dd("here");
-        if ($response->ok()) {
-            log::info($text_message . json_encode($params, JSON_UNESCAPED_UNICODE));
-            return;
-        }
-        throw new BaseTelegramBotException(CONSTANTS::SEND_MESSAGE_FAILED, __METHOD__);
-    }
 
     /**
      * Summary of banUser
@@ -228,32 +211,31 @@ class TelegramBotService
     }
 
 
-    /**
-     * Set bot commands in a group chat for all admins by typing "/"
-     * @throws BaseTelegramBotException
-     * @return void
-     */
-    public function setGroupChatCommandsForAdmins(): void
-    {
-        $testCommand = app("commandsList")->testCommand;
+    // /**
+    //  * Set bot commands in a group chat for all admins by typing "/"
+    //  * @throws BaseTelegramBotException
+    //  * @return void
+    //  */
+    // public function setGroupChatCommandsForAdmins(): void
+    // {
+    //     $testCommand = app("commandsList")->testCommand;
 
-        $commands = (new CommandBuilder($this->requestModel->getChatId()))
-            ->command($testCommand->command, $testCommand->description)
-            ->command($testCommand->command, $testCommand->description)
-            ->withChatAdministratorsScope()
-            ->get();
+    //     $commands = (new CommandBuilder($this->requestModel->getChatId()))
+    //         ->command($testCommand->command, $testCommand->description)
+    //         ->command($testCommand->command, $testCommand->description)
+    //         ->withChatAdministratorsScope()
+    //         ->get();
 
-        $response = $this->sendPost("setMyCommands", $commands);
+    //     $response = $this->sendPost("setMyCommands", $commands);
 
-        if (!$response->ok()) {
-            throw new BaseTelegramBotException(CONSTANTS::SET_GROUP_CHAT_COMMANDS_FAILED, __METHOD__);
-        }
+    //     if (!$response->ok()) {
+    //         throw new BaseTelegramBotException(CONSTANTS::SET_GROUP_CHAT_COMMANDS_FAILED, __METHOD__);
+    //     }
 
-        $this->chat->admins()->update([
-            "group_commands_access" => 1
-        ]);
-    }
-
+    //     $this->chat->admins()->update([
+    //         "group_commands_access" => 1
+    //     ]);
+    // }
 
     /**
      * Summary of sendPost
@@ -278,13 +260,6 @@ class TelegramBotService
         return $this->chat;
     }
 
-
-    // private function setChatRestrictionTime(): void
-    // {
-    //     // $time = $this->chat->newUserRestrictions->restriction_time;
-    //     // $this->chatRestrictionTime = ResTime::from($time);
-    //     $this->chatRestrictionTime = ResTime::TWO_HOURS;
-    // }
 
     private function setAdmin(): static
     {
@@ -348,9 +323,9 @@ class TelegramBotService
         }
     }
 
-    private function setChatBuilder(): void
+    public function setChatBuilder(?ChatBuilder $chatBuilder = null): void
     {
-        $this->chatBuilder = new ChatBuilder($this);
+        $this->chatBuilder = $chatBuilder ? $chatBuilder : new ChatBuilder($this);
     }
 
     public function chatBuilder(): ?ChatBuilder
@@ -369,6 +344,8 @@ class TelegramBotService
             $this->commandHandler = new PrivateChatCommandCore($this);
         }
     }
+
+
 
     public function commandHandler(): ?BaseBotCommandCore
     {
@@ -422,7 +399,16 @@ class TelegramBotService
 
     public function privateChatCommandRegister()
     {
-        return $this->privateChatCommandRegister;
+        if (empty($this->getChat())) {
+            throw new BaseTelegramBotException(CONSTANTS::SET_PRIVATE_CHAT_COMMANDS_FAILED, __METHOD__);
+        }
+
+        if (!$this->privateChatCommandRegister) {
+            $this->setPrivateChatCommandRegister();
+            return $this->privateChatCommandRegister;
+        } else {
+            return $this->privateChatCommandRegister;
+        }
     }
 
     protected function commandsList()

@@ -5,6 +5,15 @@ namespace App\Traits;
 use App\Classes\Menu;
 use App\Services\BotErrorNotificationService;
 
+
+/**
+ * Toggle column in database and send message to user
+ * with the same menu with refreshed button titles.
+ *
+ * If the menu refresh flag is set, this method will
+ * simply return and do nothing, as the menu will be
+ * refreshed in the menu class.
+ */
 trait ToggleColumn
 {
     protected $model;

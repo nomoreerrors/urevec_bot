@@ -46,6 +46,8 @@ class CONSTANTS
     public const REFRESH_BACK_MENU_FAILED = "ERROR: REFRESH BACK MENU FAILED. BACK MENU ARRAY IN CACHE IS EMPTY " . PHP_EOL;
     public const COMMAND_NOT_FOUND = "Команда не распознана";
 
+    public const UNKNOWN_MODEL = "ERROR: МОДЕЛЬ НЕ РАСПОЗНАНА " . PHP_EOL;
+
     /**
      * SUCCSESS MESSAGES
      * @var string

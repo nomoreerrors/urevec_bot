@@ -54,7 +54,6 @@ class CommandRouter
                 }
             }
         }
-        // BotErrorNotificationService::send('Неизвестная команда: ' . $this->command);
         return null;
     }
 
