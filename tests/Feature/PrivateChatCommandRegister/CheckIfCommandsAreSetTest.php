@@ -1,12 +1,15 @@
 <?php
 
 namespace Feature\PrivateChatCommandRegister;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Exceptions\SetCommandsFailedException;
 use App\Classes\PrivateChatCommandRegister;
 
 class CheckIfCommandsAreSetTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function setUp(): void
     {
         parent::setUp();

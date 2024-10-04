@@ -1,6 +1,7 @@
 <?php
 
 namespace Feature\PrivateChatCommandRegister;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Classes\PrivateChatCommandRegister;
 use App\Models\Chat;
@@ -8,6 +9,7 @@ use App\Services\TelegramBotService;
 
 class GetMyCommandsTest extends TestCase
 {
+    use RefreshDatabase;
 
     public function setUp(): void
     {

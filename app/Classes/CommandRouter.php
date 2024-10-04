@@ -23,7 +23,8 @@ class CommandRouter
 
 
     /**
-     * Loops through all enum classes and checks if the command type exists. If a match is found,
+     * Loops through all enum classes from /Enums/CommandEnums
+     * and checks if the command type exists. If a match is found,
      * returns the class name of the corresponding command class.
      * 
      * @return string|null The class name of the command if found, null otherwise.

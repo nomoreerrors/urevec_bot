@@ -46,6 +46,7 @@ class CONSTANTS
     public const REFRESH_BACK_MENU_FAILED = "ERROR: REFRESH BACK MENU FAILED. BACK MENU ARRAY IN CACHE IS EMPTY " . PHP_EOL;
     public const COMMAND_NOT_FOUND = "Команда не распознана";
 
+
     public const UNKNOWN_MODEL = "ERROR: МОДЕЛЬ НЕ РАСПОЗНАНА " . PHP_EOL;
 
     /**
@@ -126,6 +127,7 @@ class CONSTANTS
     public const REPLY_RESTRICT_NEW_USERS_FOR_24H = 'Установлено ограничение новых пользователей на 24 часа';
     public const REPLY_RESTRICT_NEW_USERS_FOR_1W = "Установлено ограничение новых пользователей на 1 неделю";
     public const REPLY_RESTRICT_NEW_USERS_FOR_MONTH = "Установлено ограничение новых пользователей на 1 месяц";
+    public const REPLY_ONLY_ONE_CHAT_AVAILABLE = "Боту доступен только один ваш чат.";
 
 }
 

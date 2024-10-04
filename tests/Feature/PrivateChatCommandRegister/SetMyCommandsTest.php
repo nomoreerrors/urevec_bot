@@ -3,6 +3,7 @@
 namespace Feature\PrivateChatCommandRegister;
 
 use App\Models\Admin;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Chat;
 use Database\Seeders\SimpleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -148,7 +149,7 @@ class SetMyCommandsTest extends TestCase
         ]);
 
         $privateChatCommandRegister->setMyCommands($secondAdmin->admin_id, [
-            ['command' => 'test', 'description' => 'test']
+            ['command' => 'test2', 'description' => 'test2']
         ]);
 
         $admins = $chat->admins()->get();
@@ -204,17 +205,5 @@ class SetMyCommandsTest extends TestCase
             $this->assertEquals(1, $admin->pivot->private_commands_access);
         }
     }
-
-
-    // public function testPrivateChatCommandsAccessColumnUpdateFailedThrowsException(): void
-    // {
-    //     //
-    // }
-
-
-    // public function testSetMyCommandsFailedThrowsException(): void
-    // {
-    //     //
-    // }
 
 }

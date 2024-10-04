@@ -33,6 +33,7 @@ class ChatBuilder
             ]);
             $this->createChatAdmins();
             $this->botService()->setChat($this->botService->getRequestModel()->getChatId());
+            $this->chat = $this->botService()->getChat();
             $this->setMyCommands();
 
         }
@@ -46,8 +47,8 @@ class ChatBuilder
     {
         $commands = [
             [
-                "command" => "test_command",
-                "description" => "test description"
+                "command" => "moderation_settings",
+                "description" => "Настройки модерации чата"
             ],
             [
                 "command" => "second_test_command",
@@ -59,8 +60,8 @@ class ChatBuilder
             ]
         ];
 
-        // BotErrorNotificationService::send($this->chat->admins()->first()->admin_id);
-        foreach ($this->chat->admins()->get() as $admin) {
+        // BotErrorNotificationService::send($this->botService()->getChat()>admins()->first()->admin_id);
+        foreach ($this->botService()->getChat()->admins()->get() as $admin) {
             $this->botService->privateChatCommandRegister()->setMyCommands($admin->admin_id, $commands);
         }
     }
@@ -100,10 +101,10 @@ class ChatBuilder
 
     protected function createChatRelation(string $relation): void
     {
-        if (empty($this->chat->{$relation})) {
-            $this->chat->{$relation}()->create();
+        if (empty($this->botService()->getChat()->{$relation})) {
+            $this->botService()->getChat()->{$relation}()->create();
         }
-        // $this->chat->refresh();
+        // $this->botService()->getChat()>refresh();
     }
 
     /**

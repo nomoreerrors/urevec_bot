@@ -19,6 +19,12 @@ class ChatSelector
 
     private Buttons $buttons;
 
+    /**
+     * Use it to stop the code after the chat was selected by the user
+     * or just instead of using "exit" function to easily test because 'exit' function stops tests
+     * @method hasBeenUpdated
+     * @var bool
+     */
     private bool $updated = false;
 
     private string $command;
@@ -41,8 +47,14 @@ class ChatSelector
     public function select()
     {
         if ($this->hasOnlyOneChat()) {
-            $this->setDefaultChat();
-            return;
+            if ($this->isSelectChatMenuRequest()) {
+                $this->botService->sendMessage(CONSTANTS::REPLY_ONLY_ONE_CHAT_AVAILABLE);
+                $this->updated = true;
+                return;
+            } else {
+                $this->setDefaultChat();
+                return;
+            }
         }
 
         if ($this->isSelectChatMenuRequest()) {
@@ -183,9 +195,15 @@ class ChatSelector
 
     private function setDefaultChat(): void
     {
-        $this->botService->setChat($this->admin->chats->first()->chat_id);
+        // $j = $this->admin->chats()->first()->chat_id;
+        $this->botService->setChat($this->admin->chats()->first()->chat_id);
     }
 
+    /**
+     * Use it to stop the code after the chat was selected by the user
+     * or just instead of using "exit" function to easily test because 'exit' function stops tests
+     * @return bool
+     */
     public function hasBeenUpdated(): bool
     {
         return $this->updated;

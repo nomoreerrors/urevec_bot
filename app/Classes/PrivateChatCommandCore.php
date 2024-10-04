@@ -31,6 +31,7 @@ class PrivateChatCommandCore extends BaseBotCommandCore
                 $this->botService->chatSelector()->buttonsHaveBeenSent() ||
                 $this->botService->chatSelector()->hasBeenUpdated()
             ) {
+                // exit; //!!!!!!!!
                 return;
             }
         }
@@ -42,16 +43,27 @@ class PrivateChatCommandCore extends BaseBotCommandCore
             return;
         }
 
+        //TODO change the name to executeCommand 
+        // to make it more readable
         $this->botService->createCommand($commandClassName);
     }
 
 
 
+    /**
+     * Find the command  in the enum classes at  /Enums/CommandEnums
+     * @return string|null
+     */
     protected function getCommandClassName(): ?string
     {
         return (new CommandRouter($this->command))->getCommandClassName();
     }
 
+    /**
+     * Send a message to the user if the command is not found
+     * @param mixed $commandClassName
+     * @return bool
+     */
     protected function isValidCommandClassName(?string $commandClassName): bool
     {
         if (!$commandClassName) {

@@ -22,20 +22,24 @@ class DeleteUserTest extends TestCase
 
 
     /**
-     * Test that delete use in unexistent chat returns 'not found' 404 error
+     * Test that delete user in unexistent chat returns 'not found' 404 error
      * which means that the api.telegram.bla-bla/banChatMember request is valid, only chat is not found
      * @return void
      */
     public function testDeleteUserApiCallWithFakeChatIdShouldReturnNotFoundError(): void
     {
-        $this->fakeResponseWithAdminsIds(123, 456);
-        $data = $this->getTextMessageModelData();
-        $data['message']['from']['id'] = 999999999999;
-        $data['message']['chat']['id'] = 999999999999;
-        $requestModel = (new TelegramRequestModelBuilder($data))->create();
-        $botService = new TelegramBotService($requestModel);
+        $requestModel = $this->getMockBuilder(TextMessageModel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getChatId', 'getFromId'])
+            ->getMock();
+
+        $botService = $this->getMockBuilder(TelegramBotService::class)
+            ->onlyMethods(['sendPost', 'getRequestModel'])
+            ->getMock();
+        $botService->method('getRequestModel')->willReturn($requestModel);
 
         $this->expectException(DeleteUserFailedException::class);
+
         $response = $botService->deleteUser();
         $this->assertEquals('Not Found', $response['description']);
         $this->assertEquals(404, $response['error_code']);

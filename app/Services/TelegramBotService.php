@@ -204,6 +204,7 @@ class TelegramBotService
      */
     public function setChat(int $chatId): void
     {
+        $j = 0;
         $this->chat = Chat::with($this->chatBuilder()->getChatRelationsNames())
             ->where("chat_id", $chatId)->first();
 
@@ -353,7 +354,8 @@ class TelegramBotService
     }
 
     /**
-     * Create command class instance 
+     * Create command class instance from app/classes/Commands directory according to a class name  and execute the command
+     * The handle method runs in parent constructor (BaseCommand::class) and command should be executed
      * @param string $className Example:  BadWordsFilterCommand extends BaseCommand
      * @throws \InvalidArgumentException
      * @return object
